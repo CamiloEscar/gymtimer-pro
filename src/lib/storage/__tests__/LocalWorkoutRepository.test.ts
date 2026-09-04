@@ -80,4 +80,21 @@ describe("LocalWorkoutRepository", () => {
 
     spy.mockRestore();
   });
+
+  it("returns an error Result instead of throwing when stored JSON is valid but not an array", () => {
+    window.localStorage.setItem("gymtimer.workouts", JSON.stringify({ not: "an array" }));
+    const repo = new LocalWorkoutRepository();
+
+    const listResult = repo.list();
+    expect(listResult.ok).toBe(false);
+    if (!listResult.ok) {
+      expect(listResult.error.kind).toBe("read_failed");
+    }
+
+    const getResult = repo.get("anything");
+    expect(getResult.ok).toBe(false);
+    if (!getResult.ok) {
+      expect(getResult.error.kind).toBe("read_failed");
+    }
+  });
 });

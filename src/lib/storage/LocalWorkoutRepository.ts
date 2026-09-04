@@ -15,8 +15,14 @@ export class LocalWorkoutRepository implements WorkoutRepository {
   list(): Result<Workout[], StorageError> {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      const workouts: Workout[] = raw ? JSON.parse(raw) : [];
-      return ok(workouts);
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) {
+        return err(
+          "read_failed",
+          `Expected an array of workouts in localStorage, got ${typeof parsed}`
+        );
+      }
+      return ok(parsed as Workout[]);
     } catch {
       return err("read_failed", "Could not read workouts from localStorage");
     }

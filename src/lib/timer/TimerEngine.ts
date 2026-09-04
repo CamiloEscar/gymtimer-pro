@@ -71,6 +71,7 @@ export class TimerEngine {
   }
 
   getState(): TimerState {
+    this.checkFinished();
     const elapsedMs = this.computeElapsedMs();
     const remainingMs =
       this.mode === "countdown" ? Math.max(0, this.durationMs - elapsedMs) : 0;
@@ -115,13 +116,26 @@ export class TimerEngine {
 
   private tick(): void {
     if (this.status !== "running") return;
+    this.checkFinished();
+    this.notify();
+  }
+
+  /**
+   * Self-correcting transition: if a countdown has elapsed past its
+   * duration (per Date.now()-derived elapsed time), flip status to
+   * "finished" regardless of whether the interval callback has fired
+   * yet. Called from both tick() and getState() so a throttled/backgrounded
+   * tab that delays setInterval callbacks can never leave the reported
+   * status stale relative to remainingMs.
+   */
+  private checkFinished(): void {
+    if (this.status !== "running") return;
     if (this.mode === "countdown" && this.computeElapsedMs() >= this.durationMs) {
       this.accumulatedMs = this.durationMs;
       this.startedAt = null;
       this.status = "finished";
       this.stopTicking();
     }
-    this.notify();
   }
 
   private notify(): void {

@@ -50,6 +50,17 @@ describe("TimerEngine — countdown", () => {
     expect(engine.getState().remainingMs).toBe(6000);
   });
 
+  it("self-corrects status to finished via getState() alone, without waiting for a tick callback", () => {
+    const engine = new TimerEngine("countdown", 5000);
+    engine.start();
+    // Simulate a throttled/backgrounded tab: the system clock jumps past
+    // durationMs but no interval tick ever fires (no advanceTimersByTime).
+    vi.setSystemTime(new Date("2026-01-01T00:00:06.000Z"));
+    const state = engine.getState();
+    expect(state.status).toBe("finished");
+    expect(state.remainingMs).toBe(0);
+  });
+
   it("pause freezes remaining time; resume continues from there", () => {
     const engine = new TimerEngine("countdown", 10_000);
     engine.start();

@@ -9,6 +9,10 @@ export class AudioManager {
   private enabled: boolean;
   private voiceEnabled: boolean;
   private ctx: AudioContext | null = null;
+  /** True only after unlock() has run at least once. Playback methods must
+   * treat this as a hard gate so no sound can play before the first
+   * user-gesture-triggered unlock (prompt Sección 13). */
+  private unlocked = false;
 
   constructor(options: AudioManagerOptions = {}) {
     this.enabled = options.enabled ?? true;
@@ -21,6 +25,7 @@ export class AudioManager {
     if (!this.enabled) return;
     this.ctx ??= new AudioContext();
     void this.ctx.resume();
+    this.unlocked = true;
   }
 
   setEnabled(enabled: boolean): void {
@@ -56,7 +61,7 @@ export class AudioManager {
   }
 
   speak(text: string): void {
-    if (!this.enabled || !this.voiceEnabled) return;
+    if (!this.unlocked || !this.enabled || !this.voiceEnabled) return;
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.cancel();
@@ -64,7 +69,7 @@ export class AudioManager {
   }
 
   private playTone({ frequency, durationMs }: ToneSpec): void {
-    if (!this.enabled) return;
+    if (!this.unlocked || !this.enabled) return;
     this.ctx ??= new AudioContext();
     const ctx = this.ctx;
     const oscillator = ctx.createOscillator();

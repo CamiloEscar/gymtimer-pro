@@ -92,7 +92,14 @@ describe("AudioManager", () => {
     );
 
     const manager = new AudioManager({ enabled: true, voiceEnabled: true });
+    manager.unlock();
     manager.speak("Get ready");
     expect(speak).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not play any sound when enabled but unlock() was never called", () => {
+    const manager = new AudioManager({ enabled: true });
+    manager.playStart();
+    expect(fakeCtx.createOscillator).not.toHaveBeenCalled();
   });
 });

@@ -71,17 +71,29 @@ export class TimerEngine {
   }
 
   getState(): TimerState {
-    this.checkFinished();
+    const didTransition = this.checkFinished();
     const elapsedMs = this.computeElapsedMs();
     const remainingMs =
       this.mode === "countdown" ? Math.max(0, this.durationMs - elapsedMs) : 0;
-    return {
+    const state: TimerState = {
       mode: this.mode,
       status: this.status,
       durationMs: this.durationMs,
       elapsedMs,
       remainingMs,
     };
+    // If this call is the one that just discovered the running -> finished
+    // transition (e.g. a subscriber-driven getState() poll after tick()'s
+    // setInterval was throttled/backgrounded), push it to subscribers now.
+    // Safe from infinite recursion: notify() -> getState() -> checkFinished()
+    // re-enters here, but by then this.status is already "finished", so
+    // checkFinished()'s own `status === "running"` guard makes that inner
+    // call a no-op (didTransition = false) and the recursion stops after
+    // exactly one extra level.
+    if (didTransition) {
+      this.notify();
+    }
+    return state;
   }
 
   subscribe(listener: TimerListener): Unsubscribe {
@@ -128,14 +140,16 @@ export class TimerEngine {
    * tab that delays setInterval callbacks can never leave the reported
    * status stale relative to remainingMs.
    */
-  private checkFinished(): void {
-    if (this.status !== "running") return;
+  private checkFinished(): boolean {
+    if (this.status !== "running") return false;
     if (this.mode === "countdown" && this.computeElapsedMs() >= this.durationMs) {
       this.accumulatedMs = this.durationMs;
       this.startedAt = null;
       this.status = "finished";
       this.stopTicking();
+      return true;
     }
+    return false;
   }
 
   private notify(): void {

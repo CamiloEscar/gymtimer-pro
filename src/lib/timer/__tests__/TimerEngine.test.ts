@@ -61,6 +61,24 @@ describe("TimerEngine — countdown", () => {
     expect(state.remainingMs).toBe(0);
   });
 
+  it("notifies subscribers when getState() alone discovers the finished transition", () => {
+    const engine = new TimerEngine("countdown", 5000);
+    const listener = vi.fn();
+    engine.start();
+    engine.subscribe(listener);
+    listener.mockClear();
+
+    // Simulate a throttled/backgrounded tab: jump the system clock past
+    // durationMs but never fire an interval tick (no advanceTimersByTime).
+    // Only a direct getState() call should discover the transition.
+    vi.setSystemTime(new Date("2026-01-01T00:00:06.000Z"));
+    const state = engine.getState();
+
+    expect(state.status).toBe("finished");
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0][0].status).toBe("finished");
+  });
+
   it("pause freezes remaining time; resume continues from there", () => {
     const engine = new TimerEngine("countdown", 10_000);
     engine.start();

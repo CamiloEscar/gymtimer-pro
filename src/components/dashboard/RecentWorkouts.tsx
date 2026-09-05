@@ -16,7 +16,7 @@ export function RecentWorkouts({ workouts }: RecentWorkoutsProps) {
 
   return (
     <div className="space-y-2">
-      <h2 className="text-white font-semibold">Recent workouts</h2>
+      <h2 className="text-white font-semibold">Entrenamientos recientes</h2>
       <ul className="space-y-1">
         {recent.map((workout) => (
           <li key={workout.id}>

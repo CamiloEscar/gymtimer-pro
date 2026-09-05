@@ -15,6 +15,8 @@ import { TimerDisplay } from "@/components/timer/TimerDisplay";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
 import { RoundIndicator } from "@/components/timer/RoundIndicator";
 import { TimerControls } from "@/components/timer/TimerControls";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 
 export default function RunWorkoutPage() {
   const params = useParams<{ id: string }>();
@@ -28,8 +30,8 @@ export default function RunWorkoutPage() {
     setWorkout(result.ok ? result.value : null);
   }, [params.id]);
 
-  if (workout === undefined) return <p className="p-4 text-white">Loading…</p>;
-  if (workout === null) return <p className="p-4 text-white">Workout not found.</p>;
+  if (workout === undefined) return <p className="p-4 text-white">Cargando…</p>;
+  if (workout === null) return <p className="p-4 text-white">Entrenamiento no encontrado.</p>;
 
   return <RunWorkoutContent workout={workout} code={code} audio={audio} />;
 }
@@ -46,6 +48,8 @@ function RunWorkoutContent({
   const session = useWorkoutSession(workout);
   const channelRef = useRef<SessionChannel | null>(null);
   const { toggle: toggleFullscreen } = useFullscreen();
+  const [resetPending, setResetPending] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Created and destroyed in the same effect (rather than via useMemo + a
   // separate cleanup effect) so React Strict Mode's dev-only double-invoke
@@ -67,7 +71,7 @@ function RunWorkoutContent({
 
   useKeyboardShortcuts({
     onPauseResume: () => (session.state.status === "running" ? session.pause() : session.resume()),
-    onReset: () => session.reset(),
+    onReset: () => setResetPending(true),
     onNext: () => session.nextRound(),
     onPrevious: () => session.previousRound(),
     onFullscreen: toggleFullscreen,
@@ -79,12 +83,26 @@ function RunWorkoutContent({
     session.start();
   }
 
+  function confirmReset() {
+    session.reset();
+    setResetPending(false);
+  }
+
+  async function handleCopyCode() {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-6 p-4">
-      <p className="text-gray-400">
-        Display code: <span className="font-mono text-white">{code}</span> —{" "}
+      <p className="text-gray-400 flex items-center gap-2">
+        Código de pantalla: <span className="font-mono text-white">{code}</span>
+        <Button size="md" variant="secondary" onClick={handleCopyCode} aria-label="Copiar código">
+          {copied ? "Copiado ✓" : "Copiar código"}
+        </Button>
         <Link href={`/display/${code}`} className="text-brand-500 underline">
-          open display
+          abrir pantalla
         </Link>
       </p>
       <PhaseIndicator phase={session.state.currentPhase} />
@@ -99,12 +117,27 @@ function RunWorkoutContent({
         onStart={handleStart}
         onPause={session.pause}
         onResume={session.resume}
-        onReset={session.reset}
+        onReset={() => setResetPending(true)}
         onNext={session.nextRound}
         onPrevious={session.previousRound}
         onAddTime={() => session.addTime(10_000)}
         onSubtractTime={() => session.subtractTime(10_000)}
       />
+      <Modal
+        open={resetPending}
+        onClose={() => setResetPending(false)}
+        title="¿Reiniciar el entrenamiento?"
+      >
+        <p className="text-gray-400 mb-4">Se perderá el progreso de la sesión actual.</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setResetPending(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={confirmReset}>
+            Reiniciar
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

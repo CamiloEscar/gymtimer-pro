@@ -1,10 +1,10 @@
 import type { WorkoutPhase } from "@/types";
 
 const PHASE_LABELS: Record<WorkoutPhase, string> = {
-  getReady: "GET READY",
-  work: "WORK",
-  rest: "REST",
-  finished: "TIME",
+  getReady: "PREPARATE",
+  work: "TRABAJO",
+  rest: "DESCANSO",
+  finished: "TIEMPO",
 };
 
 const PHASE_CLASSES: Record<WorkoutPhase, string> = {

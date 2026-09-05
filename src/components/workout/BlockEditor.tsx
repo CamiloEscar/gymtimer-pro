@@ -23,14 +23,16 @@ interface BlockEditorProps {
   block: WorkoutBlock;
   onChange: (block: WorkoutBlock) => void;
   onRemove: () => void;
+  errors?: string[];
 }
 
-export function BlockEditor({ block, onChange, onRemove }: BlockEditorProps) {
+export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEditorProps) {
   const showWorkRest = block.type === "interval" || block.type === "tabata" || block.type === "emom";
   const showDuration = !showWorkRest;
+  const hasErrors = errors.length > 0;
 
   return (
-    <Card className="space-y-3">
+    <Card className={`space-y-3 ${hasErrors ? "!border-danger-500" : ""}`}>
       <div className="flex items-center gap-2">
         <Select
           aria-label="Tipo de bloque"
@@ -114,6 +116,14 @@ export function BlockEditor({ block, onChange, onRemove }: BlockEditorProps) {
           + Agregar ejercicio
         </Button>
       </div>
+
+      {hasErrors && (
+        <ul className="text-danger-500 text-sm space-y-1">
+          {errors.map((error) => (
+            <li key={error}>{error}</li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }

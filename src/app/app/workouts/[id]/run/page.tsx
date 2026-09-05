@@ -7,6 +7,7 @@ import type { Workout } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useFullscreen } from "@/hooks/useFullscreen";
 import { SessionChannel } from "@/lib/session/SessionChannel";
 import { generateCode } from "@/lib/session/generateCode";
 import { AudioManager } from "@/lib/audio/AudioManager";
@@ -44,6 +45,7 @@ function RunWorkoutContent({
 }) {
   const session = useWorkoutSession(workout);
   const channelRef = useRef<SessionChannel | null>(null);
+  const { toggle: toggleFullscreen } = useFullscreen();
 
   // Created and destroyed in the same effect (rather than via useMemo + a
   // separate cleanup effect) so React Strict Mode's dev-only double-invoke
@@ -68,7 +70,7 @@ function RunWorkoutContent({
     onReset: () => session.reset(),
     onNext: () => session.nextRound(),
     onPrevious: () => session.previousRound(),
-    onFullscreen: () => document.documentElement.requestFullscreen?.(),
+    onFullscreen: toggleFullscreen,
   });
 
   function handleStart() {

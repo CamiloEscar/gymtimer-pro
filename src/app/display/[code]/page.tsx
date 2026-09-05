@@ -6,6 +6,7 @@ import type { ConnectionStatus, SessionState } from "@/types";
 import { SessionChannel } from "@/lib/session/SessionChannel";
 import { DisplayConnection } from "@/components/display/DisplayConnection";
 import { DisplayScreen } from "@/components/display/DisplayScreen";
+import { useFullscreen } from "@/hooks/useFullscreen";
 
 export default function DisplayCodePage() {
   const params = useParams<{ code: string }>();
@@ -13,6 +14,7 @@ export default function DisplayCodePage() {
   const channelRef = useRef<SessionChannel | null>(null);
   const [state, setState] = useState<SessionState | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("waiting");
+  const { toggle } = useFullscreen();
 
   // Created and destroyed in the same effect (rather than via useMemo + a
   // separate cleanup effect) so React Strict Mode's dev-only double-invoke
@@ -35,5 +37,5 @@ export default function DisplayCodePage() {
     return <DisplayConnection code={code} status={connectionStatus} />;
   }
 
-  return <DisplayScreen state={state} connectionStatus={connectionStatus} />;
+  return <DisplayScreen state={state} connectionStatus={connectionStatus} onFullscreenToggle={toggle} />;
 }

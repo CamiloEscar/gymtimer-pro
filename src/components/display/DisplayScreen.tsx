@@ -8,11 +8,19 @@ import { RoundIndicator } from "@/components/timer/RoundIndicator";
 interface DisplayScreenProps {
   state: SessionState;
   connectionStatus: ConnectionStatus;
+  onFullscreenToggle: () => void;
 }
 
-export function DisplayScreen({ state, connectionStatus }: DisplayScreenProps) {
+export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: DisplayScreenProps) {
   return (
     <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-8 p-4 relative">
+      <button
+        onClick={onFullscreenToggle}
+        className="absolute top-4 left-4 text-gray-600 hover:text-white text-sm"
+        aria-label="Toggle fullscreen"
+      >
+        ⛶
+      </button>
       <span
         className={`absolute top-4 right-4 text-sm ${
           connectionStatus === "connected" ? "text-brand-500" : "text-gray-600"

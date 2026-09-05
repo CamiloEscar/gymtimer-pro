@@ -12,18 +12,21 @@ interface WorkoutOfTheDayProps {
 export function WorkoutOfTheDay({ workout }: WorkoutOfTheDayProps) {
   if (!workout) {
     return (
-      <Card>
-        <p className="text-gray-400">No workout of the day yet — create one in the Library.</p>
+      <Card className="space-y-3">
+        <p className="text-gray-400">Todavía no hay entrenamiento del día — creá uno.</p>
+        <Link href="/app/workouts/new">
+          <Button size="md">+ Crear entrenamiento</Button>
+        </Link>
       </Card>
     );
   }
 
   return (
     <Card className="space-y-2">
-      <p className="text-sm uppercase text-brand-500 tracking-wide">Workout of the day</p>
+      <p className="text-sm uppercase text-brand-500 tracking-wide">Entrenamiento del día</p>
       <p className="text-2xl font-bold text-white">{workout.name}</p>
       <Link href={`/app/workouts/${workout.id}/run`}>
-        <Button size="lg">Start</Button>
+        <Button size="lg">Iniciar</Button>
       </Link>
     </Card>
   );

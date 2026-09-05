@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@theme {
+  --color-brand-500: oklch(0.7 0.19 150); /* energetic green — "GO" */
+  --color-brand-600: oklch(0.6 0.19 150);
+  --color-danger-500: oklch(0.63 0.24 25); /* rest / stop */
+  --color-surface-950: oklch(0.14 0 0); /* display background */
+  --color-surface-900: oklch(0.18 0 0);
+  --color-surface-800: oklch(0.24 0 0);
+  --font-display: var(--font-geist-sans), sans-serif;
+}

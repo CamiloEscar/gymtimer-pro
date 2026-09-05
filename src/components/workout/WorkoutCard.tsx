@@ -22,17 +22,17 @@ export function WorkoutCard({ workout, onDuplicate, onDelete }: WorkoutCardProps
       </div>
       <div className="flex flex-wrap gap-2">
         <Link href={`/app/workouts/${workout.id}/run`}>
-          <Button size="md">▶ Run</Button>
+          <Button size="md">▶ Iniciar</Button>
         </Link>
         <Link href={`/app/workouts/${workout.id}`}>
           <Button size="md" variant="secondary">
-            ✏ Edit
+            ✏ Editar
           </Button>
         </Link>
-        <Button size="md" variant="secondary" onClick={() => onDuplicate(workout.id)}>
+        <Button size="md" variant="secondary" onClick={() => onDuplicate(workout.id)} aria-label="Duplicar entrenamiento">
           📋
         </Button>
-        <Button size="md" variant="danger" onClick={() => onDelete(workout.id)}>
+        <Button size="md" variant="danger" onClick={() => onDelete(workout.id)} aria-label="Eliminar entrenamiento">
           🗑
         </Button>
       </div>

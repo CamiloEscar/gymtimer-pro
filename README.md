@@ -8,17 +8,18 @@ monitor, projector) mirrors it live for the class to see.
 
 - Timer types: Countdown, Count Up, AMRAP, EMOM, Interval, Tabata, For Time, Rest.
 - Workout Builder with blocks and exercises.
-- Trainer↔Display sync via the BroadcastChannel API — **same browser/device only**
-  in this phase (e.g. two tabs, or a laptop mirrored to a TV). Cross-device sync
-  (phone controlling a separate physical TV) is Phase 2 and requires a small
-  realtime backend (see `docs/superpowers/specs/`).
+- Trainer↔Display sync via Pusher Channels (presence channel + client
+  events) — works across physically separate devices (e.g. a phone
+  running the Trainer panel and a TV/PC on a completely different network
+  path showing the Display). Requires a small serverless auth route
+  (`src/app/api/pusher/auth`) and the env vars listed below.
 - Local persistence via `localStorage` — no account, no server required.
 - Audio cues via the Web Audio API (no external sound files) and optional
   Speech Synthesis.
 
 ## Tech stack
 
-Next.js (App Router), React, TypeScript, Tailwind CSS, Vitest.
+Next.js (App Router), React, TypeScript, Tailwind CSS, Vitest, Pusher Channels.
 
 ## Development
 
@@ -69,7 +70,17 @@ roadmap beyond Phase 1.
 
 ## Environment variables
 
-See `.env.example`. Phase 1 requires none.
+See `.env.example`. Required:
+
+- `NEXT_PUBLIC_PUSHER_KEY` / `NEXT_PUBLIC_PUSHER_CLUSTER` — read by the
+  browser client (`src/lib/session/pusherClient.ts`).
+- `PUSHER_APP_ID` / `PUSHER_KEY` / `PUSHER_SECRET` / `PUSHER_CLUSTER` —
+  server-only, read by `src/app/api/pusher/auth/route.ts`. Never prefix
+  `PUSHER_SECRET` with `NEXT_PUBLIC_` — that would ship it to every
+  browser.
+
+All four Pusher app values come from the same dashboard app under "App
+Keys" — see https://dashboard.pusher.com.
 
 ## Deployment
 
@@ -79,17 +90,9 @@ Designed for zero-cost deployment on Vercel:
 npx vercel
 ```
 
-## Known limitations (Phase 1)
-
-- The Trainer↔Display connection relies on the BroadcastChannel API, which
-  only works between tabs/windows of the **same browser on the same device**.
-  It cannot yet drive a physically separate TV from a phone — that is Phase 2.
-- The Display's connection-status indicator can briefly flicker to
-  "Disconnected" around reconnect events since there is no heartbeat/grace
-  period yet; the underlying session state is unaffected.
-
 ## Roadmap
 
-Phase 1 (this repo) → Phase 2 (cross-device realtime sync) → Phase 3 (accounts
-and gyms) → Phase 4 (athletes and results) → Phase 5 (SaaS/billing) → Phase 6
-(per-gym branding). Full detail in `GYMTIMER-PRO-PROMPT.md` Section 90.
+Phase 1 (this repo) → **Phase 2 (cross-device realtime sync, done)** → Phase 3
+(accounts and gyms) → Phase 4 (athletes and results) → Phase 5
+(SaaS/billing) → Phase 6 (per-gym branding). Full detail in
+`GYMTIMER-PRO-PROMPT.md` Section 90.

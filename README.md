@@ -87,10 +87,6 @@ npx vercel
 - The Display's connection-status indicator can briefly flicker to
   "Disconnected" around reconnect events since there is no heartbeat/grace
   period yet; the underlying session state is unaffected.
-- The Display does not currently render the active exercise name (e.g. "15
-  SQUATS") — only phase, time, and round. Exercises are shown in the Workout
-  Builder and run panel's workout data, but not surfaced on-screen during a
-  running phase yet.
 
 ## Roadmap
 

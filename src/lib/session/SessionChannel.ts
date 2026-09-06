@@ -1,9 +1,21 @@
 import type { ConnectionStatus, SessionMessage, SessionState } from "@/types";
 
 const DISCONNECT_TIMEOUT_MS = 5000;
+const MESSAGE_KINDS = new Set(["state", "heartbeat", "ping"]);
 
 type StateListener = (state: SessionState) => void;
 type StatusListener = (status: ConnectionStatus) => void;
+
+function isSessionMessage(value: unknown): value is SessionMessage {
+  if (typeof value !== "object" || value === null) return false;
+  const message = value as Record<string, unknown>;
+  if (typeof message.kind !== "string" || !MESSAGE_KINDS.has(message.kind)) return false;
+  if (typeof message.sentAt !== "number") return false;
+  if (message.kind === "state") {
+    return typeof message.state === "object" && message.state !== null;
+  }
+  return true;
+}
 
 export class SessionChannel {
   private channel: BroadcastChannel;
@@ -49,6 +61,7 @@ export class SessionChannel {
   }
 
   private handleMessage(message: SessionMessage): void {
+    if (!isSessionMessage(message)) return;
     if (message.kind === "state" && message.state) {
       this.stateListeners.forEach((listener) => listener(message.state!));
     }

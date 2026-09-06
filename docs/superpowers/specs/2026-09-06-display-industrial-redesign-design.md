@@ -13,12 +13,20 @@ identity. The user asked for the Display screen — the one mirrored to a TV
 that an entire gym class reads from across the room during a workout — to
 move first, toward an **industrial / raw gym** aesthetic.
 
-There is also a pre-existing functional gap being folded into this same pass:
-`WorkoutEngine.currentExerciseIndex` (`src/lib/workout/WorkoutEngine.ts:105`)
-is hardcoded to `0` and never advances, so the Display never shows which
-exercise is currently active — only phase, time, and round. Designing the
-Display's layout without knowing the exercise name would mean redoing the
-layout twice, so the fix ships together with the visual redesign.
+**Correction from initial scoping:** this design originally assumed a
+functional gap — that the Display never shows the active exercise name,
+based on a README "Known limitations" note. Reading the current code
+disproved that: `ExerciseListDisplay.tsx` (added in the
+`exercise-catalog-ux-i18n` merge) already renders the full exercise list of
+the active block via `selectVisibleExercises`. `WorkoutEngine.currentExerciseIndex`
+(`src/lib/workout/WorkoutEngine.ts:105`) stays hardcoded to `0` **by
+deliberate design decision** — see
+`docs/superpowers/plans/2026-09-05-exercise-catalog-ux-i18n.md:16`, which
+chose "show the whole block's exercise list" over "track one active
+exercise index." There is no functional gap to fix here. The only leftover
+is that `README.md`'s "Known limitations" section still describes the old
+(now false) behavior — corrected as a one-line doc fix in this pass, not a
+code change.
 
 **Audience constraint (drives every trade-off below):** the people reading
 this screen are gym-goers and trainers, not developers. The look must read
@@ -88,21 +96,23 @@ runtime/CDN cost):
 
 ## Component changes (Phase 1 scope)
 
-1. **`WorkoutEngine.ts`** — replace the hardcoded `currentExerciseIndex: 0`
-   with real tracking: advance through `block.exercises` as reps/time
-   dictate (exact advancement rule mirrors however the block already
-   determines phase/round progression — implementer confirms against
-   existing block/round logic during TDD). Expose the resolved exercise
-   `name` on state so components don't need to re-look-up the block.
-   Existing Vitest suite for `WorkoutEngine` gets new cases for this.
+1. **`README.md`** — fix the "Known limitations" bullet that claims the
+   Display doesn't render the active exercise name; it does, via
+   `ExerciseListDisplay`. Replace it with an accurate note (or drop the
+   bullet if there's nothing accurate left to say about it).
 
-2. **`ExerciseListDisplay.tsx`** — restyle to Macro font for the active
-   exercise name (this becomes the second-largest element on screen, right
-   under the timer number), Micro font + bracket framing for "EJERCICIO 02
-   / 06"-style counters on the rest.
+2. **`ExerciseListDisplay.tsx`** — restyle the exercise list it already
+   renders (1+ lines via `formatExerciseLine`, plus an optional "+N más"
+   overflow line via `selectVisibleExercises`): Macro font for each
+   exercise line (smaller weight class than the timer number — this is
+   secondary content, several lines can appear at once), Micro font +
+   bracket framing for the "+N más" overflow line.
 
 3. **`DisplayScreen.tsx`** — restyle host layout to the grid described
-   above; wire in the now-real exercise name from `WorkoutEngine` state.
+   above (timer/phase/exercise-list as the dominant cell, round indicator
+   and the inline connection badge — currently inlined at
+   `DisplayScreen.tsx:27-34`, not a separate component despite the
+   similarly-named `DisplayConnection.tsx` file — as slim strips).
 
 4. **`TimerDisplay.tsx`** — Macro font for the number, phase-driven color
    (green for WORK, red for REST, phosphor white for neutral phases like
@@ -113,12 +123,21 @@ runtime/CDN cost):
 
 6. **`RoundIndicator.tsx`** — Micro font, bracket-framed ("RONDA 02 / 06").
 
-7. **`DisplayConnection.tsx`** — Micro font status badge,
-   `[ CONECTADO ]` / `[ DESCONECTADO ]`, red/phosphor coloring, square
-   corners. (The existing no-heartbeat flicker limitation is NOT being
-   fixed here — out of scope, still a known limitation.)
+7. **`DisplayScreen.tsx`'s inline connection badge** (lines 27-34) — Micro
+   font, `[ CONECTADO ]` / `[ DESCONECTADO ]` bracket framing, brand-500 /
+   phosphor-muted coloring, square corners. (The existing no-heartbeat
+   flicker limitation is NOT being fixed here — out of scope, still a
+   known limitation.)
 
-8. **`globals.css`** — add the new tokens and font-face wiring described
+8. **`DisplayConnection.tsx`** — this is the separate pre-connection
+   pairing screen (shown at `/display/[code]` before the Trainer joins:
+   "CONECTAR PANTALLA", the code, the QR, "Esperando al entrenador…").
+   Restyle to the same system: Macro font for the big code, Micro font for
+   labels/status, square corners, no gradients. It shares the Display's
+   dark background so it should look like the same product as the running
+   Display, not a different screen.
+
+9. **`globals.css`** — add the new tokens and font-face wiring described
    above. Existing `brand-500`/`danger-500`/`surface-*` tokens are kept,
    not renamed, to avoid touching unrelated call sites.
 
@@ -128,22 +147,22 @@ only, never rendered on Display), `Dashboard`, `WorkoutBuilder`,
 
 ## Testing
 
-- `WorkoutEngine.currentExerciseIndex` fix gets unit tests following the
-  existing TDD pattern in `src/lib/workout/__tests__/`.
-- No visual/snapshot testing exists in this repo and none is being added —
-  verification of the restyled components is manual (per the project's
-  existing pattern of "Step 2: Manually verify" in prior plans), checked
-  via the `run` skill/dev server, cross-tab (Trainer → Display) like prior
-  Display work.
-- No changes to `SessionChannel` message shape are needed unless exposing
-  the exercise name requires a new field on the synced state — if so, the
-  existing `SessionChannel` test suite gets a case for the new field.
+This is a pure restyle — no engine, type, or `SessionChannel` message-shape
+changes, so no new unit tests are needed. No visual/snapshot testing exists
+in this repo and none is being added: verification is manual (per the
+project's existing "Step 2: Manually verify" pattern in prior plans),
+checked via the `run` skill/dev server, cross-tab (Trainer → Display) like
+prior Display work, and separately at `/display/[code]` for the pairing
+screen.
 
 ## Risks / open questions the implementer should flag if hit
 
-- If `block.exercises` can be empty (a block with no exercises, e.g. a pure
-  rest block), the exercise-name slot must have a defined empty state
-  (blank, not a crash or "undefined").
-- If advancing `currentExerciseIndex` interacts with the round-repeat logic
-  in a non-obvious way, that's a signal to stop and reconsider rather than
-  patch around it — flag it rather than guessing.
+- `ExerciseListDisplay` returns `null` for rest blocks and for blocks with
+  zero visible exercises (`block.type === "rest"` or `visible.length ===
+  0` — see `ExerciseListDisplay.tsx:10-13`). The restyled grid layout must
+  not leave a broken/empty gap in the "blueprint grid" when this happens —
+  the dominant cell should gracefully collapse to just timer+phase.
+- If Archivo Black or JetBrains Mono don't cover Spanish accented
+  characters/ñ cleanly (check rendered glyphs for "RONDA", "MÁS",
+  exercise names with accents), flag it rather than shipping mojibake —
+  both fonts are commonly used and should be fine, but verify.

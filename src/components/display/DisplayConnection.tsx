@@ -21,14 +21,26 @@ export function DisplayConnection({ code, status }: DisplayConnectionProps) {
   }, [code]);
 
   return (
-    <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-8 p-4">
-      <h1 className="text-4xl font-black text-white">CONECTAR PANTALLA</h1>
-      <p className="text-gray-400">Código:</p>
-      <p className="text-6xl font-mono font-bold text-brand-500 tracking-widest">{code}</p>
-      {url && <QRCodeSVG value={url} size={200} bgColor="transparent" fgColor="#ffffff" />}
-      <p className="text-gray-400">Escaneá para conectar</p>
-      <p className={status === "connected" ? "text-brand-500" : "text-gray-500"}>
-        {status === "connected" ? "CONECTADO ✓" : "Esperando al entrenador…"}
+    <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-6 p-4 font-tactical">
+      <h1 className="font-industrial text-3xl md:text-4xl uppercase tracking-tight text-phosphor">
+        CONECTAR PANTALLA
+      </h1>
+      <p className="text-xs uppercase tracking-widest text-gray-500">[ CÓDIGO ]</p>
+      <p className="font-industrial text-6xl md:text-7xl uppercase tracking-widest text-brand-500">
+        {code}
+      </p>
+      {url && (
+        <div className="border-2 border-surface-700 p-2">
+          <QRCodeSVG value={url} size={200} bgColor="transparent" fgColor="#EAEAEA" />
+        </div>
+      )}
+      <p className="text-xs uppercase tracking-widest text-gray-500">Escaneá para conectar</p>
+      <p
+        className={`text-sm uppercase tracking-widest ${
+          status === "connected" ? "text-brand-500" : "text-gray-500"
+        }`}
+      >
+        {status === "connected" ? "[ CONECTADO ]" : "[ ESPERANDO AL ENTRENADOR ]"}
       </p>
     </div>
   );

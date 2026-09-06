@@ -28,7 +28,7 @@ export function DisplayConnection({ code, status }: DisplayConnectionProps) {
       {url && <QRCodeSVG value={url} size={200} bgColor="transparent" fgColor="#ffffff" />}
       <p className="text-gray-400">Escaneá para conectar</p>
       <p className={status === "connected" ? "text-brand-500" : "text-gray-500"}>
-        {status === "connected" ? "CONNECTED ✓" : "Waiting for coach…"}
+        {status === "connected" ? "CONECTADO ✓" : "Esperando al entrenador…"}
       </p>
     </div>
   );

@@ -6,9 +6,9 @@ export default function WorkoutsPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between p-4">
-        <h1 className="text-xl font-bold text-white">Workouts</h1>
+        <h1 className="text-xl font-bold text-white">Entrenamientos</h1>
         <Link href="/app/workouts/new">
-          <Button>+ New workout</Button>
+          <Button>+ Nuevo entrenamiento</Button>
         </Link>
       </div>
       <WorkoutList />

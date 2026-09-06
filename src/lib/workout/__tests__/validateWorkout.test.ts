@@ -27,15 +27,15 @@ describe("validateWorkout", () => {
 
   it("requires a name", () => {
     const errors = validateWorkout(baseWorkout({ name: "" }));
-    expect(errors).toContain("Name is required");
+    expect(errors).toContainEqual({ message: "Name is required" });
   });
 
   it("requires at least one block", () => {
     const errors = validateWorkout(baseWorkout({ blocks: [] }));
-    expect(errors).toContain("Add at least one block");
+    expect(errors).toContainEqual({ message: "Add at least one block" });
   });
 
-  it("rejects a block with rounds <= 0", () => {
+  it("rejects a block with rounds <= 0 and attaches the block id", () => {
     const workout = baseWorkout({
       blocks: [
         {
@@ -49,13 +49,19 @@ describe("validateWorkout", () => {
         },
       ],
     });
-    expect(validateWorkout(workout)).toContain("Rounds must be greater than 0");
+    expect(validateWorkout(workout)).toContainEqual({
+      message: "Rounds must be greater than 0",
+      blockId: "b1",
+    });
   });
 
-  it("rejects a block with no exercises", () => {
+  it("rejects a block with no exercises and attaches the block id", () => {
     const workout = baseWorkout({
       blocks: [{ id: "b1", type: "amrap", durationSeconds: 600, exercises: [] }],
     });
-    expect(validateWorkout(workout)).toContain("Each block needs at least one exercise");
+    expect(validateWorkout(workout)).toContainEqual({
+      message: "Each block needs at least one exercise",
+      blockId: "b1",
+    });
   });
 });

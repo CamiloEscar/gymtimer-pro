@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { EXERCISE_CATALOG } from "@/lib/workout/exerciseCatalog";
 import { ExerciseEditor } from "./ExerciseEditor";
 
 const BLOCK_TYPES: BlockType[] = [
@@ -22,17 +23,19 @@ interface BlockEditorProps {
   block: WorkoutBlock;
   onChange: (block: WorkoutBlock) => void;
   onRemove: () => void;
+  errors?: string[];
 }
 
-export function BlockEditor({ block, onChange, onRemove }: BlockEditorProps) {
+export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEditorProps) {
   const showWorkRest = block.type === "interval" || block.type === "tabata" || block.type === "emom";
   const showDuration = !showWorkRest;
+  const hasErrors = errors.length > 0;
 
   return (
-    <Card className="space-y-3">
+    <Card className={`space-y-3 ${hasErrors ? "!border-danger-500" : ""}`}>
       <div className="flex items-center gap-2">
         <Select
-          aria-label="Block type"
+          aria-label="Tipo de bloque"
           value={block.type}
           onChange={(e) => onChange({ ...block, type: e.target.value as BlockType })}
           className="flex-1"
@@ -43,43 +46,43 @@ export function BlockEditor({ block, onChange, onRemove }: BlockEditorProps) {
             </option>
           ))}
         </Select>
-        <Button variant="ghost" type="button" onClick={onRemove} aria-label="Remove block">
+        <Button variant="ghost" type="button" onClick={onRemove} aria-label="Quitar bloque">
           🗑
         </Button>
       </div>
 
       {showDuration && (
         <Input
-          aria-label="Duration (seconds)"
+          aria-label="Duración (segundos)"
           type="number"
           value={block.durationSeconds}
           onChange={(e) => onChange({ ...block, durationSeconds: Number(e.target.value) })}
-          placeholder="Duration (seconds)"
+          placeholder="Duración (segundos)"
         />
       )}
 
       {showWorkRest && (
         <div className="grid grid-cols-3 gap-2">
           <Input
-            aria-label="Work seconds"
+            aria-label="Segundos de trabajo"
             type="number"
             value={block.workSeconds ?? ""}
             onChange={(e) => onChange({ ...block, workSeconds: Number(e.target.value) })}
-            placeholder="Work (s)"
+            placeholder="Trabajo (s)"
           />
           <Input
-            aria-label="Rest seconds"
+            aria-label="Segundos de descanso"
             type="number"
             value={block.restSeconds ?? ""}
             onChange={(e) => onChange({ ...block, restSeconds: Number(e.target.value) })}
-            placeholder="Rest (s)"
+            placeholder="Descanso (s)"
           />
           <Input
-            aria-label="Rounds"
+            aria-label="Rondas"
             type="number"
             value={block.rounds ?? ""}
             onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
-            placeholder="Rounds"
+            placeholder="Rondas"
           />
         </div>
       )}
@@ -106,13 +109,21 @@ export function BlockEditor({ block, onChange, onRemove }: BlockEditorProps) {
           onClick={() =>
             onChange({
               ...block,
-              exercises: [...block.exercises, { id: crypto.randomUUID(), name: "" }],
+              exercises: [...block.exercises, { id: crypto.randomUUID(), name: EXERCISE_CATALOG[0].name }],
             })
           }
         >
-          + Add exercise
+          + Agregar ejercicio
         </Button>
       </div>
+
+      {hasErrors && (
+        <ul className="text-danger-500 text-sm space-y-1">
+          {errors.map((error) => (
+            <li key={error}>{error}</li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }

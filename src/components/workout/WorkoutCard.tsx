@@ -12,27 +12,28 @@ interface WorkoutCardProps {
 }
 
 export function WorkoutCard({ workout, onDuplicate, onDelete }: WorkoutCardProps) {
+  const n = workout.blocks.length;
   return (
     <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <p className="text-white font-semibold">{workout.name}</p>
         <p className="text-sm text-gray-400">
-          {workout.blocks.length} block{workout.blocks.length === 1 ? "" : "s"}
+          {n} bloque{n === 1 ? "" : "s"}
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Link href={`/app/workouts/${workout.id}/run`}>
-          <Button size="md">▶ Run</Button>
+          <Button size="md">▶ Iniciar</Button>
         </Link>
         <Link href={`/app/workouts/${workout.id}`}>
           <Button size="md" variant="secondary">
-            ✏ Edit
+            ✏ Editar
           </Button>
         </Link>
-        <Button size="md" variant="secondary" onClick={() => onDuplicate(workout.id)}>
+        <Button size="md" variant="secondary" onClick={() => onDuplicate(workout.id)} aria-label="Duplicar entrenamiento">
           📋
         </Button>
-        <Button size="md" variant="danger" onClick={() => onDelete(workout.id)}>
+        <Button size="md" variant="danger" onClick={() => onDelete(workout.id)} aria-label="Eliminar entrenamiento">
           🗑
         </Button>
       </div>

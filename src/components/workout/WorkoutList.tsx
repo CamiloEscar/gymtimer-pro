@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import type { Workout } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 import { WorkoutCard } from "./WorkoutCard";
 
 export function WorkoutList() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<Workout | null>(null);
   const repo = new LocalWorkoutRepository();
 
   function reload() {
@@ -18,8 +21,15 @@ export function WorkoutList() {
     reload();
   }, []);
 
+  function confirmDelete() {
+    if (!pendingDelete) return;
+    repo.delete(pendingDelete.id);
+    setPendingDelete(null);
+    reload();
+  }
+
   if (workouts.length === 0) {
-    return <p className="text-gray-400 p-4">No workouts yet. Create your first one.</p>;
+    return <p className="text-gray-400 p-4">Todavía no hay entrenamientos. Creá el primero.</p>;
   }
 
   return (
@@ -32,12 +42,24 @@ export function WorkoutList() {
             repo.duplicate(id);
             reload();
           }}
-          onDelete={(id) => {
-            repo.delete(id);
-            reload();
-          }}
+          onDelete={() => setPendingDelete(workout)}
         />
       ))}
+      <Modal
+        open={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        title={`¿Eliminar '${pendingDelete?.name ?? ""}'?`}
+      >
+        <p className="text-gray-400 mb-4">Esta acción no se puede deshacer.</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setPendingDelete(null)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Eliminar
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

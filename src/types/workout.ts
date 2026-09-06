@@ -12,6 +12,7 @@ export interface Exercise {
   id: string;
   name: string;
   reps?: number;
+  sets?: number;
   timeSeconds?: number;
   distanceMeters?: number;
   weightKg?: number;

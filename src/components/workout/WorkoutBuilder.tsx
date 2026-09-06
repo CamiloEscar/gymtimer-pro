@@ -57,7 +57,8 @@ export function WorkoutBuilder({ initialWorkout }: WorkoutBuilderProps) {
       />
 
       <p className="text-sm text-gray-400">
-        {counts.blocks} bloques · {counts.exercises} ejercicios
+        {counts.blocks} bloque{counts.blocks === 1 ? "" : "s"} · {counts.exercises} ejercicio
+        {counts.exercises === 1 ? "" : "s"}
       </p>
 
       {generalErrors.length > 0 && (

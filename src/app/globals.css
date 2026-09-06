@@ -32,5 +32,9 @@ body {
   --color-surface-950: oklch(0.14 0 0); /* display background */
   --color-surface-900: oklch(0.18 0 0);
   --color-surface-800: oklch(0.24 0 0);
+  --color-surface-700: oklch(0.32 0 0); /* border lines on dark surfaces */
+  --color-phosphor: oklch(0.95 0 0); /* primary text on Display/tactical screens */
   --font-display: var(--font-geist-sans), sans-serif;
+  --font-industrial: var(--font-archivo-black), sans-serif; /* macro: timer, phase, headlines */
+  --font-tactical: var(--font-jetbrains-mono), monospace; /* micro: status, counters, metadata */
 }

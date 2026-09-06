@@ -1,45 +1,72 @@
-import type { ConnectionStatus, SessionMessage, SessionState } from "@/types";
+import type { Channel } from "pusher-js";
+import { createPusherClient } from "./pusherClient";
+import type { ConnectionStatus, SessionState } from "@/types";
 
-const DISCONNECT_TIMEOUT_MS = 5000;
-const MESSAGE_KINDS = new Set(["state", "heartbeat", "ping"]);
-
-type StateListener = (state: SessionState) => void;
+type Listener = (state: SessionState) => void;
 type StatusListener = (status: ConnectionStatus) => void;
+type Role = "trainer" | "display";
 
-function isSessionMessage(value: unknown): value is SessionMessage {
-  if (typeof value !== "object" || value === null) return false;
-  const message = value as Record<string, unknown>;
-  if (typeof message.kind !== "string" || !MESSAGE_KINDS.has(message.kind)) return false;
-  if (typeof message.sentAt !== "number") return false;
-  if (message.kind === "state") {
-    return typeof message.state === "object" && message.state !== null;
-  }
-  return true;
+const THROTTLE_MS = 200;
+
+interface PresenceMember {
+  id: string;
+  info: { role: Role };
+}
+
+interface PresenceMembers {
+  each: (callback: (member: PresenceMember) => void) => void;
 }
 
 export class SessionChannel {
-  private channel: BroadcastChannel;
-  private stateListeners = new Set<StateListener>();
+  private channel: Channel & { members: PresenceMembers };
+  private stateListeners = new Set<Listener>();
   private statusListeners = new Set<StatusListener>();
   private status: ConnectionStatus = "waiting";
-  private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastState: SessionState | null = null;
+  private throttleTimer: ReturnType<typeof setTimeout> | null = null;
+  private dirty = false;
+  private readonly role: Role;
+  private readonly otherRole: Role;
 
-  constructor(
-    private readonly code: string,
-    private readonly role: "trainer" | "display"
-  ) {
-    this.channel = new BroadcastChannel(`gymtimer:session:${code}`);
-    this.channel.addEventListener("message", (event: MessageEvent<SessionMessage>) =>
-      this.handleMessage(event.data)
-    );
+  constructor(code: string, role: Role) {
+    this.role = role;
+    this.otherRole = role === "trainer" ? "display" : "trainer";
+    const pusher = createPusherClient(role);
+    this.channel = pusher.subscribe(`presence-gymtimer-session-${code}`) as Channel & {
+      members: PresenceMembers;
+    };
+
+    this.channel.bind("client-state", (state: SessionState) => {
+      this.stateListeners.forEach((listener) => listener(state));
+    });
+
+    this.channel.bind("pusher:subscription_succeeded", () => this.syncConnectionStatus());
+    this.channel.bind("pusher:member_added", (member: PresenceMember) => {
+      this.syncConnectionStatus();
+      if (this.role === "trainer" && member.info.role === "display" && this.lastState) {
+        // Bypass the throttle here: this is a one-off "welcome" resend for a
+        // newly joined display, not a tick from TimerEngine. Routing it
+        // through sendState() would get silently swallowed into `dirty` if a
+        // throttle window from a recent tick was still open, delaying the
+        // newly joined display's first paint by up to THROTTLE_MS for no
+        // reason.
+        this.transmit(this.lastState);
+      }
+    });
+    this.channel.bind("pusher:member_removed", () => this.syncConnectionStatus());
   }
 
   sendState(state: SessionState): void {
-    const message: SessionMessage = { kind: "state", state, sentAt: Date.now() };
-    this.channel.postMessage(message);
+    this.lastState = state;
+    if (this.throttleTimer !== null) {
+      this.dirty = true;
+      return;
+    }
+    this.transmit(state);
+    this.throttleTimer = setTimeout(() => this.onThrottleWindowEnd(), THROTTLE_MS);
   }
 
-  onState(listener: StateListener): () => void {
+  onState(listener: Listener): () => void {
     this.stateListeners.add(listener);
     return () => this.stateListeners.delete(listener);
   }
@@ -54,26 +81,31 @@ export class SessionChannel {
   }
 
   destroy(): void {
-    if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
-    this.channel.close();
+    if (this.throttleTimer) clearTimeout(this.throttleTimer);
+    this.channel.unsubscribe();
     this.stateListeners.clear();
     this.statusListeners.clear();
   }
 
-  private handleMessage(message: SessionMessage): void {
-    if (!isSessionMessage(message)) return;
-    if (message.kind === "state" && message.state) {
-      this.stateListeners.forEach((listener) => listener(message.state!));
+  private onThrottleWindowEnd(): void {
+    this.throttleTimer = null;
+    if (this.dirty) {
+      this.dirty = false;
+      this.transmit(this.lastState!);
+      this.throttleTimer = setTimeout(() => this.onThrottleWindowEnd(), THROTTLE_MS);
     }
-    this.markConnected();
   }
 
-  private markConnected(): void {
-    this.setStatus("connected");
-    if (this.disconnectTimer) clearTimeout(this.disconnectTimer);
-    this.disconnectTimer = setTimeout(() => {
-      this.setStatus("disconnected");
-    }, DISCONNECT_TIMEOUT_MS);
+  private transmit(state: SessionState): void {
+    this.channel.trigger("client-state", state);
+  }
+
+  private syncConnectionStatus(): void {
+    let otherPresent = false;
+    this.channel.members.each((member) => {
+      if (member.info.role === this.otherRole) otherPresent = true;
+    });
+    this.setStatus(otherPresent ? "connected" : "disconnected");
   }
 
   private setStatus(status: ConnectionStatus): void {

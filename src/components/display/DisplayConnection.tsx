@@ -17,7 +17,7 @@ export function DisplayConnection({ code, status }: DisplayConnectionProps) {
   const [url, setUrl] = useState("");
 
   useEffect(() => {
-    setUrl(`${window.location.origin}/display/${code}`);
+    setUrl(`${window.location.origin}/app/workouts?code=${code}`);
   }, [code]);
 
   return (

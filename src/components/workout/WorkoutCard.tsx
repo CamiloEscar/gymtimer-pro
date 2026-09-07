@@ -7,12 +7,17 @@ import { Button } from "@/components/ui/Button";
 
 interface WorkoutCardProps {
   workout: Workout;
+  code?: string;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function WorkoutCard({ workout, onDuplicate, onDelete }: WorkoutCardProps) {
+export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCardProps) {
   const n = workout.blocks.length;
+  const runHref = code
+    ? `/app/workouts/${workout.id}/run?code=${code}`
+    : `/app/workouts/${workout.id}/run`;
+
   return (
     <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
@@ -22,7 +27,7 @@ export function WorkoutCard({ workout, onDuplicate, onDelete }: WorkoutCardProps
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Link href={`/app/workouts/${workout.id}/run`}>
+        <Link href={runHref}>
           <Button size="md">▶ Iniciar</Button>
         </Link>
         <Link href={`/app/workouts/${workout.id}`}>

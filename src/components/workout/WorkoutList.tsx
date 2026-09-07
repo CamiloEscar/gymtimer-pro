@@ -7,7 +7,11 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { WorkoutCard } from "./WorkoutCard";
 
-export function WorkoutList() {
+interface WorkoutListProps {
+  code?: string;
+}
+
+export function WorkoutList({ code }: WorkoutListProps) {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [pendingDelete, setPendingDelete] = useState<Workout | null>(null);
   const repo = new LocalWorkoutRepository();
@@ -38,6 +42,7 @@ export function WorkoutList() {
         <WorkoutCard
           key={workout.id}
           workout={workout}
+          code={code}
           onDuplicate={(id) => {
             repo.duplicate(id);
             reload();

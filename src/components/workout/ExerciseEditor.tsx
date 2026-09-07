@@ -1,20 +1,22 @@
 "use client";
 
 import type { Exercise } from "@/types";
-import { EXERCISE_CATALOG, groupCatalogByCategory } from "@/lib/workout/exerciseCatalog";
+import type { CatalogExercise } from "@/lib/workout/exerciseCatalog";
+import { groupCatalogByCategory } from "@/lib/workout/exerciseCatalog";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 interface ExerciseEditorProps {
   exercise: Exercise;
+  catalog: CatalogExercise[];
   onChange: (exercise: Exercise) => void;
   onRemove: () => void;
 }
 
-const CATALOG_BY_CATEGORY = groupCatalogByCategory(EXERCISE_CATALOG);
+export function ExerciseEditor({ exercise, catalog, onChange, onRemove }: ExerciseEditorProps) {
+  const catalogByCategory = groupCatalogByCategory(catalog);
 
-export function ExerciseEditor({ exercise, onChange, onRemove }: ExerciseEditorProps) {
   return (
     <div className="grid grid-cols-2 gap-2 items-end border-t border-surface-800 pt-2 first:border-t-0 first:pt-0">
       <Select
@@ -23,7 +25,7 @@ export function ExerciseEditor({ exercise, onChange, onRemove }: ExerciseEditorP
         onChange={(e) => onChange({ ...exercise, name: e.target.value })}
         className="col-span-2"
       >
-        {Object.entries(CATALOG_BY_CATEGORY).map(([category, exercises]) => (
+        {Object.entries(catalogByCategory).map(([category, exercises]) => (
           <optgroup key={category} label={category}>
             {exercises.map((catalogExercise) => (
               <option key={catalogExercise.id} value={catalogExercise.name}>

@@ -1,5 +1,10 @@
 import { WorkoutBuilder } from "@/components/workout/WorkoutBuilder";
 
-export default function NewWorkoutPage() {
-  return <WorkoutBuilder />;
+interface NewWorkoutPageProps {
+  searchParams: Promise<{ code?: string }>;
+}
+
+export default async function NewWorkoutPage({ searchParams }: NewWorkoutPageProps) {
+  const { code } = await searchParams;
+  return <WorkoutBuilder code={code} />;
 }

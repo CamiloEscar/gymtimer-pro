@@ -16,9 +16,10 @@ function emptyBlock(): WorkoutBlock {
 
 interface WorkoutBuilderProps {
   initialWorkout?: Workout;
+  code?: string;
 }
 
-export function WorkoutBuilder({ initialWorkout }: WorkoutBuilderProps) {
+export function WorkoutBuilder({ initialWorkout, code }: WorkoutBuilderProps) {
   const router = useRouter();
   const [workout, setWorkout] = useState<Workout>(
     initialWorkout ?? {
@@ -42,6 +43,10 @@ export function WorkoutBuilder({ initialWorkout }: WorkoutBuilderProps) {
     const result = repo.save(workout);
     if (!result.ok) {
       setErrors([{ message: result.error.message }]);
+      return;
+    }
+    if (code) {
+      router.push(`/app/workouts/${result.value.id}/run?code=${code}`);
       return;
     }
     router.push("/app/workouts");

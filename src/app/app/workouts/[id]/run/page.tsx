@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Workout } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/Button";
 export default function RunWorkoutPage() {
   const params = useParams<{ id: string }>();
   const [workout, setWorkout] = useState<Workout | null | undefined>(undefined);
-  const [code] = useState(() => generateCode());
   const audio = useMemo(() => new AudioManager({ enabled: true, voiceEnabled: false }), []);
 
   useEffect(() => {
@@ -33,18 +32,22 @@ export default function RunWorkoutPage() {
   if (workout === undefined) return <p className="p-4 text-white">Cargando…</p>;
   if (workout === null) return <p className="p-4 text-white">Entrenamiento no encontrado.</p>;
 
-  return <RunWorkoutContent workout={workout} code={code} audio={audio} />;
+  return (
+    <Suspense fallback={<p className="p-4 text-white">Cargando…</p>}>
+      <RunWorkoutContent workout={workout} audio={audio} />
+    </Suspense>
+  );
 }
 
 function RunWorkoutContent({
   workout,
-  code,
   audio,
 }: {
   workout: Workout;
-  code: string;
   audio: AudioManager;
 }) {
+  const searchParams = useSearchParams();
+  const [code] = useState(() => searchParams.get("code") ?? generateCode());
   const session = useWorkoutSession(workout);
   const channelRef = useRef<SessionChannel | null>(null);
   const { toggle: toggleFullscreen } = useFullscreen();

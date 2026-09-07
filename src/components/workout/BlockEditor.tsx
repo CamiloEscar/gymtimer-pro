@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import type { BlockType, WorkoutBlock } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { EXERCISE_CATALOG } from "@/lib/workout/exerciseCatalog";
+import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
 import { ExerciseEditor } from "./ExerciseEditor";
 
 const BLOCK_TYPES: BlockType[] = [
@@ -19,6 +21,8 @@ const BLOCK_TYPES: BlockType[] = [
   "rest",
 ];
 
+type CatalogKind = "gym" | "crossfit";
+
 interface BlockEditorProps {
   block: WorkoutBlock;
   onChange: (block: WorkoutBlock) => void;
@@ -27,6 +31,8 @@ interface BlockEditorProps {
 }
 
 export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEditorProps) {
+  const [catalogKind, setCatalogKind] = useState<CatalogKind>("gym");
+  const catalog = catalogKind === "gym" ? EXERCISE_CATALOG : CROSSFIT_CATALOG;
   const showWorkRest = block.type === "interval" || block.type === "tabata" || block.type === "emom";
   const showDuration = !showWorkRest;
   const hasErrors = errors.length > 0;
@@ -87,11 +93,31 @@ export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEdi
         </div>
       )}
 
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          size="md"
+          variant={catalogKind === "gym" ? "primary" : "secondary"}
+          onClick={() => setCatalogKind("gym")}
+        >
+          Gimnasio
+        </Button>
+        <Button
+          type="button"
+          size="md"
+          variant={catalogKind === "crossfit" ? "primary" : "secondary"}
+          onClick={() => setCatalogKind("crossfit")}
+        >
+          CrossFit
+        </Button>
+      </div>
+
       <div className="space-y-2">
         {block.exercises.map((exercise) => (
           <ExerciseEditor
             key={exercise.id}
             exercise={exercise}
+            catalog={catalog}
             onChange={(updated) =>
               onChange({
                 ...block,
@@ -109,7 +135,7 @@ export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEdi
           onClick={() =>
             onChange({
               ...block,
-              exercises: [...block.exercises, { id: crypto.randomUUID(), name: EXERCISE_CATALOG[0].name }],
+              exercises: [...block.exercises, { id: crypto.randomUUID(), name: catalog[0].name }],
             })
           }
         >

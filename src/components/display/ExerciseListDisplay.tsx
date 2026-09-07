@@ -14,12 +14,12 @@ export function ExerciseListDisplay({ block }: ExerciseListDisplayProps) {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      {visible.map((exercise) => (
+      {visible.map((exercise, index) => (
         <p
           key={exercise.id}
           className="font-industrial text-3xl md:text-4xl uppercase tracking-tight leading-tight text-gray-300 text-center"
         >
-          {formatExerciseLine(exercise)}
+          {index + 1}) {formatExerciseLine(exercise)}
         </p>
       ))}
       {overflowCount > 0 && (

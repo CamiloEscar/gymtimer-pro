@@ -14,6 +14,10 @@ interface DisplayScreenProps {
 
 export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: DisplayScreenProps) {
   const currentBlock = state.workout.blocks[state.currentBlockIndex];
+  const blockProgress =
+    state.timer.durationMs > 0
+      ? Math.min(1, Math.max(0, state.timer.elapsedMs / state.timer.durationMs))
+      : 0;
 
   return (
     <div className="min-h-screen bg-surface-950 grid grid-rows-[auto_1fr_auto] gap-4 p-4 font-tactical">
@@ -43,6 +47,15 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
           elapsedMs={state.timer.elapsedMs}
           mode={state.timer.mode}
         />
+        {state.timer.mode === "countdown" && (
+          <div className="w-full max-w-md h-1 bg-surface-700">
+            <div
+              data-testid="block-progress-bar"
+              className="h-full bg-phosphor"
+              style={{ width: `${blockProgress * 100}%` }}
+            />
+          </div>
+        )}
         {currentBlock && <ExerciseListDisplay block={currentBlock} />}
         {state.currentPhase === "finished" && (
           <p className="font-industrial text-4xl uppercase text-phosphor">
@@ -51,8 +64,13 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
         )}
       </div>
 
-      <div className="border-t border-surface-700 pt-2 flex justify-center">
+      <div className="border-t border-surface-700 pt-2 flex justify-center gap-4">
         <RoundIndicator round={state.currentRound} totalRounds={state.totalRounds} />
+        {state.workout.blocks.length > 1 && (
+          <p className="font-tactical text-sm md:text-base uppercase tracking-widest text-gray-400 text-center">
+            [ BLOQUE {state.currentBlockIndex + 1}/{state.workout.blocks.length} ]
+          </p>
+        )}
       </div>
     </div>
   );

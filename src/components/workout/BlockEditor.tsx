@@ -98,6 +98,7 @@ export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEdi
           type="button"
           size="md"
           variant={catalogKind === "gym" ? "primary" : "secondary"}
+          aria-pressed={catalogKind === "gym"}
           onClick={() => setCatalogKind("gym")}
         >
           Gimnasio
@@ -106,6 +107,7 @@ export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEdi
           type="button"
           size="md"
           variant={catalogKind === "crossfit" ? "primary" : "secondary"}
+          aria-pressed={catalogKind === "crossfit"}
           onClick={() => setCatalogKind("crossfit")}
         >
           CrossFit

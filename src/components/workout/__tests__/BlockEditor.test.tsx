@@ -31,4 +31,32 @@ describe("BlockEditor catalog toggle", () => {
     expect(optionValues).toContain("Back Squat");
     expect(optionValues).not.toContain("Sentadilla");
   });
+
+  it("switches back to the Gimnasio catalog when toggled again", async () => {
+    const user = userEvent.setup();
+    render(<BlockEditor block={BLOCK} onChange={vi.fn()} onRemove={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "CrossFit" }));
+    await user.click(screen.getByRole("button", { name: "Gimnasio" }));
+
+    const select = screen.getByLabelText("Ejercicio") as HTMLSelectElement;
+    const optionValues = Array.from(select.options).map((option) => option.value);
+    expect(optionValues).toContain("Sentadilla");
+    expect(optionValues).not.toContain("Back Squat");
+  });
+
+  it("marks the active catalog button with aria-pressed", async () => {
+    const user = userEvent.setup();
+    render(<BlockEditor block={BLOCK} onChange={vi.fn()} onRemove={vi.fn()} />);
+
+    const gymButton = screen.getByRole("button", { name: "Gimnasio" });
+    const crossfitButton = screen.getByRole("button", { name: "CrossFit" });
+    expect(gymButton).toHaveAttribute("aria-pressed", "true");
+    expect(crossfitButton).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(crossfitButton);
+
+    expect(gymButton).toHaveAttribute("aria-pressed", "false");
+    expect(crossfitButton).toHaveAttribute("aria-pressed", "true");
+  });
 });

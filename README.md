@@ -57,8 +57,9 @@ zero React dependency and its own Vitest suite:
 - `src/lib/storage` — `WorkoutRepository` interface + `LocalWorkoutRepository`
   (localStorage-backed). Designed to be swapped for a Supabase-backed
   implementation later without touching call sites.
-- `src/lib/session` — `SessionChannel`, the BroadcastChannel transport that
-  mirrors Trainer state to the Display in real time.
+- `src/lib/session` — `SessionChannel`, the Pusher Channels (presence +
+  client events) transport that mirrors Trainer state to the Display in
+  real time.
 
 React components under `src/components/` are presentational; they consume
 engine state via hooks in `src/hooks/` (`useWorkoutSession`,
@@ -89,6 +90,18 @@ Designed for zero-cost deployment on Vercel:
 ```bash
 npx vercel
 ```
+
+## Known limitations (Phase 2)
+
+- A session code grants full control, not just view access: anyone who
+  sees the code (e.g. read off the gym's TV, where it's shown by design)
+  can authenticate as either `display` (intended — multiple screens can
+  watch the same session) or `trainer` (not fully intended — that role
+  can push state that overrides the real trainer's). There is no
+  server-side session store to bind a "trainer" claim to whoever actually
+  started the session, since this app has no accounts by design. Accepted
+  as a reasonable trade-off for a hobby/single-gym-class use case; revisit
+  if this is ever exposed beyond a trusted room.
 
 ## Roadmap
 

@@ -7,6 +7,9 @@ type Role = "trainer" | "display";
 class FakeChannel {
   private listeners = new Map<string, EventCallback[]>();
   members: { each: (fn: (member: { id: string; info: { role: Role } }) => void) => void };
+  // Mirrors real Pusher: client events (trigger) silently no-op until the
+  // channel's own subscription handshake has completed.
+  subscribed = false;
 
   constructor(
     private readonly room: Room,
@@ -30,6 +33,7 @@ class FakeChannel {
   }
 
   trigger(event: string, payload: unknown) {
+    if (!this.subscribed) return false;
     this.room.deliver(this, event, payload);
     return true;
   }
@@ -68,6 +72,7 @@ vi.mock("../pusherClient", () => ({
     subscribe: (name: string) => {
       const channel = new FakeChannel(getRoom(name), role);
       queueMicrotask(() => {
+        channel.subscribed = true;
         channel._emit("pusher:subscription_succeeded", undefined);
         getRoom(name).channels.forEach((c) => {
           if (c !== channel) c._emit("pusher:member_added", { id: role, info: { role } });
@@ -158,6 +163,34 @@ describe("SessionChannel", () => {
     const display = new SessionChannel("ABC123", "display");
     const received: SessionState[] = [];
     display.onState((state) => received.push(state));
+    await Promise.resolve();
+
+    expect(received).toHaveLength(1);
+    expect(received[0]).toEqual(sampleState);
+
+    trainer.destroy();
+    display.destroy();
+  });
+
+  it("resends its own last state once its own subscription succeeds, recovering a send that raced ahead of it", async () => {
+    // Display joins and is already subscribed and waiting.
+    const display = new SessionChannel("ABC123", "display");
+    await Promise.resolve();
+
+    const received: SessionState[] = [];
+    display.onState((state) => received.push(state));
+
+    // Trainer constructs its channel and calls sendState() synchronously,
+    // before its own subscription handshake (queued via queueMicrotask) has
+    // resolved. Real Pusher silently no-ops client-event triggers in this
+    // window, so this first transmit is dropped.
+    const trainer = new SessionChannel("ABC123", "trainer");
+    trainer.sendState(sampleState);
+
+    expect(received).toHaveLength(0);
+
+    // Once the trainer's own subscription succeeds, it should resend its
+    // last known state so the already-waiting display isn't stuck forever.
     await Promise.resolve();
 
     expect(received).toHaveLength(1);

@@ -40,7 +40,15 @@ export class SessionChannel {
       this.stateListeners.forEach((listener) => listener(state));
     });
 
-    this.channel.bind("pusher:subscription_succeeded", () => this.syncConnectionStatus());
+    this.channel.bind("pusher:subscription_succeeded", () => {
+      this.syncConnectionStatus();
+      // Resend our own last known state, if any: an earlier sendState()/
+      // transmit() call may have raced ahead of our own subscription
+      // handshake and been silently dropped by Pusher (client events no-op
+      // before pusher:subscription_succeeded fires). This covers the case
+      // where the OTHER side joined first and is already waiting.
+      if (this.lastState) this.transmit(this.lastState);
+    });
     this.channel.bind("pusher:member_added", (member: PresenceMember) => {
       this.syncConnectionStatus();
       if (this.role === "trainer" && member.info.role === "display" && this.lastState) {

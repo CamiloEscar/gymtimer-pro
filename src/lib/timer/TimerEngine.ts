@@ -55,6 +55,32 @@ export class TimerEngine {
     this.notify();
   }
 
+  /**
+   * Re-anchor this engine to a snapshot produced by a remote TimerEngine
+   * (e.g. received over Pusher), so it can keep ticking locally and stay
+   * self-correcting even if no further snapshots arrive for a while — the
+   * scenario that matters is the sender's tab getting backgrounded/locked
+   * and its setInterval throttling to a halt. `referenceTimestampMs` is the
+   * sender's Date.now() at the moment `remote` was captured; the gap between
+   * that and our own Date.now() (network + processing lag) is folded into
+   * the accumulated time so a running timer doesn't visibly rewind.
+   */
+  hydrate(remote: TimerState, referenceTimestampMs: number): void {
+    this.stopTicking();
+    this.mode = remote.mode;
+    this.durationMs = remote.durationMs;
+    this.status = remote.status;
+    const staleMs = remote.status === "running" ? Math.max(0, Date.now() - referenceTimestampMs) : 0;
+    this.accumulatedMs = remote.elapsedMs + staleMs;
+    if (remote.status === "running") {
+      this.startedAt = Date.now();
+      this.startTicking();
+    } else {
+      this.startedAt = null;
+    }
+    this.notify();
+  }
+
   addTime(ms: number): void {
     // Fold any elapsed time accrued while running into the accumulator
     // before adjusting it, then re-baseline `startedAt` to now so we

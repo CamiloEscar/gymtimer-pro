@@ -87,6 +87,29 @@ export class WorkoutEngine {
     this.timer.addTime(ms);
   }
 
+  /**
+   * Re-anchor this engine to a remote SessionState snapshot (e.g. received
+   * over Pusher by a /display mirror), then let it keep advancing locally —
+   * phase/round transitions included — using this same workout's block
+   * definitions. `referenceTimestampMs` is the sender's Date.now() at
+   * capture time, passed through to the inner TimerEngine.hydrate() so a
+   * running timer accounts for network/processing lag instead of rewinding.
+   *
+   * this.timer.hydrate() below synchronously triggers onTimerTick() via the
+   * timer's own subscription, so if the remote snapshot is already stale
+   * enough to be finished, advancePhase()/finish() run as part of that call
+   * and can overwrite the phase/status assigned here — same self-correcting
+   * cascade the trainer's own local ticking already relies on.
+   */
+  hydrate(remote: SessionState, referenceTimestampMs: number): void {
+    this.blockIndex = remote.currentBlockIndex;
+    this.round = remote.currentRound;
+    this.phase = remote.currentPhase;
+    this.status = remote.status;
+    this.timer.hydrate(remote.timer, referenceTimestampMs);
+    this.notify();
+  }
+
   subtractTime(ms: number): void {
     this.timer.subtractTime(ms);
   }

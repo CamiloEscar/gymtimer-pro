@@ -179,3 +179,89 @@ describe("WorkoutEngine — Interval (work/rest rounds)", () => {
     expect(state.currentPhase).toBe("getReady");
   });
 });
+
+describe("WorkoutEngine — hydrate (remote /display mirror)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("adopts a remote running snapshot mid-round and keeps ticking locally", () => {
+    const mirror = new WorkoutEngine(intervalWorkout);
+    const referenceMs = Date.now();
+    mirror.hydrate(
+      {
+        code: "",
+        workout: intervalWorkout,
+        status: "running",
+        currentBlockIndex: 0,
+        currentRound: 1,
+        totalRounds: 2,
+        currentPhase: "work",
+        currentExerciseIndex: 0,
+        timer: { mode: "countdown", status: "running", durationMs: 5000, elapsedMs: 4000, remainingMs: 1000 },
+      },
+      referenceMs,
+    );
+    const state = mirror.getState();
+    expect(state.status).toBe("running");
+    expect(state.currentPhase).toBe("work");
+    expect(state.timer.remainingMs).toBe(1000);
+
+    // No further hydrate() calls — must advance work -> rest on its own,
+    // using this same instance's workout block definitions.
+    vi.advanceTimersByTime(1100);
+    expect(mirror.getState().currentPhase).toBe("rest");
+  });
+
+  it("self-corrects into the next phase if the snapshot was already stale on arrival", () => {
+    const mirror = new WorkoutEngine(intervalWorkout);
+    const referenceMs = Date.now();
+    // The sender captured this while already 200ms past the work phase's
+    // end (e.g. its own tab had been throttled); the mirror should catch up
+    // immediately rather than getting stuck reporting "work" with 0ms left.
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.200Z"));
+    mirror.hydrate(
+      {
+        code: "",
+        workout: intervalWorkout,
+        status: "running",
+        currentBlockIndex: 0,
+        currentRound: 1,
+        totalRounds: 2,
+        currentPhase: "work",
+        currentExerciseIndex: 0,
+        timer: { mode: "countdown", status: "running", durationMs: 5000, elapsedMs: 5000, remainingMs: 0 },
+      },
+      referenceMs,
+    );
+    expect(mirror.getState().currentPhase).toBe("rest");
+  });
+
+  it("adopts a remote paused snapshot and freezes there", () => {
+    const mirror = new WorkoutEngine(intervalWorkout);
+    const referenceMs = Date.now();
+    mirror.hydrate(
+      {
+        code: "",
+        workout: intervalWorkout,
+        status: "paused",
+        currentBlockIndex: 0,
+        currentRound: 2,
+        totalRounds: 2,
+        currentPhase: "rest",
+        currentExerciseIndex: 0,
+        timer: { mode: "countdown", status: "paused", durationMs: 3000, elapsedMs: 1000, remainingMs: 2000 },
+      },
+      referenceMs,
+    );
+    vi.advanceTimersByTime(5000);
+    const state = mirror.getState();
+    expect(state.status).toBe("paused");
+    expect(state.currentRound).toBe(2);
+    expect(state.currentPhase).toBe("rest");
+    expect(state.timer.remainingMs).toBe(2000);
+  });
+});

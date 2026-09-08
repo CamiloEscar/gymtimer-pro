@@ -134,6 +134,73 @@ describe("TimerEngine — countdown", () => {
   });
 });
 
+describe("TimerEngine — hydrate (remote sync)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("adopts a running remote snapshot and keeps ticking locally", () => {
+    const local = new TimerEngine("countdown", 10_000);
+    const referenceMs = Date.now();
+    local.hydrate(
+      { mode: "countdown", status: "running", durationMs: 10_000, elapsedMs: 3000, remainingMs: 7000 },
+      referenceMs,
+    );
+    expect(local.getState().status).toBe("running");
+    expect(local.getState().remainingMs).toBe(7000);
+
+    // Keeps counting down on its own after hydration, no further snapshots.
+    vi.advanceTimersByTime(2000);
+    expect(local.getState().remainingMs).toBe(5000);
+  });
+
+  it("folds in network/processing lag so a running timer doesn't rewind", () => {
+    const local = new TimerEngine("countdown", 10_000);
+    const referenceMs = Date.now();
+    // The snapshot took 500ms to arrive.
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.500Z"));
+    local.hydrate(
+      { mode: "countdown", status: "running", durationMs: 10_000, elapsedMs: 3000, remainingMs: 7000 },
+      referenceMs,
+    );
+    expect(local.getState().remainingMs).toBe(6500);
+  });
+
+  it("adopts a paused remote snapshot and freezes at that remaining time", () => {
+    const local = new TimerEngine("countdown", 10_000);
+    local.start();
+    vi.setSystemTime(new Date("2026-01-01T00:00:04.000Z"));
+    const referenceMs = Date.now();
+    local.hydrate(
+      { mode: "countdown", status: "paused", durationMs: 10_000, elapsedMs: 3000, remainingMs: 7000 },
+      referenceMs,
+    );
+    expect(local.getState().status).toBe("paused");
+    vi.advanceTimersByTime(5000);
+    expect(local.getState().remainingMs).toBe(7000);
+  });
+
+  it("self-corrects to finished if time elapses past duration after hydration with no further ticks", () => {
+    const local = new TimerEngine("countdown", 5000);
+    const referenceMs = Date.now();
+    local.hydrate(
+      { mode: "countdown", status: "running", durationMs: 5000, elapsedMs: 4900, remainingMs: 100 },
+      referenceMs,
+    );
+    // Simulate the receiving tab itself getting backgrounded right after
+    // hydration: the clock jumps past durationMs with no intervening tick.
+    vi.setSystemTime(new Date("2026-01-01T00:00:03.000Z"));
+    const state = local.getState();
+    expect(state.status).toBe("finished");
+    expect(state.remainingMs).toBe(0);
+  });
+});
+
 describe("TimerEngine — count up", () => {
   beforeEach(() => {
     vi.useFakeTimers();

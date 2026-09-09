@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { EXERCISE_CATALOG } from "@/lib/workout/exerciseCatalog";
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
+import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
 import { ExerciseEditor } from "./ExerciseEditor";
 
 const BLOCK_TYPES: BlockType[] = [
@@ -19,26 +20,33 @@ const BLOCK_TYPES: BlockType[] = [
   "tabata",
   "forTime",
   "rest",
+  "basic",
 ];
 
 type CatalogKind = "gym" | "crossfit";
 
 interface BlockEditorProps {
   block: WorkoutBlock;
+  index: number;
   onChange: (block: WorkoutBlock) => void;
   onRemove: () => void;
   errors?: string[];
 }
 
-export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEditorProps) {
+export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: BlockEditorProps) {
   const [catalogKind, setCatalogKind] = useState<CatalogKind>("gym");
   const catalog = catalogKind === "gym" ? EXERCISE_CATALOG : CROSSFIT_CATALOG;
-  const showWorkRest = block.type === "interval" || block.type === "tabata" || block.type === "emom";
-  const showDuration = !showWorkRest;
+  const isBasic = block.type === "basic";
+  const showWorkRest = !isBasic && (block.type === "interval" || block.type === "tabata" || block.type === "emom");
+  const showDuration = !isBasic && !showWorkRest;
   const hasErrors = errors.length > 0;
 
   return (
     <Card className={`space-y-3 ${hasErrors ? "!border-danger-500" : ""}`}>
+      <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
+        BLOQUE {index} · {block.type.toUpperCase()}
+      </p>
+
       <div className="flex items-center gap-2">
         <Select
           aria-label="Tipo de bloque"
@@ -90,6 +98,44 @@ export function BlockEditor({ block, onChange, onRemove, errors = [] }: BlockEdi
             onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
             placeholder="Rondas"
           />
+        </div>
+      )}
+
+      {isBasic && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              aria-label="Tiempo de ejercicio (seg)"
+              type="number"
+              value={block.workSeconds ?? ""}
+              onChange={(e) => onChange({ ...block, workSeconds: Number(e.target.value) })}
+              placeholder="⏱ Tiempo de ejercicio (seg)"
+            />
+            <Input
+              aria-label="Tiempo de pausa (seg)"
+              type="number"
+              value={block.restSeconds ?? ""}
+              onChange={(e) => onChange({ ...block, restSeconds: Number(e.target.value) })}
+              placeholder="⏸ Tiempo de pausa (seg)"
+            />
+            <Input
+              aria-label="Series"
+              type="number"
+              value={block.rounds ?? ""}
+              onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
+              placeholder="🔁 Series"
+            />
+            <Input
+              aria-label="Reps por serie"
+              type="number"
+              value={block.repsPerRound ?? ""}
+              onChange={(e) => onChange({ ...block, repsPerRound: Number(e.target.value) })}
+              placeholder="💪 Reps por serie"
+            />
+          </div>
+          <p className="text-sm text-gray-400 font-tactical">
+            Tiempo total estimado: {formatEstimateMinutes(estimateWorkoutDurationSeconds({ blocks: [block] } as never))}
+          </p>
         </div>
       )}
 

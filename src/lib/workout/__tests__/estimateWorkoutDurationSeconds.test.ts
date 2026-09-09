@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { estimateWorkoutDurationSeconds } from "../estimateWorkoutDurationSeconds";
+import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "../estimateWorkoutDurationSeconds";
 import type { Workout } from "@/types";
 
 function workout(blocks: Workout["blocks"]): Workout {
@@ -37,5 +37,24 @@ describe("estimateWorkoutDurationSeconds", () => {
       { id: "b2", type: "interval", durationSeconds: 0, workSeconds: 20, restSeconds: 10, rounds: 3, exercises: [] },
     ]);
     expect(estimateWorkoutDurationSeconds(w)).toBe(300 + 30 * 3);
+  });
+});
+
+describe("estimateWorkoutDurationSeconds — basic blocks", () => {
+  it("computes (work + rest) * rounds for basic blocks, same as interval", () => {
+    const w = workout([
+      { id: "b1", type: "basic", durationSeconds: 0, workSeconds: 45, restSeconds: 15, rounds: 4, exercises: [] },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe((45 + 15) * 4);
+  });
+});
+
+describe("formatEstimateMinutes", () => {
+  it("rounds seconds to the nearest whole minute with an 'm' suffix", () => {
+    expect(formatEstimateMinutes(660)).toBe("11m");
+  });
+
+  it("rounds down when under 30 seconds past a minute boundary", () => {
+    expect(formatEstimateMinutes(90)).toBe("2m");
   });
 });

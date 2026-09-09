@@ -5,15 +5,10 @@ import type { Workout } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { countBlocksAndExercises } from "@/lib/workout/countBlocksAndExercises";
-import { estimateWorkoutDurationSeconds } from "@/lib/workout/estimateWorkoutDurationSeconds";
+import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
 
 interface WorkoutOfTheDayProps {
   workout: Workout | null;
-}
-
-function formatEstimateMinutes(seconds: number): string {
-  const minutes = Math.round(seconds / 60);
-  return `${minutes}m`;
 }
 
 export function WorkoutOfTheDay({ workout }: WorkoutOfTheDayProps) {

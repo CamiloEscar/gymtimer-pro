@@ -19,12 +19,12 @@ export class LocalWorkoutRepository implements WorkoutRepository {
       if (!Array.isArray(parsed)) {
         return err(
           "read_failed",
-          `Expected an array of workouts in localStorage, got ${typeof parsed}`
+          `Se esperaba un array de entrenamientos en el almacenamiento local, se obtuvo ${typeof parsed}`
         );
       }
       return ok(parsed as Workout[]);
     } catch {
-      return err("read_failed", "Could not read workouts from localStorage");
+      return err("read_failed", "No se pudieron leer los entrenamientos del almacenamiento local");
     }
   }
 
@@ -60,12 +60,12 @@ export class LocalWorkoutRepository implements WorkoutRepository {
     const getResult = this.get(id);
     if (!getResult.ok) return getResult;
     if (!getResult.value) {
-      return err("not_found", `Workout ${id} not found`);
+      return err("not_found", `No se encontró el entrenamiento ${id}`);
     }
     const copy: Workout = {
       ...getResult.value,
       id: crypto.randomUUID(),
-      name: `${getResult.value.name} (copy)`,
+      name: `${getResult.value.name} (copia)`,
       createdAt: new Date().toISOString(),
     };
     return this.save(copy);
@@ -79,7 +79,7 @@ export class LocalWorkoutRepository implements WorkoutRepository {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
       return ok(returnValue as T);
     } catch {
-      return err("write_failed", "Could not write workouts to localStorage");
+      return err("write_failed", "No se pudieron guardar los entrenamientos en el almacenamiento local");
     }
   }
 }

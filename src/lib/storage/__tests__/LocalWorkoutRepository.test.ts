@@ -51,14 +51,14 @@ describe("LocalWorkoutRepository", () => {
     expect(result).toEqual({ ok: true, value: null });
   });
 
-  it("duplicates a workout with a new id and '(copy)' suffix", () => {
+  it("duplicates a workout with a new id and '(copia)' suffix", () => {
     const repo = new LocalWorkoutRepository();
     repo.save(makeWorkout({ id: "w1", name: "Fran" }));
     const result = repo.duplicate("w1");
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.id).not.toBe("w1");
-      expect(result.value.name).toBe("Fran (copy)");
+      expect(result.value.name).toBe("Fran (copia)");
     }
     const listResult = repo.list();
     expect(listResult.ok && listResult.value).toHaveLength(2);

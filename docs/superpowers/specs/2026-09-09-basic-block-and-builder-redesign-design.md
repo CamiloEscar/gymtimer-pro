@@ -197,6 +197,30 @@ Applies only when `state.totalRounds > 1`; single-round workouts (most
 per the brainstorming decision to avoid noise where a round concept doesn't
 meaningfully apply.
 
+## 4b. Displaying `repsPerRound` on `/display`
+
+Gap closed during spec self-review: Section 1 declares `repsPerRound` as
+"shown on /display during the work phase" but never specified where.
+
+`src/components/display/ExerciseListDisplay.tsx` currently receives only
+`block` and renders the exercise list unconditionally (it already hides
+itself for `"rest"`-type blocks). It gains a second prop, `phase:
+WorkoutPhase` (passed from `DisplayScreen` as `state.currentPhase`, which
+`DisplayScreen` already has in scope). When `block.repsPerRound` is set AND
+`phase === "work"`, render one extra line below the exercise list:
+
+```tsx
+{block.repsPerRound && phase === "work" && (
+  <p className="font-tactical text-lg uppercase tracking-widest text-brand-500 text-center">
+    💪 {block.repsPerRound} REPS
+  </p>
+)}
+```
+
+Not shown during `"rest"` phase (nothing to do reps of while resting), and
+naturally absent for block types that don't set `repsPerRound` (everything
+except `"basic"` today).
+
 ## 5. Testing
 
 - `WorkoutEngine`: extend existing interval/tabata test coverage
@@ -213,6 +237,9 @@ meaningfully apply.
 - `DisplayScreen`: component test(s) asserting the background class per
   `currentRound`/`totalRounds` combination, including the `totalRounds <= 1`
   no-cycling case.
+- `ExerciseListDisplay`: component test(s) for the new reps line — shown
+  when `repsPerRound` is set and `phase === "work"`, hidden during
+  `"rest"`, absent when `repsPerRound` is unset.
 
 ## Open questions / risks
 

@@ -6,6 +6,14 @@ import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
 import { RoundIndicator } from "@/components/timer/RoundIndicator";
 import { ExerciseListDisplay } from "./ExerciseListDisplay";
 
+const ROUND_BACKGROUNDS = [
+  "bg-surface-950",
+  "bg-emerald-950",
+  "bg-sky-950",
+  "bg-amber-950",
+  "bg-violet-950",
+];
+
 interface DisplayScreenProps {
   state: SessionState;
   connectionStatus: ConnectionStatus;
@@ -18,9 +26,13 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
     state.timer.durationMs > 0
       ? Math.min(1, Math.max(0, state.timer.elapsedMs / state.timer.durationMs))
       : 0;
+  const background =
+    state.totalRounds > 1
+      ? ROUND_BACKGROUNDS[(state.currentRound - 1) % ROUND_BACKGROUNDS.length]
+      : ROUND_BACKGROUNDS[0];
 
   return (
-    <div className="min-h-screen bg-surface-950 grid grid-rows-[auto_1fr_auto] gap-4 p-4 font-tactical">
+    <div className={`min-h-screen ${background} grid grid-rows-[auto_1fr_auto] gap-4 p-4 font-tactical`}>
       <div className="flex items-center justify-between border-b border-surface-700 pb-2">
         <button
           onClick={onFullscreenToggle}
@@ -56,7 +68,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
             />
           </div>
         )}
-        {currentBlock && <ExerciseListDisplay block={currentBlock} />}
+        {currentBlock && <ExerciseListDisplay block={currentBlock} phase={state.currentPhase} />}
         {state.currentPhase === "finished" && (
           <p className="font-industrial text-4xl uppercase text-phosphor">
             ENTRENAMIENTO COMPLETADO

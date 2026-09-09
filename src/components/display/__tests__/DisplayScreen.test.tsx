@@ -103,3 +103,34 @@ describe("DisplayScreen block indicator", () => {
     expect(screen.queryByText(/BLOQUE/)).not.toBeInTheDocument();
   });
 });
+
+describe("DisplayScreen round background color", () => {
+  it("uses the default background for a single-round workout", () => {
+    const state = buildState({ totalRounds: 1, currentRound: 1 });
+    const { container } = render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+    expect(container.firstChild).toHaveClass("bg-surface-950");
+  });
+
+  it("cycles the background per round for multi-round workouts", () => {
+    const round1 = buildState({ totalRounds: 4, currentRound: 1 });
+    const { container: c1 } = render(
+      <DisplayScreen state={round1} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+    expect(c1.firstChild).toHaveClass("bg-surface-950");
+
+    const round2 = buildState({ totalRounds: 4, currentRound: 2 });
+    const { container: c2 } = render(
+      <DisplayScreen state={round2} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+    expect(c2.firstChild).toHaveClass("bg-emerald-950");
+
+    const round5 = buildState({ totalRounds: 6, currentRound: 5 });
+    const { container: c5 } = render(
+      <DisplayScreen state={round5} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+    // round 5 lands on index 4 of the 5-color palette (surface + 4 accents): (5-1) % 5 = 4
+    expect(c5.firstChild).toHaveClass("bg-violet-950");
+  });
+});

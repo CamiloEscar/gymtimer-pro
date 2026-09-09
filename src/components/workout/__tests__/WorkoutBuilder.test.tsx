@@ -44,3 +44,26 @@ describe("WorkoutBuilder save redirect", () => {
     expect(pushMock).toHaveBeenCalledWith("/app/workouts/w1/run?code=ABC123");
   });
 });
+
+describe("WorkoutBuilder header and summary", () => {
+  beforeEach(() => {
+    pushMock.mockClear();
+    window.localStorage.clear();
+  });
+
+  it("shows 'Nueva rutina' when there is no initial workout", () => {
+    render(<WorkoutBuilder />);
+    expect(screen.getByRole("heading", { name: "Nueva rutina" })).toBeInTheDocument();
+  });
+
+  it("shows 'Editar rutina' when editing an existing workout", () => {
+    render(<WorkoutBuilder initialWorkout={validWorkout()} />);
+    expect(screen.getByRole("heading", { name: "Editar rutina" })).toBeInTheDocument();
+  });
+
+  it("shows a live summary of blocks, exercises, and estimated duration", () => {
+    render(<WorkoutBuilder initialWorkout={validWorkout()} />);
+    // validWorkout(): 1 block (amrap, 600s), 1 exercise
+    expect(screen.getByText(/1 bloque · 1 ejercicio · ~10m totales/)).toBeInTheDocument();
+  });
+});

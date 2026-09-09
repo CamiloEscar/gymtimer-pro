@@ -6,6 +6,7 @@ import type { Workout, WorkoutBlock } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { validateWorkout, type ValidationError } from "@/lib/workout/validateWorkout";
 import { countBlocksAndExercises } from "@/lib/workout/countBlocksAndExercises";
+import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { BlockEditor } from "./BlockEditor";
@@ -52,19 +53,20 @@ export function WorkoutBuilder({ initialWorkout, code }: WorkoutBuilderProps) {
     router.push("/app/workouts");
   }
 
+  const estimatedSeconds = estimateWorkoutDurationSeconds(workout);
+
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
+      <h1 className="text-2xl font-bold text-white font-industrial">
+        {initialWorkout ? "Editar rutina" : "Nueva rutina"}
+      </h1>
+
       <Input
         aria-label="Nombre del entrenamiento"
         value={workout.name}
         onChange={(e) => setWorkout({ ...workout, name: e.target.value })}
         placeholder="Nombre del entrenamiento (ej: Entrenamiento de Murph)"
       />
-
-      <p className="text-sm text-gray-400">
-        {counts.blocks} bloque{counts.blocks === 1 ? "" : "s"} · {counts.exercises} ejercicio
-        {counts.exercises === 1 ? "" : "s"}
-      </p>
 
       {generalErrors.length > 0 && (
         <ul className="text-danger-500 text-sm space-y-1">
@@ -75,10 +77,11 @@ export function WorkoutBuilder({ initialWorkout, code }: WorkoutBuilderProps) {
       )}
 
       <div className="space-y-3">
-        {workout.blocks.map((block) => (
+        {workout.blocks.map((block, index) => (
           <BlockEditor
             key={block.id}
             block={block}
+            index={index + 1}
             errors={errors.filter((error) => error.blockId === block.id).map((error) => error.message)}
             onChange={(updated) =>
               setWorkout({
@@ -99,6 +102,12 @@ export function WorkoutBuilder({ initialWorkout, code }: WorkoutBuilderProps) {
           + Agregar bloque
         </Button>
       </div>
+
+      <p className="text-sm text-gray-400 font-tactical">
+        {counts.blocks} bloque{counts.blocks === 1 ? "" : "s"} · {counts.exercises} ejercicio
+        {counts.exercises === 1 ? "" : "s"}
+        {estimatedSeconds > 0 && ` · ~${formatEstimateMinutes(estimatedSeconds)} totales`}
+      </p>
 
       <Button type="button" size="lg" onClick={handleSave} className="w-full">
         Guardar entrenamiento

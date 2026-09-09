@@ -39,6 +39,25 @@ const intervalWorkout: Workout = {
   ],
 };
 
+const basicWorkout: Workout = {
+  id: "w3",
+  name: "Basic Block",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  favorite: false,
+  blocks: [
+    {
+      id: "b1",
+      type: "basic",
+      durationSeconds: 0,
+      workSeconds: 5,
+      restSeconds: 3,
+      rounds: 2,
+      repsPerRound: 12,
+      exercises: [{ id: "e1", name: "Push Ups" }],
+    },
+  ],
+};
+
 describe("WorkoutEngine — AMRAP", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -177,6 +196,45 @@ describe("WorkoutEngine — Interval (work/rest rounds)", () => {
     expect(state.status).toBe("ready");
     expect(state.currentRound).toBe(1);
     expect(state.currentPhase).toBe("getReady");
+  });
+});
+
+describe("WorkoutEngine — Basic (reuses interval/tabata state machine)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("starts round 1 in the work phase for workSeconds", () => {
+    const engine = new WorkoutEngine(basicWorkout);
+    engine.start();
+    const state = engine.getState();
+    expect(state.currentPhase).toBe("work");
+    expect(state.currentRound).toBe(1);
+    expect(state.totalRounds).toBe(2);
+    expect(state.timer.remainingMs).toBe(5000);
+  });
+
+  it("transitions work -> rest after workSeconds elapses", () => {
+    const engine = new WorkoutEngine(basicWorkout);
+    engine.start();
+    vi.advanceTimersByTime(5100);
+    expect(engine.getState().currentPhase).toBe("rest");
+  });
+
+  it("transitions rest -> next round's work phase, then finishes after the last round's rest", () => {
+    const engine = new WorkoutEngine(basicWorkout);
+    engine.start();
+    vi.advanceTimersByTime(5100);
+    vi.advanceTimersByTime(3100);
+    expect(engine.getState().currentRound).toBe(2);
+    expect(engine.getState().currentPhase).toBe("work");
+
+    vi.advanceTimersByTime(5100);
+    vi.advanceTimersByTime(3100);
+    expect(engine.getState().status).toBe("finished");
   });
 });
 

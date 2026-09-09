@@ -182,7 +182,7 @@ export class WorkoutEngine {
   private advancePhase(): void {
     const block = this.currentBlock();
 
-    if (block.type === "interval" || block.type === "tabata") {
+    if (block.type === "interval" || block.type === "tabata" || block.type === "basic") {
       const totalRounds = block.rounds ?? 1;
       if (this.phase === "work") {
         if (block.restSeconds && block.restSeconds > 0) {
@@ -237,7 +237,7 @@ export class WorkoutEngine {
     if (block.type === "countup" || block.type === "forTime") {
       return new TimerEngine("countup", 0);
     }
-    if (block.type === "interval" || block.type === "tabata") {
+    if (block.type === "interval" || block.type === "tabata" || block.type === "basic") {
       return new TimerEngine("countdown", (block.workSeconds ?? 0) * 1000);
     }
     return new TimerEngine("countdown", block.durationSeconds * 1000);

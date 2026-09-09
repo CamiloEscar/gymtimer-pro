@@ -6,7 +6,8 @@ export type BlockType =
   | "interval"
   | "tabata"
   | "forTime"
-  | "rest";
+  | "rest"
+  | "basic";
 
 export interface Exercise {
   id: string;
@@ -26,6 +27,7 @@ export interface WorkoutBlock {
   workSeconds?: number;
   restSeconds?: number;
   rounds?: number;
+  repsPerRound?: number;
   exercises: Exercise[];
   label?: string;
 }

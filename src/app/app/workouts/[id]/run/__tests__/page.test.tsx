@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import RunWorkoutPage from "../page";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
@@ -38,6 +38,25 @@ function seedWorkout(): Workout {
         type: "amrap",
         durationSeconds: 600,
         exercises: [{ id: "e1", name: "Pull-up", reps: 10 }],
+      },
+    ],
+  };
+  new LocalWorkoutRepository().save(workout);
+  return workout;
+}
+
+function seedShortWorkout(): Workout {
+  const workout: Workout = {
+    id: "w1",
+    name: "Sprint Test",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    favorite: false,
+    blocks: [
+      {
+        id: "b1",
+        type: "countdown",
+        durationSeconds: 1,
+        exercises: [{ id: "e1", name: "Sprint", reps: 1 }],
       },
     ],
   };
@@ -113,5 +132,41 @@ describe("RunWorkoutPage history recording", () => {
     const midRun = new WorkoutHistoryRepository().list();
     expect(midRun.ok).toBe(true);
     if (midRun.ok) expect(midRun.value).toHaveLength(0);
+  });
+
+  it("records a history entry end-to-end once a real session reaches finished", async () => {
+    const workout = seedShortWorkout();
+    render(<RunWorkoutPage />);
+
+    // Resolve the start button with real timers first: testing-library's
+    // findBy* polls via setTimeout internally, which would never progress
+    // once fake timers are installed and nothing is advancing them yet.
+    const startButton = await screen.findByRole("button", { name: /^iniciar$/i });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(startButton);
+
+      // The seeded workout is a 1s countdown block. TimerEngine ticks every
+      // 100ms and self-corrects to "finished" once elapsed >= durationMs, so
+      // advancing the fake clock past 1000ms drives WorkoutEngine's
+      // running -> finished transition, which the page's effect observes and
+      // records into history.
+      act(() => {
+        vi.advanceTimersByTime(1_200);
+      });
+
+      const afterFinish = new WorkoutHistoryRepository().list();
+      expect(afterFinish.ok).toBe(true);
+      if (!afterFinish.ok) return;
+      expect(afterFinish.value).toHaveLength(1);
+      const [entry] = afterFinish.value;
+      expect(entry.workoutId).toBe(workout.id);
+      expect(entry.workoutName).toBe(workout.name);
+      expect(entry.durationMs).toBeGreaterThan(0);
+      expect(entry.durationMs).toBeLessThan(5_000);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -33,4 +33,12 @@ describe("RecentWorkouts", () => {
     screen.getByLabelText("Duplicar entrenamiento").click();
     expect(onDuplicate).toHaveBeenCalledWith("a");
   });
+
+  it("calls onDelete with the workout id when its delete button is clicked", () => {
+    const onDelete = vi.fn();
+    const workouts = [makeWorkout("a", "2026-01-01T00:00:00.000Z")];
+    render(<RecentWorkouts workouts={workouts} onDuplicate={vi.fn()} onDelete={onDelete} />);
+    screen.getByLabelText("Eliminar entrenamiento").click();
+    expect(onDelete).toHaveBeenCalledWith("a");
+  });
 });

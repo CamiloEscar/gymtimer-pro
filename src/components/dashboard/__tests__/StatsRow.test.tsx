@@ -15,7 +15,7 @@ describe("StatsRow", () => {
 
   it("shows the streak in days", () => {
     render(<StatsRow stats={{ sessionsThisWeek: 3, streakDays: 5, totalTimeMs: 7_200_000 }} totalRoutines={5} />);
-    expect(screen.getByText(/5/)).toBeInTheDocument();
+    expect(screen.getByText("5d")).toBeInTheDocument();
   });
 
   it("formats total time trained as hours and minutes", () => {
@@ -25,7 +25,7 @@ describe("StatsRow", () => {
   });
 
   it("shows the total number of saved routines", () => {
-    render(<StatsRow stats={{ sessionsThisWeek: 0, streakDays: 0, totalTimeMs: 0 }} totalRoutines={7} />);
+    render(<StatsRow stats={{ sessionsThisWeek: 3, streakDays: 2, totalTimeMs: 7_200_000 }} totalRoutines={7} />);
     expect(screen.getByText("7")).toBeInTheDocument();
   });
 });

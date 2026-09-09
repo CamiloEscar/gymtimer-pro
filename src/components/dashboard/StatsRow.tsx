@@ -19,18 +19,12 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
 
   if (!hasHistory) {
     return (
-      <div>
-        <Card className="text-center mb-3">
-          <p className="text-white font-semibold">Arrancá tu racha hoy 🔥</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Todavía no completaste ningún entrenamiento. Iniciá uno y volvé acá.
-          </p>
-        </Card>
-        <Card className="text-center">
-          <p className="font-tactical text-2xl text-brand-500">{totalRoutines}</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wide mt-1">Rutinas</p>
-        </Card>
-      </div>
+      <Card className="text-center">
+        <p className="text-white font-semibold">Arrancá tu racha hoy 🔥</p>
+        <p className="text-sm text-gray-400 mt-1">
+          Todavía no completaste ningún entrenamiento. Iniciá uno y volvé acá.
+        </p>
+      </Card>
     );
   }
 
@@ -38,10 +32,11 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
     { label: "Esta semana", value: String(stats.sessionsThisWeek) },
     { label: "Racha", value: `${stats.streakDays}d` },
     { label: "Tiempo total", value: formatDurationShort(stats.totalTimeMs) },
+    { label: "Rutinas", value: String(totalRoutines) },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {items.map((item) => (
         <Card key={item.label} className="text-center">
           <p className="font-tactical text-2xl text-brand-500">{item.value}</p>

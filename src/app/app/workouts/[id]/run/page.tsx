@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { SessionChannel } from "@/lib/session/SessionChannel";
 import { generateCode } from "@/lib/session/generateCode";
+import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { TimerDisplay } from "@/components/timer/TimerDisplay";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
@@ -50,6 +51,8 @@ function RunWorkoutContent({
   const [code] = useState(() => searchParams.get("code") ?? generateCode());
   const session = useWorkoutSession(workout);
   const channelRef = useRef<SessionChannel | null>(null);
+  const sessionStartedAtRef = useRef<number | null>(null);
+  const hasRecordedRef = useRef(false);
   const { toggle: toggleFullscreen } = useFullscreen();
   const [resetPending, setResetPending] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -69,8 +72,19 @@ function RunWorkoutContent({
 
   useEffect(() => {
     channelRef.current?.sendState({ ...session.state, code });
-    if (session.state.status === "finished") audio.playFinish();
-  }, [session.state, code, audio]);
+    if (session.state.status === "finished") {
+      audio.playFinish();
+      if (!hasRecordedRef.current && sessionStartedAtRef.current !== null) {
+        hasRecordedRef.current = true;
+        new WorkoutHistoryRepository().record({
+          workoutId: workout.id,
+          workoutName: workout.name,
+          completedAt: new Date().toISOString(),
+          durationMs: Date.now() - sessionStartedAtRef.current,
+        });
+      }
+    }
+  }, [session.state, code, audio, workout.id, workout.name]);
 
   useKeyboardShortcuts({
     onPauseResume: () => (session.state.status === "running" ? session.pause() : session.resume()),
@@ -83,12 +97,15 @@ function RunWorkoutContent({
   function handleStart() {
     audio.unlock();
     audio.playStart();
+    if (sessionStartedAtRef.current === null) sessionStartedAtRef.current = Date.now();
     session.start();
   }
 
   function confirmReset() {
     session.reset();
     setResetPending(false);
+    sessionStartedAtRef.current = null;
+    hasRecordedRef.current = false;
   }
 
   async function handleCopyCode() {

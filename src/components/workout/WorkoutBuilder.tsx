@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { BlockEditor } from "./BlockEditor";
 
 function emptyBlock(): WorkoutBlock {
-  return { id: crypto.randomUUID(), type: "amrap", durationSeconds: 600, exercises: [] };
+  return { id: crypto.randomUUID(), type: "amrap", durationSeconds: 0, exercises: [] };
 }
 
 interface WorkoutBuilderProps {
@@ -57,9 +57,16 @@ export function WorkoutBuilder({ initialWorkout, code }: WorkoutBuilderProps) {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <h1 className="text-2xl font-bold text-white font-industrial">
-        {initialWorkout ? "Editar rutina" : "Nueva rutina"}
-      </h1>
+      <div className="border-b border-surface-800 pb-3">
+        <h1 className="text-2xl font-bold text-white font-industrial">
+          {initialWorkout ? "Editar rutina" : "Nueva rutina"}
+        </h1>
+        <p className="text-xs text-gray-400 font-tactical uppercase tracking-widest mt-1">
+          {counts.blocks} bloque{counts.blocks === 1 ? "" : "s"} ·{" "}
+          {counts.exercises} ejercicio{counts.exercises === 1 ? "" : "s"}
+          {estimatedSeconds > 0 && ` · ~${formatEstimateMinutes(estimatedSeconds)} totales`}
+        </p>
+      </div>
 
       <Input
         aria-label="Nombre del entrenamiento"
@@ -102,12 +109,6 @@ export function WorkoutBuilder({ initialWorkout, code }: WorkoutBuilderProps) {
           + Agregar bloque
         </Button>
       </div>
-
-      <p className="text-sm text-gray-400 font-tactical">
-        {counts.blocks} bloque{counts.blocks === 1 ? "" : "s"} · {counts.exercises} ejercicio
-        {counts.exercises === 1 ? "" : "s"}
-        {estimatedSeconds > 0 && ` · ~${formatEstimateMinutes(estimatedSeconds)} totales`}
-      </p>
 
       <Button type="button" size="lg" onClick={handleSave} className="w-full">
         Guardar entrenamiento

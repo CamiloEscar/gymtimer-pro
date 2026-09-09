@@ -64,4 +64,61 @@ describe("validateWorkout", () => {
       blockId: "b1",
     });
   });
+
+  it("accepts a basic block with no exercises", () => {
+    const workout = baseWorkout({
+      blocks: [{ id: "b1", type: "basic", durationSeconds: 0, exercises: [] }],
+    });
+    expect(validateWorkout(workout)).toEqual([]);
+  });
+
+  it("accepts a rest block with no exercises", () => {
+    const workout = baseWorkout({
+      blocks: [{ id: "b1", type: "rest", durationSeconds: 60, exercises: [] }],
+    });
+    const errors = validateWorkout(workout);
+    expect(errors).not.toContainEqual(
+      expect.objectContaining({ blockId: "b1", message: expect.stringMatching(/ejercicio/i) })
+    );
+  });
+
+  it("accepts a countdown block with no exercises", () => {
+    const workout = baseWorkout({
+      blocks: [{ id: "b1", type: "countdown", durationSeconds: 60, exercises: [] }],
+    });
+    const errors = validateWorkout(workout);
+    expect(errors).not.toContainEqual(
+      expect.objectContaining({ blockId: "b1", message: expect.stringMatching(/ejercicio/i) })
+    );
+  });
+
+  it("accepts a countup block with no exercises", () => {
+    const workout = baseWorkout({
+      blocks: [{ id: "b1", type: "countup", durationSeconds: 0, exercises: [] }],
+    });
+    const errors = validateWorkout(workout);
+    expect(errors).not.toContainEqual(
+      expect.objectContaining({ blockId: "b1", message: expect.stringMatching(/ejercicio/i) })
+    );
+  });
+
+  it("rejects an interval block with no exercises", () => {
+    const workout = baseWorkout({
+      blocks: [
+        {
+          id: "b1",
+          type: "interval",
+          durationSeconds: 0,
+          workSeconds: 20,
+          restSeconds: 10,
+          rounds: 4,
+          exercises: [],
+        },
+      ],
+    });
+    expect(validateWorkout(workout)).toContainEqual({
+      message: "Cada bloque necesita al menos un ejercicio",
+      blockId: "b1",
+    });
+  });
 });

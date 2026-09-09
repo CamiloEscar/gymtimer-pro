@@ -1,4 +1,4 @@
-import type { Workout, WorkoutBlock } from "@/types";
+import type { WorkoutBlock } from "@/types";
 
 function estimateBlockSeconds(block: WorkoutBlock): number {
   if (block.type === "interval" || block.type === "tabata" || block.type === "basic") {
@@ -9,7 +9,7 @@ function estimateBlockSeconds(block: WorkoutBlock): number {
   return block.durationSeconds;
 }
 
-export function estimateWorkoutDurationSeconds(workout: Workout): number {
+export function estimateWorkoutDurationSeconds(workout: { blocks: WorkoutBlock[] }): number {
   return workout.blocks.reduce((sum, block) => sum + estimateBlockSeconds(block), 0);
 }
 

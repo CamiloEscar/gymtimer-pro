@@ -87,8 +87,8 @@ describe("BlockEditor — basic block type", () => {
 
   it("renders the 4 basic-specific labeled inputs with their current values", () => {
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByLabelText("Tiempo de ejercicio (seg)")).toHaveValue(30);
-    expect(screen.getByLabelText("Tiempo de pausa (seg)")).toHaveValue(10);
+    expect(screen.getByLabelText("Tiempo de ejercicio")).toHaveValue("0:30");
+    expect(screen.getByLabelText("Tiempo de pausa")).toHaveValue("0:10");
     expect(screen.getByLabelText("Cantidad de series")).toHaveValue(3);
     expect(screen.getByLabelText("Reps por serie")).toHaveValue(12);
   });
@@ -97,12 +97,6 @@ describe("BlockEditor — basic block type", () => {
     const onChange = vi.fn();
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={onChange} onRemove={vi.fn()} />);
 
-    // Using fireEvent.change (rather than userEvent.clear+type) because this
-    // is a static, non-re-rendering controlled input in the test: with no
-    // state update between keystrokes, userEvent's character-by-character
-    // typing does not actually clear the DOM value first, producing "35"
-    // instead of "5". fireEvent.change sets the value in one shot, matching
-    // the "changes a single field" intent of this test.
     fireEvent.change(screen.getByLabelText("Cantidad de series"), { target: { value: "5" } });
 
     expect(onChange).toHaveBeenLastCalledWith({ ...BASIC_BLOCK, rounds: 5 });
@@ -112,12 +106,65 @@ describe("BlockEditor — basic block type", () => {
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
     // (30 + 10) * 3 = 120s = 2m
     expect(screen.getByText(/Tiempo total estimado: 2m/)).toBeInTheDocument();
-    expect(screen.queryByLabelText("Duración (segundos)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Duración")).not.toBeInTheDocument();
   });
 
   it("does not show the interval-style work/rest/rounds inputs for a basic block", () => {
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
     expect(screen.queryByLabelText("Segundos de trabajo")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Rondas")).not.toBeInTheDocument();
+  });
+
+  it("hides the catalog toggle and + Agregar ejercicio for basic blocks, and shows the explanation", () => {
+    render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Gimnasio" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "CrossFit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /\+ Agregar ejercicio/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Los bloques básicos no necesitan ejercicios específicos/),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("BlockEditor — exempt block types without exercises", () => {
+  function renderExempt(type: "rest" | "countdown" | "countup") {
+    const block: WorkoutBlock = {
+      id: `block-${type}`,
+      type,
+      durationSeconds: 60,
+      exercises: [],
+    };
+    render(<BlockEditor block={block} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+  }
+
+  it("renders a rest block with no catalog, no add button, and the rest hint", () => {
+    renderExempt("rest");
+    expect(screen.queryByRole("button", { name: "Gimnasio" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "CrossFit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /\+ Agregar ejercicio/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Solo configurá cuánto dura el descanso/)).toBeInTheDocument();
+  });
+
+  it("renders a countdown block with no catalog, no add button, and the countdown hint", () => {
+    renderExempt("countdown");
+    expect(screen.queryByRole("button", { name: "Gimnasio" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "CrossFit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /\+ Agregar ejercicio/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Solo configurá cuánto dura el timer/)).toBeInTheDocument();
+  });
+});
+
+describe("BlockEditor — amrap block with no exercises", () => {
+  it("still shows the catalog toggle and add button when exercises list is empty", () => {
+    const block: WorkoutBlock = {
+      id: "block-amrap-empty",
+      type: "amrap",
+      durationSeconds: 600,
+      exercises: [],
+    };
+    render(<BlockEditor block={block} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Gimnasio" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "CrossFit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /\+ Agregar ejercicio/i })).toBeInTheDocument();
   });
 });

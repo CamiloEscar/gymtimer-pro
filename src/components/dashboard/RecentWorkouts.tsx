@@ -1,13 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import type { Workout } from "@/types";
+import { WorkoutCard } from "@/components/workout/WorkoutCard";
 
 interface RecentWorkoutsProps {
   workouts: Workout[];
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export function RecentWorkouts({ workouts }: RecentWorkoutsProps) {
+export function RecentWorkouts({ workouts, onDuplicate, onDelete }: RecentWorkoutsProps) {
   const recent = [...workouts]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 5);
@@ -15,17 +17,13 @@ export function RecentWorkouts({ workouts }: RecentWorkoutsProps) {
   if (recent.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <h2 className="text-white font-semibold">Entrenamientos recientes</h2>
-      <ul className="space-y-1">
+    <div className="space-y-3">
+      <h2 className="text-white font-semibold font-industrial">Entrenamientos recientes</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
         {recent.map((workout) => (
-          <li key={workout.id}>
-            <Link href={`/app/workouts/${workout.id}/run`} className="text-brand-500 hover:underline">
-              {workout.name}
-            </Link>
-          </li>
+          <WorkoutCard key={workout.id} workout={workout} onDuplicate={onDuplicate} onDelete={onDelete} />
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

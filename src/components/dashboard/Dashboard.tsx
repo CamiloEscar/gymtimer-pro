@@ -24,6 +24,11 @@ export function Dashboard() {
   const [historyStats, setHistoryStats] = useState(computeHistoryStats([]));
   const [query, setQuery] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Workout | null>(null);
+  // Starts null (not computed from Date.now() during render) so the server-
+  // rendered markup for this "use client" component never depends on the
+  // server's timezone — computed client-side in the effect below instead,
+  // avoiding a hydration mismatch against the user's local hour.
+  const [greetingText, setGreetingText] = useState<string | null>(null);
   const workoutRepo = useMemo(() => new LocalWorkoutRepository(), []);
 
   function reload() {
@@ -35,6 +40,7 @@ export function Dashboard() {
 
   useEffect(() => {
     reload();
+    setGreetingText(greeting(new Date().getHours()));
   }, []);
 
   function confirmDelete() {
@@ -53,7 +59,7 @@ export function Dashboard() {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
       <div>
-        <p className="text-brand-500 text-sm uppercase tracking-wide">{greeting(new Date().getHours())}</p>
+        <p className="text-brand-500 text-sm uppercase tracking-wide">{greetingText}</p>
         <h1 className="text-2xl font-bold text-white font-industrial">¿Qué entrenamos hoy?</h1>
       </div>
 

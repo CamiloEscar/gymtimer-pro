@@ -1,28 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color-scheme: dark;
 }
 
 @theme {
@@ -34,7 +13,104 @@ body {
   --color-surface-800: oklch(0.24 0 0);
   --color-surface-700: oklch(0.32 0 0); /* border lines on dark surfaces */
   --color-phosphor: oklch(0.95 0 0); /* primary text on Display/tactical screens */
+  --color-phosphor-dim: oklch(0.72 0 0); /* secondary text on dark */
+  --color-phosphor-muted: oklch(0.55 0 0); /* tertiary text / labels */
+  --color-phase-ready: oklch(0.82 0.16 90); /* "preparate" amber-yellow */
+  --color-round-1: oklch(0.18 0.05 150); /* brand-tinted neutral */
+  --color-round-2: oklch(0.2 0.06 230); /* steel blue */
+  --color-round-3: oklch(0.22 0.07 60); /* amber-tinted neutral */
+  --color-round-4: oklch(0.2 0.05 300); /* muted violet */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
   --font-display: var(--font-geist-sans), sans-serif;
   --font-industrial: var(--font-archivo-black), sans-serif; /* macro: timer, phase, headlines */
   --font-tactical: var(--font-jetbrains-mono), monospace; /* micro: status, counters, metadata */
+  --font-display-condensed: var(--font-bebas-neue), Impact, sans-serif; /* hero-only condensed display */
+}
+
+body {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  color: var(--color-phosphor);
+  background-color: var(--color-surface-950);
+}
+
+@keyframes fadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeUpSubtle {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInSlow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInPanel {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.anim-fade-down {
+  animation: fadeDown 600ms ease both;
+}
+
+.anim-fade-up {
+  animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-fade-up-subtle {
+  animation: fadeUpSubtle 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-fade-in-slow {
+  animation: fadeInSlow 1200ms ease both;
+}
+
+.anim-fade-in-panel {
+  animation: fadeInPanel 300ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
 }

@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { WorkoutEngine } from "@/lib/workout/WorkoutEngine";
+import type { AudioManager } from "@/lib/audio/AudioManager";
 import type { SessionState, Workout } from "@/types";
 
-export function useWorkoutSession(workout: Workout) {
+export function useWorkoutSession(workout: Workout, audio: AudioManager | null = null) {
   const engineRef = useRef<WorkoutEngine | null>(null);
   // Lazy initializer only reads a throwaway engine's initial snapshot for the
   // very first render; the effect below owns the engine that is actually
   // subscribed to and interacted with.
-  const [state, setState] = useState<SessionState>(() => new WorkoutEngine(workout).getState());
+  const [state, setState] = useState<SessionState>(() => new WorkoutEngine(workout, audio).getState());
 
   useEffect(() => {
     // Created and destroyed within this single effect (rather than via
@@ -18,7 +19,7 @@ export function useWorkoutSession(workout: Workout) {
     // that a later setup still expects to be alive. destroy() unsubscribes
     // WorkoutEngine from its internal TimerEngine permanently, so reusing a
     // destroyed instance silently stops all future tick updates.
-    const engine = new WorkoutEngine(workout);
+    const engine = new WorkoutEngine(workout, audio);
     engineRef.current = engine;
     setState(engine.getState());
     const unsubscribe = engine.subscribe(setState);
@@ -27,7 +28,7 @@ export function useWorkoutSession(workout: Workout) {
       engine.destroy();
       if (engineRef.current === engine) engineRef.current = null;
     };
-  }, [workout]);
+  }, [workout, audio]);
 
   return {
     state,
@@ -39,5 +40,7 @@ export function useWorkoutSession(workout: Workout) {
     previousRound: () => engineRef.current?.previousRound(),
     addTime: (ms: number) => engineRef.current?.addTime(ms),
     subtractTime: (ms: number) => engineRef.current?.subtractTime(ms),
+    addRep: () => engineRef.current?.addRep(),
+    removeRep: () => engineRef.current?.removeRep(),
   };
 }

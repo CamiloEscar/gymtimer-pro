@@ -15,8 +15,8 @@ export default function DisplayEntryPage() {
 
   if (mode === "choice") {
     return (
-      <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
-        <h1 className="text-2xl font-bold text-white">Abrir una pantalla</h1>
+      <div className="min-h-[100dvh] bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
+        <h1 className="text-2xl font-bold text-phosphor">Abrir una pantalla</h1>
         <Button size="lg" onClick={() => router.push(`/display/${generateCode()}`)}>
           Generar código nuevo
         </Button>
@@ -28,8 +28,8 @@ export default function DisplayEntryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
-      <h1 className="text-2xl font-bold text-white">Abrir una pantalla</h1>
+    <div className="min-h-[100dvh] bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
+      <h1 className="text-2xl font-bold text-phosphor">Abrir una pantalla</h1>
       <Input
         aria-label="Código de conexión"
         value={code}

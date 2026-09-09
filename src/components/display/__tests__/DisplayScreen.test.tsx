@@ -1,7 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DisplayScreen } from "../DisplayScreen";
 import type { SessionState } from "@/types";
+
+vi.mock("@/components/ui/VideoPlayer", () => ({
+  VideoPlayer: ({ alt }: { alt: string }) => <div data-testid="display-video">{alt}</div>,
+}));
 
 function buildState(overrides: Partial<SessionState> = {}): SessionState {
   return {
@@ -104,6 +108,137 @@ describe("DisplayScreen block indicator", () => {
   });
 });
 
+describe("DisplayScreen RM rep counter", () => {
+  it("shows the accumulated rep count for an RM block in the running state", () => {
+    const state = buildState({
+      workout: {
+        id: "w1",
+        name: "WOD",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "rm",
+            durationSeconds: 120,
+            exercises: [{ id: "e1", name: "Push Press" }],
+          },
+        ],
+      },
+      accumulatedReps: 17,
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.getByTestId("rm-reps-display")).toHaveTextContent("17 REPS");
+  });
+
+  it("falls back to 0 when accumulatedReps is missing for an RM block", () => {
+    const state = buildState({
+      workout: {
+        id: "w1",
+        name: "WOD",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "rm",
+            durationSeconds: 120,
+            exercises: [{ id: "e1", name: "Push Press" }],
+          },
+        ],
+      },
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.getByTestId("rm-reps-display")).toHaveTextContent("0 REPS");
+  });
+});
+
+describe("DisplayScreen FGB station indicator", () => {
+  function fgbState(stationIndex: number) {
+    return buildState({
+      workout: {
+        id: "w1",
+        name: "FGB",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "fightGoneBad",
+            durationSeconds: 0,
+            rounds: 3,
+            stationSeconds: 60,
+            roundRestSeconds: 60,
+            exercises: [
+              { id: "e1", name: "Wall Ball" },
+              { id: "e2", name: "SDHP" },
+              { id: "e3", name: "Box Jump" },
+            ],
+          },
+        ],
+      },
+      currentRound: 1,
+      totalRounds: 3,
+      currentExerciseIndex: stationIndex,
+    });
+  }
+
+  it("shows the current station index and exercise name for FGB", () => {
+    render(
+      <DisplayScreen
+        state={fgbState(1)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    expect(screen.getByText(/ESTACI.N 2 \/ 3/)).toBeInTheDocument();
+    expect(screen.getByText((content, element) => {
+      return element?.tagName.toLowerCase() === "span" && /SDHP/.test(content);
+    })).toBeInTheDocument();
+  });
+
+  it("shows the inter-round rest label while in the rest phase", () => {
+    const state = buildState({
+      currentPhase: "rest",
+      currentRound: 1,
+      totalRounds: 3,
+      workout: {
+        id: "w1",
+        name: "FGB",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "fightGoneBad",
+            durationSeconds: 0,
+            rounds: 3,
+            stationSeconds: 60,
+            roundRestSeconds: 60,
+            exercises: [
+              { id: "e1", name: "Wall Ball" },
+              { id: "e2", name: "SDHP" },
+              { id: "e3", name: "Box Jump" },
+            ],
+          },
+        ],
+      },
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.getByText("DESCANSO ENTRE RONDAS")).toBeInTheDocument();
+  });
+});
+
 describe("DisplayScreen round background color", () => {
   it("uses the default background for a single-round workout", () => {
     const state = buildState({ totalRounds: 1, currentRound: 1 });
@@ -124,13 +259,60 @@ describe("DisplayScreen round background color", () => {
     const { container: c2 } = render(
       <DisplayScreen state={round2} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
-    expect(c2.firstChild).toHaveClass("bg-emerald-950");
+    expect(c2.firstChild).toHaveClass("bg-round-1");
 
     const round5 = buildState({ totalRounds: 6, currentRound: 5 });
     const { container: c5 } = render(
       <DisplayScreen state={round5} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
     // round 5 lands on index 4 of the 5-color palette (surface + 4 accents): (5-1) % 5 = 4
-    expect(c5.firstChild).toHaveClass("bg-violet-950");
+    expect(c5.firstChild).toHaveClass("bg-round-4");
+  });
+});
+
+describe("DisplayScreen workout video", () => {
+  it("shows the video in the right panel during the work phase when videoByExerciseId has the current exercise", () => {
+    const state = buildState({
+      currentPhase: "work",
+      videoByExerciseId: { "ex-1": { videoUrl: "/v.mp4" } },
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.getByTestId("display-video")).toHaveTextContent("Thruster");
+  });
+
+  it("hides the video when videoByExerciseId is empty", () => {
+    const state = buildState({
+      currentPhase: "work",
+      videoByExerciseId: {},
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+  });
+
+  it("hides the video during the rest phase", () => {
+    const state = buildState({
+      currentPhase: "rest",
+      videoByExerciseId: { "ex-1": { videoUrl: "/v.mp4" } },
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+  });
+
+  it("hides the video when videoByExerciseId is absent", () => {
+    const state = buildState({ currentPhase: "work" });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
   });
 });

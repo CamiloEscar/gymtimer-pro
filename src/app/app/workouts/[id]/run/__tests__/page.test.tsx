@@ -165,6 +165,54 @@ describe("RunWorkoutPage history recording", () => {
       expect(entry.workoutName).toBe(workout.name);
       expect(entry.durationMs).toBeGreaterThan(0);
       expect(entry.durationMs).toBeLessThan(5_000);
+      // Non-RM block: no reps field should land in the record.
+      expect(entry.reps).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("captures the rep tally in the history entry when the last block is RM", async () => {
+    const workout: Workout = {
+      id: "w1",
+      name: "Push Press RM",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [
+        {
+          id: "b1",
+          type: "rm",
+          durationSeconds: 1,
+          exercises: [{ id: "e1", name: "Push Press" }],
+        },
+      ],
+    };
+    new LocalWorkoutRepository().save(workout);
+    render(<RunWorkoutPage />);
+
+    const startButton = await screen.findByRole("button", { name: /^iniciar$/i });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(startButton);
+
+      // Tap +1 REP three times before the timecap elapses.
+      fireEvent.click(screen.getByRole("button", { name: "Sumar una rep" }));
+      fireEvent.click(screen.getByRole("button", { name: "Sumar una rep" }));
+      fireEvent.click(screen.getByRole("button", { name: "Sumar una rep" }));
+
+      // Advance past the 1s timecap so the engine reports finished.
+      act(() => {
+        vi.advanceTimersByTime(1_200);
+      });
+
+      const afterFinish = new WorkoutHistoryRepository().list();
+      expect(afterFinish.ok).toBe(true);
+      if (!afterFinish.ok) return;
+      expect(afterFinish.value).toHaveLength(1);
+      const [entry] = afterFinish.value;
+      expect(entry.workoutId).toBe(workout.id);
+      expect(entry.reps).toBe(3);
     } finally {
       vi.useRealTimers();
     }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Workout } from "@/types";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 
 interface QuickActionsProps {
   workoutOfTheDay: Workout | null;
@@ -14,13 +15,15 @@ export function QuickActions({ workoutOfTheDay }: QuickActionsProps) {
       </Link>
       <Link href="/display">
         <Button size="md" variant="secondary">
-          📺 Abrir Display
+          <Icon name="display" />
+          Abrir Display
         </Button>
       </Link>
       {workoutOfTheDay && (
         <Link href={`/app/workouts/${workoutOfTheDay.id}/run`}>
           <Button size="md" variant="secondary">
-            ▶ Continuar {workoutOfTheDay.name}
+            <Icon name="play" />
+            Continuar {workoutOfTheDay.name}
           </Button>
         </Link>
       )}

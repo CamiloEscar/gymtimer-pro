@@ -1,4 +1,5 @@
 import type { WorkoutBlock, WorkoutPhase } from "@/types";
+import { Icon } from "@/components/ui/Icon";
 import { formatExerciseLine } from "@/lib/workout/formatExerciseLine";
 import { selectVisibleExercises } from "@/lib/workout/selectVisibleExercises";
 
@@ -18,19 +19,20 @@ export function ExerciseListDisplay({ block, phase }: ExerciseListDisplayProps) 
       {visible.map((exercise, index) => (
         <p
           key={exercise.id}
-          className="font-industrial text-3xl md:text-4xl uppercase tracking-tight leading-tight text-gray-300 text-center"
+          className="font-industrial text-3xl md:text-4xl uppercase tracking-tight leading-tight text-phosphor-dim text-center"
         >
           {index + 1}) {formatExerciseLine(exercise)}
         </p>
       ))}
       {overflowCount > 0 && (
-        <p className="font-tactical text-sm uppercase tracking-widest text-gray-500 text-center">
+        <p className="font-tactical text-sm uppercase tracking-widest text-phosphor-muted text-center">
           [ +{overflowCount} MÁS ]
         </p>
       )}
       {block.repsPerRound && phase === "work" && (
-        <p className="font-tactical text-lg uppercase tracking-widest text-brand-500 text-center">
-          💪 {block.repsPerRound} REPS
+        <p className="font-tactical text-lg uppercase tracking-widest text-brand-500 text-center inline-flex items-center gap-2">
+          <Icon name="dumbbell" className="size-6" />
+          <span>{block.repsPerRound} REPS</span>
         </p>
       )}
     </div>

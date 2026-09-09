@@ -5,6 +5,18 @@ function estimateBlockSeconds(block: WorkoutBlock): number {
     const rounds = block.rounds ?? 1;
     return ((block.workSeconds ?? 0) + (block.restSeconds ?? 0)) * rounds;
   }
+  if (block.type === "emom" || block.type === "otm") {
+    const rounds = block.rounds ?? 1;
+    const perRound = block.intervalSeconds ?? (block.workSeconds ?? 0) + (block.restSeconds ?? 0);
+    return perRound * rounds;
+  }
+  if (block.type === "fightGoneBad") {
+    const rounds = block.rounds ?? 1;
+    const stations = block.exercises.length;
+    const stationSec = block.stationSeconds ?? 0;
+    const roundRestSec = block.roundRestSeconds ?? 0;
+    return rounds * (stations * stationSec) + Math.max(0, rounds - 1) * roundRestSec;
+  }
   if (block.type === "countup") return 0;
   return block.durationSeconds;
 }

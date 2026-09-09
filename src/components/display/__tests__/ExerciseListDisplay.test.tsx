@@ -51,7 +51,7 @@ describe("ExerciseListDisplay reps line", () => {
   it("shows the reps-per-round line during the work phase when repsPerRound is set", () => {
     const block: WorkoutBlock = { ...BLOCK, type: "basic", repsPerRound: 12 };
     render(<ExerciseListDisplay block={block} phase="work" />);
-    expect(screen.getByText("💪 12 REPS")).toBeInTheDocument();
+    expect(screen.getByText("12 REPS")).toBeInTheDocument();
   });
 
   it("hides the reps-per-round line during the rest phase", () => {

@@ -26,6 +26,12 @@ describe("CROSSFIT_CATALOG", () => {
     }
   });
 
+  it("has a non-empty description for every exercise", () => {
+    for (const exercise of CROSSFIT_CATALOG) {
+      expect(exercise.description?.trim().length).toBeGreaterThan(0);
+    }
+  });
+
   it("groups into all three known categories with groupCatalogByCategory", () => {
     const grouped = groupCatalogByCategory(CROSSFIT_CATALOG);
     expect(Object.keys(grouped).sort()).toEqual([...KNOWN_CATEGORIES].sort());

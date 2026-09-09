@@ -4,7 +4,7 @@ export function RoundIndicator({ round, totalRounds }: { round: number; totalRou
   return (
     <p
       className={`font-tactical text-2xl md:text-4xl uppercase tracking-widest text-center ${
-        isLast ? "text-brand-500" : "text-gray-400"
+        isLast ? "text-brand-500" : "text-phosphor-dim"
       }`}
     >
       [ RONDA {round} / {totalRounds} ]

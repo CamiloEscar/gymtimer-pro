@@ -1,5 +1,6 @@
 import type { HistoryStats } from "@/lib/history/computeHistoryStats";
 import { Card } from "@/components/ui/Card";
+import { Icon } from "@/components/ui/Icon";
 
 interface StatsRowProps {
   stats: HistoryStats;
@@ -20,8 +21,11 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
   if (!hasHistory) {
     return (
       <Card className="text-center">
-        <p className="text-white font-semibold">Arrancá tu racha hoy 🔥</p>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-phosphor font-semibold inline-flex items-center gap-2">
+          Arrancá tu racha hoy
+          <Icon name="flame" />
+        </p>
+        <p className="text-sm text-phosphor-dim mt-1">
           Todavía no completaste ningún entrenamiento. Iniciá uno y volvé acá.
         </p>
       </Card>
@@ -40,7 +44,7 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
       {items.map((item) => (
         <Card key={item.label} className="text-center">
           <p className="font-tactical text-2xl text-brand-500">{item.value}</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wide mt-1">{item.label}</p>
+          <p className="text-xs text-phosphor-dim uppercase tracking-wide mt-1">{item.label}</p>
         </Card>
       ))}
     </div>

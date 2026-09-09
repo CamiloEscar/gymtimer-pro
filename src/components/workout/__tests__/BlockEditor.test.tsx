@@ -168,3 +168,102 @@ describe("BlockEditor — amrap block with no exercises", () => {
     expect(screen.getByRole("button", { name: /\+ Agregar ejercicio/i })).toBeInTheDocument();
   });
 });
+
+describe("BlockEditor — EMOM/OTM interval cap input + hint", () => {
+  function renderCycling(type: "emom" | "otm", intervalSeconds?: number): WorkoutBlock {
+    return {
+      id: `block-${type}`,
+      type,
+      durationSeconds: 0,
+      workSeconds: 40,
+      restSeconds: 0,
+      rounds: 3,
+      exercises: [{ id: "ex-1", name: "Burpees" }],
+      ...(intervalSeconds !== undefined ? { intervalSeconds } : {}),
+    };
+  }
+
+  it("shows the optional 'Cada cuánto' input next to work/rest/rounds for an EMOM block", () => {
+    render(<BlockEditor block={renderCycling("emom")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.getByLabelText("Cada cuánto")).toBeInTheDocument();
+    expect(screen.getByLabelText("Segundos de trabajo")).toBeInTheDocument();
+    expect(screen.getByLabelText("Segundos de descanso")).toBeInTheDocument();
+    expect(screen.getByLabelText("Rondas")).toBeInTheDocument();
+  });
+
+  it("shows the optional 'Cada cuánto' input next to work/rest/rounds for an OTM block", () => {
+    render(<BlockEditor block={renderCycling("otm")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.getByLabelText("Cada cuánto")).toBeInTheDocument();
+    expect(screen.getByLabelText("Segundos de trabajo")).toBeInTheDocument();
+    expect(screen.getByLabelText("Segundos de descanso")).toBeInTheDocument();
+    expect(screen.getByLabelText("Rondas")).toBeInTheDocument();
+  });
+
+  it("uses a '1:00' placeholder for EMOM and '2:00' for OTM", () => {
+    const { rerender } = render(
+      <BlockEditor block={renderCycling("emom")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />,
+    );
+    expect(screen.getByLabelText("Cada cuánto")).toHaveAttribute("placeholder", "1:00");
+
+    rerender(
+      <BlockEditor block={renderCycling("otm")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />,
+    );
+    expect(screen.getByLabelText("Cada cuánto")).toHaveAttribute("placeholder", "2:00");
+  });
+
+  it("shows the missing-interval hint when EMOM has no intervalSeconds", () => {
+    render(<BlockEditor block={renderCycling("emom")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(
+      screen.getByText(/Sin "cada cuánto", el bloque corre con work \+ descanso como largo de ronda y termina/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the missing-interval hint when OTM has no intervalSeconds", () => {
+    render(<BlockEditor block={renderCycling("otm")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(
+      screen.getByText(/Sin "cada cuánto", el bloque corre con work \+ descanso como largo de ronda y termina/),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the hint once intervalSeconds is provided", () => {
+    render(
+      <BlockEditor
+        block={renderCycling("emom", 60)}
+        index={1}
+        onChange={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    expect(
+      screen.queryByText(/Sin "cada cuánto", el bloque corre con work \+ descanso como largo de ronda y termina/),
+    ).not.toBeInTheDocument();
+    // The Cada cuánto input keeps showing so the trainer can adjust it.
+    expect(screen.getByLabelText("Cada cuánto")).toBeInTheDocument();
+  });
+
+  it("does NOT show the interval input or hint for non-cycling types (interval/tabata)", () => {
+    const intervalBlock: WorkoutBlock = {
+      id: "block-interval",
+      type: "interval",
+      durationSeconds: 0,
+      workSeconds: 30,
+      restSeconds: 10,
+      rounds: 4,
+      exercises: [{ id: "ex-1", name: "Row" }],
+    };
+    render(<BlockEditor block={intervalBlock} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.queryByLabelText("Cada cuánto")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Sin "cada cuánto"/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("propagates intervalSeconds changes via onChange", () => {
+    const onChange = vi.fn();
+    render(<BlockEditor block={renderCycling("emom")} index={1} onChange={onChange} onRemove={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("Cada cuánto"), { target: { value: "1:30" } });
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ intervalSeconds: 90 }));
+  });
+});

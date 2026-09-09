@@ -49,6 +49,70 @@ describe("estimateWorkoutDurationSeconds — basic blocks", () => {
   });
 });
 
+describe("estimateWorkoutDurationSeconds — EMOM/OTM", () => {
+  it("uses intervalSeconds as the per-round length when set", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "emom",
+        durationSeconds: 0,
+        workSeconds: 40,
+        restSeconds: 0,
+        rounds: 5,
+        intervalSeconds: 60,
+        exercises: [],
+      },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe(60 * 5);
+  });
+
+  it("falls back to (work + rest) * rounds when intervalSeconds is unset", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "otm",
+        durationSeconds: 0,
+        workSeconds: 30,
+        restSeconds: 10,
+        rounds: 3,
+        exercises: [],
+      },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe((30 + 10) * 3);
+  });
+});
+
+describe("estimateWorkoutDurationSeconds — RM", () => {
+  it("returns the timecap as the block duration", () => {
+    const w = workout([
+      { id: "b1", type: "rm", durationSeconds: 120, exercises: [] },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe(120);
+  });
+});
+
+describe("estimateWorkoutDurationSeconds — fightGoneBad", () => {
+  it("sums stations * stationSeconds * rounds + (rounds - 1) * roundRest", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "fightGoneBad",
+        durationSeconds: 0,
+        rounds: 3,
+        stationSeconds: 60,
+        roundRestSeconds: 60,
+        exercises: [
+          { id: "e1", name: "Wall Ball" },
+          { id: "e2", name: "SDHP" },
+          { id: "e3", name: "Box Jump" },
+        ],
+      },
+    ]);
+    // 3 stations * 60s * 3 rounds = 540s, + 2 inter-round rests * 60s = 120s
+    expect(estimateWorkoutDurationSeconds(w)).toBe(540 + 120);
+  });
+});
+
 describe("formatEstimateMinutes", () => {
   it("rounds seconds to the nearest whole minute with an 'm' suffix", () => {
     expect(formatEstimateMinutes(660)).toBe("11m");

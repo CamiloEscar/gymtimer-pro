@@ -122,3 +122,73 @@ describe("validateWorkout", () => {
     });
   });
 });
+
+describe("validateWorkout — otm / fightGoneBad / rm", () => {
+  function baseWorkout(overrides: Partial<Workout> = {}): Workout {
+    return {
+      id: "w1",
+      name: "Custom",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [],
+      ...overrides,
+    };
+  }
+
+  it("requires rounds > 0 for an otm block", () => {
+    const workout = baseWorkout({
+      blocks: [
+        {
+          id: "b1",
+          type: "otm",
+          durationSeconds: 0,
+          workSeconds: 30,
+          restSeconds: 0,
+          rounds: 0,
+          exercises: [{ id: "e1", name: "Burpees" }],
+        },
+      ],
+    });
+    expect(validateWorkout(workout)).toContainEqual({
+      message: "Las rondas deben ser mayores a 0",
+      blockId: "b1",
+    });
+  });
+
+  it("requires rounds > 0 for a fightGoneBad block", () => {
+    const workout = baseWorkout({
+      blocks: [
+        {
+          id: "b1",
+          type: "fightGoneBad",
+          durationSeconds: 0,
+          rounds: 0,
+          stationSeconds: 60,
+          roundRestSeconds: 60,
+          exercises: [{ id: "e1", name: "Wall Ball" }],
+        },
+      ],
+    });
+    expect(validateWorkout(workout)).toContainEqual({
+      message: "Las rondas deben ser mayores a 0",
+      blockId: "b1",
+    });
+  });
+
+  it("requires a timecap > 0 for an rm block", () => {
+    const workout = baseWorkout({
+      blocks: [
+        {
+          id: "b1",
+          type: "rm",
+          durationSeconds: 0,
+          exercises: [{ id: "e1", name: "Push Press" }],
+        },
+      ],
+    });
+    expect(validateWorkout(workout)).toContainEqual({
+      message: "El timecap debe ser mayor a 0",
+      blockId: "b1",
+    });
+  });
+});

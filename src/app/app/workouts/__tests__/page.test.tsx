@@ -26,7 +26,7 @@ describe("WorkoutsPage code propagation", () => {
     const ui = await WorkoutsPage({ searchParams: Promise.resolve({}) });
     render(ui);
     expect(screen.queryByText(/CONECTANDO A PANTALLA/)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "▶ Iniciar" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Iniciar" })).toHaveAttribute(
       "href",
       "/app/workouts/w1/run"
     );
@@ -41,7 +41,7 @@ describe("WorkoutsPage code propagation", () => {
     const ui = await WorkoutsPage({ searchParams: Promise.resolve({ code: "ABC123" }) });
     render(ui);
     expect(screen.getByText(/CONECTANDO A PANTALLA: ABC123/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "▶ Iniciar" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Iniciar" })).toHaveAttribute(
       "href",
       "/app/workouts/w1/run?code=ABC123"
     );

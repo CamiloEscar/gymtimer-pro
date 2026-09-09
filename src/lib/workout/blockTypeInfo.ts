@@ -19,6 +19,11 @@ export const BLOCK_TYPE_INFO: Record<
     description: "Cada minuto hacé las reps indicadas. Descanso lo que sobre.",
     requiresExercises: true,
   },
+  otm: {
+    label: "OTM",
+    description: "Cada X tiempo hacé las reps. Descanso lo que sobre.",
+    requiresExercises: true,
+  },
   tabata: {
     label: "TABATA",
     description: "20 seg trabajo · 10 seg descanso · 8 rondas (podés ajustar todo).",
@@ -57,5 +62,15 @@ export const BLOCK_TYPE_INFO: Record<
     description: "Solo pausa. Útil entre bloques.",
     requiresExercises: false,
     noExercisesHint: "Solo configurá cuánto dura el descanso.",
+  },
+  rm: {
+    label: "RM",
+    description: "Cantidad máxima de reps en el tiempo que definas.",
+    requiresExercises: true,
+  },
+  fightGoneBad: {
+    label: "FIGHT GONE BAD",
+    description: "Rondas de estaciones rotativas con descanso entre rondas.",
+    requiresExercises: true,
   },
 };

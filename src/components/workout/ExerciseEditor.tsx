@@ -7,6 +7,7 @@ import { groupCatalogByCategory } from "@/lib/workout/exerciseCatalog";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 
 interface ExerciseEditorProps {
   exercise: Exercise;
@@ -20,7 +21,7 @@ export function ExerciseEditor({ exercise, catalog, onChange, onRemove }: Exerci
   const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <div className="space-y-2 border-t border-surface-800 pt-2 first:border-t-0 first:pt-0">
+      <div className="space-y-2 border-t border-surface-800 pt-2 first:border-t-0 first:pt-0">
       <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
         <Select
           aria-label="Ejercicio"
@@ -44,18 +45,26 @@ export function ExerciseEditor({ exercise, catalog, onChange, onRemove }: Exerci
           onClick={onRemove}
           aria-label="Quitar ejercicio"
         >
-          ✕
+          <Icon name="close" />
+          Quitar
         </Button>
       </div>
 
       <button
         type="button"
         onClick={() => setShowDetails((prev) => !prev)}
-        className="text-xs text-gray-400 hover:text-white font-tactical uppercase tracking-widest"
+        className="text-xs text-phosphor-dim hover:text-phosphor font-tactical uppercase tracking-widest"
         aria-expanded={showDetails}
         aria-controls={`exercise-details-${exercise.id}`}
       >
-        {showDetails ? "▾ Ocultar detalles" : "+ Detalles"}
+        {showDetails ? (
+          <>
+            <Icon name="chevron-down" className="size-3" />
+            Ocultar detalles
+          </>
+        ) : (
+          "+ Detalles"
+        )}
       </button>
 
       {showDetails && (

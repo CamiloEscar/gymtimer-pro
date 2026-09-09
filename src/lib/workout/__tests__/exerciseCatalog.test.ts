@@ -31,6 +31,12 @@ describe("EXERCISE_CATALOG", () => {
       expect(exercise.name.trim().length).toBeGreaterThan(0);
     }
   });
+
+  it("has a non-empty description for every exercise", () => {
+    for (const exercise of EXERCISE_CATALOG) {
+      expect(exercise.description?.trim().length).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe("groupCatalogByCategory", () => {

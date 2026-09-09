@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Archivo_Black, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Archivo_Black, JetBrains_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,6 +23,12 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const bebasNeue = Bebas_Neue({
+  variable: "--font-bebas-neue",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: "GymTimer Pro",
   description: "Temporizador de entrenamientos para gimnasio, sin backend.",
@@ -32,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} ${archivoBlack.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${archivoBlack.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

@@ -22,9 +22,17 @@ export function validateWorkout(workout: Workout): ValidationError[] {
     if (requiresExercises && block.exercises.length === 0) {
       errors.push({ message: "Cada bloque necesita al menos un ejercicio", blockId: block.id });
     }
-    const needsRounds = block.type === "interval" || block.type === "tabata" || block.type === "emom";
+    const needsRounds =
+      block.type === "interval" ||
+      block.type === "tabata" ||
+      block.type === "emom" ||
+      block.type === "otm" ||
+      block.type === "fightGoneBad";
     if (needsRounds && (block.rounds ?? 0) <= 0) {
       errors.push({ message: "Las rondas deben ser mayores a 0", blockId: block.id });
+    }
+    if (block.type === "rm" && block.durationSeconds <= 0) {
+      errors.push({ message: "El timecap debe ser mayor a 0", blockId: block.id });
     }
   }
 

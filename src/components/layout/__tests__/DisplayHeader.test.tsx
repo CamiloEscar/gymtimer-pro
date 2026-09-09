@@ -5,7 +5,7 @@ import { DisplayHeader } from "../DisplayHeader";
 describe("DisplayHeader", () => {
   it("renders the back button with href=/", () => {
     render(<DisplayHeader />);
-    const back = screen.getByRole("link", { name: "← Atrás" });
+    const back = screen.getByRole("link", { name: "Atrás" });
     expect(back).toHaveAttribute("href", "/");
   });
 

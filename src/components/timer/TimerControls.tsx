@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 
 interface TimerControlsProps {
   status: "ready" | "running" | "paused" | "finished" | "waiting";
@@ -38,11 +39,13 @@ export function TimerControls({
           REANUDAR
         </Button>
       )}
-      <Button size="md" variant="secondary" onClick={onPrevious}>
-        ◀ ANTERIOR
+      <Button size="md" variant="secondary" onClick={onPrevious} aria-label="Anterior">
+        <Icon name="arrow-left" />
+        ANTERIOR
       </Button>
-      <Button size="md" variant="secondary" onClick={onNext}>
-        SIGUIENTE ▶
+      <Button size="md" variant="secondary" onClick={onNext} aria-label="Siguiente">
+        SIGUIENTE
+        <Icon name="arrow-left" className="size-4 rotate-180" />
       </Button>
       <Button size="md" variant="secondary" onClick={onSubtractTime}>
         -10 SEG

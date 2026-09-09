@@ -15,7 +15,7 @@ export function WorkoutOfTheDay({ workout }: WorkoutOfTheDayProps) {
   if (!workout) {
     return (
       <Card className="space-y-3">
-        <p className="text-gray-400">Todavía no hay entrenamiento del día — creá uno.</p>
+        <p className="text-phosphor-dim">Todavía no hay entrenamiento del día — creá uno.</p>
         <Link href="/app/workouts/new">
           <Button size="md">+ Crear entrenamiento</Button>
         </Link>
@@ -29,8 +29,8 @@ export function WorkoutOfTheDay({ workout }: WorkoutOfTheDayProps) {
   return (
     <Card className="space-y-2">
       <p className="text-sm uppercase text-brand-500 tracking-wide">Entrenamiento del día</p>
-      <p className="text-2xl font-bold text-white">{workout.name}</p>
-      <p className="text-sm text-gray-400 font-tactical">
+      <p className="text-2xl font-bold text-phosphor">{workout.name}</p>
+      <p className="text-sm text-phosphor-dim font-tactical">
         {blocks} bloque{blocks === 1 ? "" : "s"}
         {estimatedSeconds > 0 && ` · ~${formatEstimateMinutes(estimatedSeconds)}`}
       </p>

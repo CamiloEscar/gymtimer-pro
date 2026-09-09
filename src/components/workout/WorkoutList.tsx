@@ -33,7 +33,7 @@ export function WorkoutList({ code }: WorkoutListProps) {
   }
 
   if (workouts.length === 0) {
-    return <p className="text-gray-400 p-4">Todavía no hay entrenamientos. Creá el primero.</p>;
+    return <p className="text-phosphor-dim p-4">Todavía no hay entrenamientos. Creá el primero.</p>;
   }
 
   return (
@@ -55,7 +55,7 @@ export function WorkoutList({ code }: WorkoutListProps) {
         onClose={() => setPendingDelete(null)}
         title={`¿Eliminar '${pendingDelete?.name ?? ""}'?`}
       >
-        <p className="text-gray-400 mb-4">Esta acción no se puede deshacer.</p>
+        <p className="text-phosphor-dim mb-4">Esta acción no se puede deshacer.</p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setPendingDelete(null)}>
             Cancelar

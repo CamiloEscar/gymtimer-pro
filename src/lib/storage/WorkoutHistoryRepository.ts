@@ -1,7 +1,8 @@
 import type { WorkoutHistoryEntry } from "@/types";
 import type { Result, StorageError } from "./WorkoutRepository";
 
-const STORAGE_KEY = "gymtimer.history";
+export const HISTORY_STORAGE_KEY = "gymtimer.history";
+const STORAGE_KEY = HISTORY_STORAGE_KEY;
 
 function ok<T>(value: T): Result<T, StorageError> {
   return { ok: true, value };

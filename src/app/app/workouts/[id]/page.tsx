@@ -16,8 +16,8 @@ export default function EditWorkoutPage() {
     setWorkout(result.ok ? result.value : null);
   }, [params.id]);
 
-  if (workout === undefined) return <p className="p-4 text-white">Cargando…</p>;
-  if (workout === null) return <p className="p-4 text-white">Entrenamiento no encontrado.</p>;
+  if (workout === undefined) return <p className="p-4 text-phosphor">Cargando…</p>;
+  if (workout === null) return <p className="p-4 text-phosphor">Entrenamiento no encontrado.</p>;
 
   return <WorkoutBuilder initialWorkout={workout} />;
 }

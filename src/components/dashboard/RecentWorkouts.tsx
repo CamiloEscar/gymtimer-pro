@@ -18,7 +18,7 @@ export function RecentWorkouts({ workouts, onDuplicate, onDelete }: RecentWorkou
 
   return (
     <div className="space-y-3">
-      <h2 className="text-white font-semibold font-industrial">Entrenamientos recientes</h2>
+      <h2 className="text-phosphor font-semibold font-industrial">Entrenamientos recientes</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {recent.map((workout) => (
           <WorkoutCard key={workout.id} workout={workout} onDuplicate={onDuplicate} onDelete={onDelete} />

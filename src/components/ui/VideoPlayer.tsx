@@ -1,0 +1,147 @@
+"use client";
+
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Image from "next/image";
+import { Icon } from "./Icon";
+
+interface VideoPlayerProps {
+  src: string;
+  thumbnailSrc?: string;
+  alt: string;
+  className?: string;
+  autoPlay?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  lazy?: boolean;
+  rounded?: boolean;
+}
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(callback: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+function getReducedMotionServerSnapshot() {
+  return false;
+}
+
+function usePrefersReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot
+  );
+}
+
+export function VideoPlayer({
+  src,
+  thumbnailSrc,
+  alt,
+  className = "",
+  autoPlay = true,
+  muted = true,
+  loop = true,
+  lazy = true,
+  rounded = false,
+}: VideoPlayerProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [inView, setInView] = useState(!lazy);
+  const [error, setError] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    if (!lazy) return;
+    if (reducedMotion || !ref.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(ref.current);
+
+    return () => observer.disconnect();
+  }, [lazy, reducedMotion]);
+
+  const showVideo = inView && !error && !reducedMotion;
+
+  return (
+    <div
+      ref={ref}
+      className={`relative w-full aspect-video bg-surface-900 overflow-hidden ${
+        rounded ? "rounded-lg" : ""
+      } ${className}`}
+    >
+      {error ? (
+        <Fallback ariaLabel={alt} />
+      ) : !showVideo ? (
+        thumbnailSrc ? (
+          <Image
+            src={thumbnailSrc}
+            alt={alt}
+            role="img"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+          />
+        ) : (
+          <Fallback ariaLabel={alt} />
+        )
+      ) : (
+        <>
+          <video
+            ref={videoRef}
+            src={src}
+            autoPlay={autoPlay}
+            muted={muted}
+            loop={loop}
+            playsInline
+            preload="metadata"
+            poster={thumbnailSrc}
+            aria-label={alt}
+            onError={() => setError(true)}
+            className="absolute inset-0 size-full object-cover"
+          />
+          <button
+            type="button"
+            aria-label="Reproducir"
+            onClick={() => {
+              videoRef.current?.play().catch(() => {});
+            }}
+            className="absolute bottom-3 right-3 size-10 rounded-full bg-brand-500/90 text-black flex items-center justify-center hover:bg-brand-500 transition-colors"
+          >
+            <Icon name="play" className="size-5" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Fallback({ ariaLabel }: { ariaLabel: string }) {
+  return (
+    <div
+      role="img"
+      aria-label={ariaLabel}
+      className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 85% 15%, oklch(0.7 0.19 150 / 0.12), transparent 55%), radial-gradient(circle at 80% 90%, oklch(0.82 0.16 90 / 0.07), transparent 60%)",
+      }}
+    >
+      <Icon name="dumbbell" className="size-16 text-phosphor-muted" />
+    </div>
+  );
+}

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { BlockType, WorkoutBlock } from "@/types";
+import type { BlockType, UserExerciseOverride, WorkoutBlock } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { EXERCISE_CATALOG } from "@/lib/workout/exerciseCatalog";
+import { Icon } from "@/components/ui/Icon";
+import { EXERCISE_CATALOG, getEffectiveCatalog } from "@/lib/workout/exerciseCatalog";
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
 import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
 import { BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
@@ -18,12 +19,21 @@ const BLOCK_TYPES: BlockType[] = [
   "countup",
   "amrap",
   "emom",
+  "otm",
   "interval",
   "tabata",
   "forTime",
   "rest",
   "basic",
+  "rm",
+  "fightGoneBad",
 ];
+
+// Hoisted out of JSX so the embedded "" characters don't trip the
+// react/no-unescaped-entities rule (it only fires on text directly inside
+// JSX elements, not on JS string values).
+const INTERVAL_HINT =
+  'Sin "cada cuánto", el bloque corre con work + descanso como largo de ronda y termina. Configurá "cada cuánto" para que suene la campana al inicio de cada intervalo.';
 
 type CatalogKind = "gym" | "crossfit";
 
@@ -33,6 +43,7 @@ interface BlockEditorProps {
   onChange: (block: WorkoutBlock) => void;
   onRemove: () => void;
   errors?: string[];
+  overrides?: UserExerciseOverride[];
 }
 
 function timeInputToDisplay(seconds: number): string {
@@ -68,7 +79,7 @@ function TimeInput({ ariaLabel, seconds, onChangeSeconds, placeholder }: TimeInp
         className="flex-1 min-w-0"
       />
       {seconds > 0 && (
-        <span className="text-xs text-gray-400 font-tactical whitespace-nowrap">
+        <span className="text-xs text-phosphor-dim font-tactical whitespace-nowrap">
           = {formatTimeInput(seconds)}
         </span>
       )}
@@ -76,15 +87,31 @@ function TimeInput({ ariaLabel, seconds, onChangeSeconds, placeholder }: TimeInp
   );
 }
 
-export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: BlockEditorProps) {
+export function BlockEditor({
+  block,
+  index,
+  onChange,
+  onRemove,
+  errors = [],
+  overrides,
+}: BlockEditorProps) {
   const [catalogKind, setCatalogKind] = useState<CatalogKind>("gym");
   const catalog = catalogKind === "gym" ? EXERCISE_CATALOG : CROSSFIT_CATALOG;
+  const effectiveCatalog = getEffectiveCatalog(catalog, overrides ?? []);
   const typeInfo = BLOCK_TYPE_INFO[block.type];
   const isBasic = block.type === "basic";
+  const isRm = block.type === "rm";
+  const isFgb = block.type === "fightGoneBad";
   const requiresExercises = typeInfo.requiresExercises;
   const noExercisesHint = typeInfo.noExercisesHint;
-  const showWorkRest = !isBasic && (block.type === "interval" || block.type === "tabata" || block.type === "emom");
-  const showDuration = !isBasic && !showWorkRest;
+  const isIntervalCycling = block.type === "interval" || block.type === "tabata" || block.type === "emom" || block.type === "otm";
+  // EMOM/OTM get an optional "cada cuánto" (interval cap) so each round can
+  // trigger the start-of-interval bell. The hint surfaces when the user
+  // leaves it blank, since the engine silently falls back to work+rest as
+  // the round length.
+  const isCyclingWithInterval = block.type === "emom" || block.type === "otm";
+  const showWorkRest = !isBasic && !isRm && !isFgb && isIntervalCycling;
+  const showDuration = !isBasic && !isRm && !isFgb && !showWorkRest;
   const hasErrors = errors.length > 0;
   const blockEstimatedSeconds = estimateWorkoutDurationSeconds({ blocks: [block] });
 
@@ -108,11 +135,12 @@ export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: B
           ))}
         </Select>
         <Button variant="ghost" type="button" onClick={onRemove} aria-label="Quitar bloque">
-          🗑
+          <Icon name="trash" />
+          Quitar
         </Button>
       </div>
 
-      <p className="text-xs text-gray-400 italic">{BLOCK_TYPE_INFO[block.type].description}</p>
+      <p className="text-xs text-phosphor-dim italic">{BLOCK_TYPE_INFO[block.type].description}</p>
 
       {showDuration && (
         <div className="space-y-1">
@@ -125,31 +153,106 @@ export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: B
         </div>
       )}
 
-      {showWorkRest && (
-        <div className="grid grid-cols-3 gap-2">
-          <div className="space-y-1">
-            <TimeInput
-              ariaLabel="Segundos de trabajo"
-              seconds={block.workSeconds ?? 0}
-              onChangeSeconds={(seconds) => onChange({ ...block, workSeconds: seconds })}
-              placeholder="0:45"
-            />
-          </div>
-          <div className="space-y-1">
-            <TimeInput
-              ariaLabel="Segundos de descanso"
-              seconds={block.restSeconds ?? 0}
-              onChangeSeconds={(seconds) => onChange({ ...block, restSeconds: seconds })}
-              placeholder="0:15"
-            />
-          </div>
-          <Input
-            aria-label="Rondas"
-            type="number"
-            value={block.rounds ?? ""}
-            onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
-            placeholder="Rondas"
+      {isRm && (
+        <div className="space-y-2">
+          <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+            TIMECAP
+          </p>
+          <TimeInput
+            ariaLabel="Timcap"
+            seconds={block.durationSeconds}
+            onChangeSeconds={(seconds) => onChange({ ...block, durationSeconds: seconds })}
+            placeholder="2:00"
           />
+        </div>
+      )}
+
+      {isFgb && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1">
+              <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                Rondas
+              </p>
+              <Input
+                aria-label="Rondas"
+                type="number"
+                value={block.rounds ?? ""}
+                onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
+                placeholder="3"
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                Estación
+              </p>
+              <TimeInput
+                ariaLabel="Segundos por estación"
+                seconds={block.stationSeconds ?? 0}
+                onChangeSeconds={(seconds) => onChange({ ...block, stationSeconds: seconds })}
+                placeholder="1:00"
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                Descanso
+              </p>
+              <TimeInput
+                ariaLabel="Descanso entre rondas"
+                seconds={block.roundRestSeconds ?? 0}
+                onChangeSeconds={(seconds) => onChange({ ...block, roundRestSeconds: seconds })}
+                placeholder="1:00"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWorkRest && (
+        <div className="space-y-2">
+          <div className={`grid gap-2 ${isCyclingWithInterval ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
+            <div className="space-y-1">
+              <TimeInput
+                ariaLabel="Segundos de trabajo"
+                seconds={block.workSeconds ?? 0}
+                onChangeSeconds={(seconds) => onChange({ ...block, workSeconds: seconds })}
+                placeholder="0:45"
+              />
+            </div>
+            <div className="space-y-1">
+              <TimeInput
+                ariaLabel="Segundos de descanso"
+                seconds={block.restSeconds ?? 0}
+                onChangeSeconds={(seconds) => onChange({ ...block, restSeconds: seconds })}
+                placeholder="0:15"
+              />
+            </div>
+            <Input
+              aria-label="Rondas"
+              type="number"
+              value={block.rounds ?? ""}
+              onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
+              placeholder="Rondas"
+            />
+            {isCyclingWithInterval && (
+              <div className="space-y-1">
+                <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                  Cada cuánto
+                </p>
+                <TimeInput
+                  ariaLabel="Cada cuánto"
+                  seconds={block.intervalSeconds ?? 0}
+                  onChangeSeconds={(seconds) =>
+                    onChange({ ...block, intervalSeconds: seconds || undefined })
+                  }
+                  placeholder={block.type === "otm" ? "2:00" : "1:00"}
+                />
+              </div>
+            )}
+          </div>
+          {isCyclingWithInterval && !block.intervalSeconds && (
+            <p className="text-xs text-phosphor-muted italic mt-1">{INTERVAL_HINT}</p>
+          )}
         </div>
       )}
 
@@ -176,24 +279,25 @@ export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: B
             type="number"
             value={block.rounds ?? ""}
             onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
-            placeholder="🔁 Cantidad de series"
+            placeholder="Cantidad de series"
           />
           <Input
             aria-label="Reps por serie"
             type="number"
             value={block.repsPerRound ?? ""}
             onChange={(e) => onChange({ ...block, repsPerRound: Number(e.target.value) })}
-            placeholder="💪 Reps por serie"
+            placeholder="Reps por serie"
           />
         </div>
       )}
 
-      <p className="text-sm text-gray-400 font-tactical">
-        ⏱ Tiempo total estimado: {formatEstimateMinutes(blockEstimatedSeconds)}
+      <p className="text-sm text-phosphor-dim font-tactical inline-flex items-center gap-2">
+        <Icon name="clock" />
+        <span>Tiempo total estimado: {formatEstimateMinutes(blockEstimatedSeconds)}</span>
       </p>
 
       {!requiresExercises && noExercisesHint && (
-        <p className="text-xs text-gray-400 italic">{noExercisesHint}</p>
+        <p className="text-xs text-phosphor-dim italic">{noExercisesHint}</p>
       )}
 
       {requiresExercises && (
@@ -224,7 +328,7 @@ export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: B
               <ExerciseEditor
                 key={exercise.id}
                 exercise={exercise}
-                catalog={catalog}
+                catalog={effectiveCatalog}
                 onChange={(updated) =>
                   onChange({
                     ...block,
@@ -242,7 +346,7 @@ export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: B
               onClick={() =>
                 onChange({
                   ...block,
-                  exercises: [...block.exercises, { id: crypto.randomUUID(), name: catalog[0].name }],
+                  exercises: [...block.exercises, { id: crypto.randomUUID(), name: effectiveCatalog[0].name }],
                 })
               }
             >

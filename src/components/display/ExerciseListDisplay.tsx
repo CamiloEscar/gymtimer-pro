@@ -1,12 +1,13 @@
-import type { WorkoutBlock } from "@/types";
+import type { WorkoutBlock, WorkoutPhase } from "@/types";
 import { formatExerciseLine } from "@/lib/workout/formatExerciseLine";
 import { selectVisibleExercises } from "@/lib/workout/selectVisibleExercises";
 
 interface ExerciseListDisplayProps {
   block: WorkoutBlock;
+  phase?: WorkoutPhase;
 }
 
-export function ExerciseListDisplay({ block }: ExerciseListDisplayProps) {
+export function ExerciseListDisplay({ block, phase }: ExerciseListDisplayProps) {
   if (block.type === "rest") return null;
 
   const { visible, overflowCount } = selectVisibleExercises(block.exercises);
@@ -25,6 +26,11 @@ export function ExerciseListDisplay({ block }: ExerciseListDisplayProps) {
       {overflowCount > 0 && (
         <p className="font-tactical text-sm uppercase tracking-widest text-gray-500 text-center">
           [ +{overflowCount} MÁS ]
+        </p>
+      )}
+      {block.repsPerRound && phase === "work" && (
+        <p className="font-tactical text-lg uppercase tracking-widest text-brand-500 text-center">
+          💪 {block.repsPerRound} REPS
         </p>
       )}
     </div>

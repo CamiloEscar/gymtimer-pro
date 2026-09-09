@@ -119,11 +119,11 @@ export function BlockEditor({ block, index, onChange, onRemove, errors = [] }: B
               placeholder="⏸ Tiempo de pausa (seg)"
             />
             <Input
-              aria-label="Series"
+              aria-label="Cantidad de series"
               type="number"
               value={block.rounds ?? ""}
               onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
-              placeholder="🔁 Series"
+              placeholder="🔁 Cantidad de series"
             />
             <Input
               aria-label="Reps por serie"

@@ -77,19 +77,19 @@ describe("BlockEditor — basic block type", () => {
     restSeconds: 10,
     rounds: 3,
     repsPerRound: 12,
-    // Deliberately empty: ExerciseEditor renders its own "Series" labeled
-    // input per exercise row, which collides with the basic block's
-    // block-level "Series" field under getByLabelText. These tests only
-    // assert on the block-level fields, so an empty exercises array keeps
-    // the query unambiguous without touching ExerciseEditor.tsx.
-    exercises: [],
+    // A basic block normally has exercises attached; ExerciseEditor renders
+    // its own "Series" labeled input per exercise row alongside the block's
+    // "Cantidad de series" field. Keeping a real exercise here exercises the
+    // scenario where both coexist in the DOM, so a label collision can't
+    // silently regress.
+    exercises: [{ id: "ex-1", name: "Sentadilla" }],
   };
 
   it("renders the 4 basic-specific labeled inputs with their current values", () => {
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
     expect(screen.getByLabelText("Tiempo de ejercicio (seg)")).toHaveValue(30);
     expect(screen.getByLabelText("Tiempo de pausa (seg)")).toHaveValue(10);
-    expect(screen.getByLabelText("Series")).toHaveValue(3);
+    expect(screen.getByLabelText("Cantidad de series")).toHaveValue(3);
     expect(screen.getByLabelText("Reps por serie")).toHaveValue(12);
   });
 
@@ -103,7 +103,7 @@ describe("BlockEditor — basic block type", () => {
     // typing does not actually clear the DOM value first, producing "35"
     // instead of "5". fireEvent.change sets the value in one shot, matching
     // the "changes a single field" intent of this test.
-    fireEvent.change(screen.getByLabelText("Series"), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("Cantidad de series"), { target: { value: "5" } });
 
     expect(onChange).toHaveBeenLastCalledWith({ ...BASIC_BLOCK, rounds: 5 });
   });

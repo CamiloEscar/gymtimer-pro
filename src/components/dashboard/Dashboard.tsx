@@ -6,6 +6,8 @@ import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { computeHistoryStats } from "@/lib/history/computeHistoryStats";
 import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 import { StatsRow } from "./StatsRow";
 import { QuickActions } from "./QuickActions";
 import { WorkoutOfTheDay } from "./WorkoutOfTheDay";
@@ -21,6 +23,7 @@ export function Dashboard() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [historyStats, setHistoryStats] = useState(computeHistoryStats([]));
   const [query, setQuery] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<Workout | null>(null);
   const workoutRepo = useMemo(() => new LocalWorkoutRepository(), []);
 
   function reload() {
@@ -33,6 +36,13 @@ export function Dashboard() {
   useEffect(() => {
     reload();
   }, []);
+
+  function confirmDelete() {
+    if (!pendingDelete) return;
+    workoutRepo.delete(pendingDelete.id);
+    setPendingDelete(null);
+    reload();
+  }
 
   const workoutOfTheDay = workouts.length > 0 ? workouts[workouts.length - 1] : null;
   const isSearching = query.trim().length > 0;
@@ -67,10 +77,26 @@ export function Dashboard() {
           reload();
         }}
         onDelete={(id) => {
-          workoutRepo.delete(id);
-          reload();
+          const workout = workouts.find((w) => w.id === id) ?? null;
+          setPendingDelete(workout);
         }}
       />
+
+      <Modal
+        open={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        title={`¿Eliminar '${pendingDelete?.name ?? ""}'?`}
+      >
+        <p className="text-gray-400 mb-4">Esta acción no se puede deshacer.</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setPendingDelete(null)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Eliminar
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

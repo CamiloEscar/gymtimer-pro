@@ -49,4 +49,22 @@ describe("Dashboard", () => {
     expect(screen.getByRole("link", { name: /nueva rutina/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /abrir display/i })).toBeInTheDocument();
   });
+
+  it("asks for confirmation before deleting a recent workout", () => {
+    seed("a", "Murph", "2026-01-01T00:00:00.000Z");
+    seed("b", "Fran", "2026-01-02T00:00:00.000Z");
+    render(<Dashboard />);
+
+    expect(screen.getByText("Murph")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /eliminar entrenamiento/i }));
+
+    // Not deleted yet — confirmation dialog is shown instead.
+    expect(screen.getByText("Murph")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /¿Eliminar/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
+
+    expect(screen.queryByText("Murph")).not.toBeInTheDocument();
+  });
 });

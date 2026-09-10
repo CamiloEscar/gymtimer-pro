@@ -48,7 +48,8 @@ describe("ExerciseDetail", () => {
     expect(pushMock).toHaveBeenCalledWith(expect.stringMatching(/^\/app\/workouts\/[^/]+$/));
     const raw = window.localStorage.getItem("gymtimer.workouts");
     const saved = JSON.parse(raw ?? "[]");
-    expect(saved[0].blocks[0].type).toBe("basic");
+    expect(saved[0].blocks[0].type).toBe("interval");
     expect(saved[0].blocks[0].exercises[0].name).toBe("Sentadilla");
+    expect(saved[0].blocks[0].exercises[0].reps).toBe(12);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Workout, UserExerciseOverride } from "@/types";
@@ -25,6 +25,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Icon } from "@/components/ui/Icon";
+import { BlockEditor } from "@/components/workout/BlockEditor";
+import { emptyBlock } from "@/components/workout/WorkoutBuilder";
 
 export default function RunWorkoutPage() {
   const params = useParams<{ id: string }>();
@@ -44,7 +46,7 @@ export default function RunWorkoutPage() {
 
   return (
     <Suspense fallback={<p className="p-4 text-phosphor">Cargando…</p>}>
-      <RunWorkoutContent workout={workout} audio={audio} />
+      <RunWorkoutContent workout={workout} setWorkout={setWorkout} audio={audio} />
     </Suspense>
   );
 }
@@ -66,9 +68,11 @@ function saveActiveCode(workoutId: string, code: string) {
 
 function RunWorkoutContent({
   workout,
+  setWorkout,
   audio,
 }: {
   workout: Workout;
+  setWorkout: Dispatch<SetStateAction<Workout | null | undefined>>;
   audio: AudioManager;
 }) {
   const searchParams = useSearchParams();
@@ -115,6 +119,10 @@ function RunWorkoutContent({
       channelRef.current = null;
     };
   }, [code, workout.id]);
+
+  useEffect(() => {
+    new LocalWorkoutRepository().save(workout);
+  }, [workout]);
 
   useEffect(() => {
     channelRef.current?.sendState({
@@ -216,6 +224,43 @@ function RunWorkoutContent({
           abrir pantalla
         </Link>
       </p>
+      {session.state.status === "ready" && (
+        <div className="w-full max-w-xl space-y-3">
+          <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
+            EDICIÓN DE RUTINA
+          </p>
+          <Input
+            aria-label="Nombre del entrenamiento"
+            value={workout.name}
+            onChange={(e) => setWorkout({ ...workout, name: e.target.value })}
+            placeholder="Nombre del entrenamiento"
+          />
+          {workout.blocks.map((block, index) => (
+            <BlockEditor
+              key={block.id}
+              block={block}
+              index={index + 1}
+              onChange={(updated) =>
+                setWorkout({
+                  ...workout,
+                  blocks: workout.blocks.map((b) => (b.id === block.id ? updated : b)),
+                })
+              }
+              onRemove={() =>
+                setWorkout({ ...workout, blocks: workout.blocks.filter((b) => b.id !== block.id) })
+              }
+              overrides={overrides}
+            />
+          ))}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setWorkout({ ...workout, blocks: [...workout.blocks, emptyBlock()] })}
+          >
+            + Agregar bloque
+          </Button>
+        </div>
+      )}
       <PhaseIndicator phase={session.state.currentPhase} />
       <TimerDisplay
         remainingMs={session.state.timer.remainingMs}

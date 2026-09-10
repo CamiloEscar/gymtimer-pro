@@ -24,13 +24,12 @@ export function ExerciseDetail({ exercise }: ExerciseDetailProps) {
       blocks: [
         {
           id: crypto.randomUUID(),
-          type: "basic",
+          type: "interval",
           durationSeconds: 0,
           workSeconds: 40,
           restSeconds: 20,
           rounds: 3,
-          repsPerRound: 12,
-          exercises: [{ id: crypto.randomUUID(), name: exercise.name }],
+          exercises: [{ id: crypto.randomUUID(), name: exercise.name, reps: 12 }],
         },
       ],
     };

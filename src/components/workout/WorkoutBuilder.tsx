@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { BlockEditor } from "./BlockEditor";
 
-function emptyBlock(): WorkoutBlock {
+export function emptyBlock(): WorkoutBlock {
   return { id: crypto.randomUUID(), type: "amrap", durationSeconds: 0, exercises: [] };
 }
 

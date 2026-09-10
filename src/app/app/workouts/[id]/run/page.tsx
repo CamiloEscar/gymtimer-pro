@@ -10,6 +10,7 @@ import { DisplaySettingsRepository } from "@/lib/storage/DisplaySettingsReposito
 import type { DisplaySettings } from "@/lib/storage/DisplaySettingsRepository";
 import { resolveExerciseVideos } from "@/lib/workout/resolveExerciseVideos";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { SessionChannel } from "@/lib/session/SessionChannel";
@@ -84,17 +85,22 @@ function RunWorkoutContent({
   const [resetPending, setResetPending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [codeDraft, setCodeDraft] = useState(code);
-  const [overrides, setOverrides] = useState<UserExerciseOverride[]>([]);
-  const [settings, setSettings] = useState<DisplaySettings>({ showVideoOnDisplay: false });
-
-  /* eslint-disable react-hooks/set-state-in-effect -- localStorage is the source of truth, intentional reload-on-mount */
-  useEffect(() => {
-    const overridesResult = new UserExerciseOverrideRepository().list();
-    setOverrides(overridesResult.ok ? overridesResult.value : []);
-    const settingsResult = new DisplaySettingsRepository().get();
-    setSettings(settingsResult.ok ? settingsResult.value : { showVideoOnDisplay: false });
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
+    "gymtimer.exerciseOverrides",
+    () => {
+      const result = new UserExerciseOverrideRepository().list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
+  const settings = useLocalStorageSnapshot<DisplaySettings>(
+    "gymtimer.displaySettings",
+    () => {
+      const result = new DisplaySettingsRepository().get();
+      return result.ok ? result.value : { showVideoOnDisplay: false };
+    },
+    { showVideoOnDisplay: false }
+  );
 
   // Created and destroyed in the same effect (rather than via useMemo + a
   // separate cleanup effect) so React Strict Mode's dev-only double-invoke

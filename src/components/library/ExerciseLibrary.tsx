@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { CatalogExercise } from "@/lib/workout/exerciseCatalog";
 import { EXERCISE_CATALOG, getEffectiveCatalog } from "@/lib/workout/exerciseCatalog";
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
 import type { UserExerciseOverride } from "@/types";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
+import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 
 export function ExerciseLibrary() {
-  const [overrides, setOverrides] = useState<UserExerciseOverride[]>([]);
   const [query, setQuery] = useState("");
-  const repo = new UserExerciseOverrideRepository();
-
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */
-  useEffect(() => {
-    const result = repo.list();
-    setOverrides(result.ok ? result.value : []);
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+  const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
+    "gymtimer.exerciseOverrides",
+    () => {
+      const result = new UserExerciseOverrideRepository().list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
 
   const exercises: CatalogExercise[] = [
     ...getEffectiveCatalog(EXERCISE_CATALOG, overrides),

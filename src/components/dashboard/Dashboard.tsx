@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Workout } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { computeHistoryStats } from "@/lib/history/computeHistoryStats";
+import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -22,8 +23,22 @@ function greeting(hour: number): string {
 }
 
 export function Dashboard() {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [historyStats, setHistoryStats] = useState(computeHistoryStats([]));
+  const workouts = useLocalStorageSnapshot<Workout[]>(
+    "gymtimer.workouts",
+    () => {
+      const result = new LocalWorkoutRepository().list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
+  const historyStats = useLocalStorageSnapshot(
+    "gymtimer.history",
+    () => {
+      const result = new WorkoutHistoryRepository().list();
+      return computeHistoryStats(result.ok ? result.value : []);
+    },
+    computeHistoryStats([])
+  );
   const [query, setQuery] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Workout | null>(null);
   // Starts null (not computed from Date.now() during render) so the server-
@@ -31,27 +46,18 @@ export function Dashboard() {
   // server's timezone — computed client-side in the effect below instead,
   // avoiding a hydration mismatch against the user's local hour.
   const [greetingText, setGreetingText] = useState<string | null>(null);
-  const workoutRepo = useMemo(() => new LocalWorkoutRepository(), []);
 
-  function reload() {
-    const result = workoutRepo.list();
-    setWorkouts(result.ok ? result.value : []);
-    const historyResult = new WorkoutHistoryRepository().list();
-    setHistoryStats(computeHistoryStats(historyResult.ok ? historyResult.value : []));
-  }
-
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount; greeting depends on the current hour */
+  /* eslint-disable react-hooks/set-state-in-effect -- client-only greeting, hour must not come from the server */
   useEffect(() => {
-    reload();
     setGreetingText(greeting(new Date().getHours()));
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function confirmDelete() {
     if (!pendingDelete) return;
-    workoutRepo.delete(pendingDelete.id);
+    new LocalWorkoutRepository().delete(pendingDelete.id);
     setPendingDelete(null);
-    reload();
+    notifyLocalStorageChange();
   }
 
   const workoutOfTheDay = workouts.length > 0 ? workouts[workouts.length - 1] : null;
@@ -95,8 +101,8 @@ export function Dashboard() {
       <RecentWorkouts
         workouts={filtered}
         onDuplicate={(id) => {
-          workoutRepo.duplicate(id);
-          reload();
+          new LocalWorkoutRepository().duplicate(id);
+          notifyLocalStorageChange();
         }}
         onDelete={(id) => {
           const workout = workouts.find((w) => w.id === id) ?? null;

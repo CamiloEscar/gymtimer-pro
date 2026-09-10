@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { UserExerciseOverride, Workout, WorkoutBlock } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
+import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { validateWorkout, type ValidationError } from "@/lib/workout/validateWorkout";
 import { countBlocksAndExercises } from "@/lib/workout/countBlocksAndExercises";
 import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
@@ -33,21 +34,16 @@ export function WorkoutBuilder({ initialWorkout, code }: WorkoutBuilderProps) {
     }
   );
   const [errors, setErrors] = useState<ValidationError[]>([]);
-  const [overrides, setOverrides] = useState<UserExerciseOverride[]>([]);
+  const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
+    "gymtimer.exerciseOverrides",
+    () => {
+      const result = new UserExerciseOverrideRepository().list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
   const counts = countBlocksAndExercises(workout);
   const generalErrors = errors.filter((error) => !error.blockId).map((error) => error.message);
-  const overridesRepo = new UserExerciseOverrideRepository();
-
-  function reloadOverrides() {
-    const result = overridesRepo.list();
-    setOverrides(result.ok ? result.value : []);
-  }
-
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */
-  useEffect(() => {
-    reloadOverrides();
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   function handleSave() {
     const validationErrors = validateWorkout(workout);

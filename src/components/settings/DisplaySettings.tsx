@@ -1,25 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { DisplaySettings as DisplaySettingsModel } from "@/lib/storage/DisplaySettingsRepository";
 import { DisplaySettingsRepository } from "@/lib/storage/DisplaySettingsRepository";
+import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 export function DisplaySettings() {
-  const [settings, setSettings] = useState<DisplaySettingsModel>({ showVideoOnDisplay: true });
   const repo = new DisplaySettingsRepository();
-
-  function reload() {
-    const result = repo.get();
-    setSettings(result.ok ? result.value : { showVideoOnDisplay: true });
-  }
-
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */
-  useEffect(() => {
-    reload();
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+  const settings = useLocalStorageSnapshot<DisplaySettingsModel>(
+    "gymtimer.displaySettings",
+    () => {
+      const result = repo.get();
+      return result.ok ? result.value : { showVideoOnDisplay: true };
+    },
+    { showVideoOnDisplay: true }
+  );
 
   return (
     <Card className="space-y-4">
@@ -36,7 +32,7 @@ export function DisplaySettings() {
           onClick={() => {
             const next = { showVideoOnDisplay: false };
             repo.save(next);
-            setSettings(next);
+            notifyLocalStorageChange();
           }}
         >
           Apagado
@@ -49,7 +45,7 @@ export function DisplaySettings() {
           onClick={() => {
             const next = { showVideoOnDisplay: true };
             repo.save(next);
-            setSettings(next);
+            notifyLocalStorageChange();
           }}
         >
           Encendido

@@ -1,32 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { GymProfile } from "@/lib/storage/GymProfileRepository";
 import { GymProfileRepository } from "@/lib/storage/GymProfileRepository";
+import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 export function GymSettings() {
-  const [profile, setProfile] = useState<GymProfile>({ name: "" });
-  const [draft, setDraft] = useState<GymProfile>({ name: "" });
   const repo = new GymProfileRepository();
-
-  function reload() {
-    const result = repo.get();
-    const value = result.ok ? result.value : { name: "" };
-    setProfile(value);
-    setDraft(value);
-  }
-
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */
-  useEffect(() => {
-    reload();
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+  const profile = useLocalStorageSnapshot<GymProfile>(
+    "gymtimer.gymProfile",
+    () => {
+      const result = repo.get();
+      return result.ok ? result.value : { name: "" };
+    },
+    { name: "" }
+  );
+  const [draft, setDraft] = useState<GymProfile | null>(null);
+  const form = draft ?? profile;
 
   const dirty =
-    draft.name !== profile.name || (draft.logoUrl ?? "") !== (profile.logoUrl ?? "");
+    form.name !== profile.name || (form.logoUrl ?? "") !== (profile.logoUrl ?? "");
 
   return (
     <Card className="space-y-4">
@@ -38,8 +34,8 @@ export function GymSettings() {
         <label className="block space-y-1">
           <span className="text-sm uppercase tracking-widest text-phosphor-dim">Nombre</span>
           <Input
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            value={form.name}
+            onChange={(e) => setDraft({ ...form, name: e.target.value })}
             placeholder="Box del Sur"
             aria-label="Nombre del gimnasio"
           />
@@ -50,8 +46,8 @@ export function GymSettings() {
             Logo URL (opcional)
           </span>
           <Input
-            value={draft.logoUrl ?? ""}
-            onChange={(e) => setDraft({ ...draft, logoUrl: e.target.value })}
+            value={form.logoUrl ?? ""}
+            onChange={(e) => setDraft({ ...form, logoUrl: e.target.value })}
             placeholder="/logos/gimnasio.png"
             aria-label="Logo URL del gimnasio"
           />
@@ -65,11 +61,12 @@ export function GymSettings() {
           variant="primary"
           disabled={!dirty}
           onClick={() => {
-            const next: GymProfile = draft.logoUrl
-              ? { name: draft.name, logoUrl: draft.logoUrl }
-              : { name: draft.name };
+            const next: GymProfile = form.logoUrl
+              ? { name: form.name, logoUrl: form.logoUrl }
+              : { name: form.name };
             repo.save(next);
-            setProfile(next);
+            setDraft(null);
+            notifyLocalStorageChange();
           }}
         >
           Guardar
@@ -79,7 +76,7 @@ export function GymSettings() {
           size="md"
           variant="ghost"
           disabled={!dirty}
-          onClick={() => setDraft(profile)}
+          onClick={() => setDraft(null)}
         >
           Descartar
         </Button>

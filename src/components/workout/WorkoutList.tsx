@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Workout } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
+import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { WorkoutCard } from "./WorkoutCard";
@@ -12,26 +13,22 @@ interface WorkoutListProps {
 }
 
 export function WorkoutList({ code }: WorkoutListProps) {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [pendingDelete, setPendingDelete] = useState<Workout | null>(null);
   const repo = new LocalWorkoutRepository();
-
-  function reload() {
-    const result = repo.list();
-    setWorkouts(result.ok ? result.value : []);
-  }
-
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */
-  useEffect(() => {
-    reload();
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+  const workouts = useLocalStorageSnapshot<Workout[]>(
+    "gymtimer.workouts",
+    () => {
+      const result = repo.list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
 
   function confirmDelete() {
     if (!pendingDelete) return;
     repo.delete(pendingDelete.id);
     setPendingDelete(null);
-    reload();
+    notifyLocalStorageChange();
   }
 
   if (workouts.length === 0) {
@@ -47,7 +44,7 @@ export function WorkoutList({ code }: WorkoutListProps) {
           code={code}
           onDuplicate={(id) => {
             repo.duplicate(id);
-            reload();
+            notifyLocalStorageChange();
           }}
           onDelete={() => setPendingDelete(workout)}
         />

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { UserExerciseOverride } from "@/types";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
+import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 import {
   EXERCISE_CATALOG,
   getEffectiveCatalog,
@@ -34,21 +35,17 @@ const EMPTY_EDIT: EditState = {
 };
 
 export function ExerciseOverridesSettings() {
-  const [overrides, setOverrides] = useState<UserExerciseOverride[]>([]);
   const [catalogKind, setCatalogKind] = useState<CatalogKind>("gym");
   const [edit, setEdit] = useState<EditState>(EMPTY_EDIT);
   const repo = new UserExerciseOverrideRepository();
-
-  function reload() {
-    const result = repo.list();
-    setOverrides(result.ok ? result.value : []);
-  }
-
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */
-  useEffect(() => {
-    reload();
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+  const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
+    "gymtimer.exerciseOverrides",
+    () => {
+      const result = repo.list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
 
   const currentCatalog = catalogKind === "gym" ? EXERCISE_CATALOG : CROSSFIT_CATALOG;
   const effectiveCatalog = getEffectiveCatalog(currentCatalog, overrides);
@@ -90,12 +87,12 @@ export function ExerciseOverridesSettings() {
     if (thumbnailUrl) override.thumbnailUrl = thumbnailUrl;
     if (description) override.description = description;
     repo.save(override);
-    reload();
+    notifyLocalStorageChange();
   }
 
   function handleRemove(exerciseId: string) {
     repo.remove(exerciseId);
-    reload();
+    notifyLocalStorageChange();
   }
 
   return (

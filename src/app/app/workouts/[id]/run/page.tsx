@@ -89,6 +89,8 @@ function RunWorkoutContent({
   const [resetPending, setResetPending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [codeDraft, setCodeDraft] = useState(code);
+  const [editOpen, setEditOpen] = useState(false);
+  const [draft, setDraft] = useState<Workout | null>(null);
   const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
     "gymtimer.exerciseOverrides",
     () => {
@@ -225,42 +227,72 @@ function RunWorkoutContent({
         </Link>
       </p>
       {session.state.status === "ready" && (
-        <div className="w-full max-w-xl space-y-3">
-          <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
-            EDICIÓN DE RUTINA
-          </p>
-          <Input
-            aria-label="Nombre del entrenamiento"
-            value={workout.name}
-            onChange={(e) => setWorkout({ ...workout, name: e.target.value })}
-            placeholder="Nombre del entrenamiento"
-          />
-          {workout.blocks.map((block, index) => (
-            <BlockEditor
-              key={block.id}
-              block={block}
-              index={index + 1}
-              onChange={(updated) =>
-                setWorkout({
-                  ...workout,
-                  blocks: workout.blocks.map((b) => (b.id === block.id ? updated : b)),
-                })
-              }
-              onRemove={() =>
-                setWorkout({ ...workout, blocks: workout.blocks.filter((b) => b.id !== block.id) })
-              }
-              overrides={overrides}
-            />
-          ))}
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setWorkout({ ...workout, blocks: [...workout.blocks, emptyBlock()] })}
-          >
-            + Agregar bloque
-          </Button>
-        </div>
+        <Button
+          size="md"
+          variant="secondary"
+          onClick={() => {
+            setDraft({ ...workout });
+            setEditOpen(true);
+          }}
+          aria-label="Editar rutina"
+        >
+          <Icon name="pencil" />
+          Editar rutina
+        </Button>
       )}
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Editar rutina"
+      >
+        {draft && (
+          <div className="space-y-3">
+            <Input
+              aria-label="Nombre del entrenamiento"
+              value={draft.name}
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              placeholder="Nombre del entrenamiento"
+            />
+            {draft.blocks.map((block, index) => (
+              <BlockEditor
+                key={block.id}
+                block={block}
+                index={index + 1}
+                onChange={(updated) =>
+                  setDraft({
+                    ...draft,
+                    blocks: draft.blocks.map((b) => (b.id === block.id ? updated : b)),
+                  })
+                }
+                onRemove={() =>
+                  setDraft({ ...draft, blocks: draft.blocks.filter((b) => b.id !== block.id) })
+                }
+                overrides={overrides}
+              />
+            ))}
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setDraft({ ...draft, blocks: [...draft.blocks, emptyBlock()] })}
+            >
+              + Agregar bloque
+            </Button>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" onClick={() => setEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  setWorkout(draft);
+                  setEditOpen(false);
+                }}
+              >
+                Guardar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
       <PhaseIndicator phase={session.state.currentPhase} />
       <TimerDisplay
         remainingMs={session.state.timer.remainingMs}

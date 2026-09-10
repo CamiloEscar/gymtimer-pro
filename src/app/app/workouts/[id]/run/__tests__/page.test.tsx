@@ -75,15 +75,42 @@ describe("RunWorkoutPage session code", () => {
     seedWorkout();
     mockSearchParams = new URLSearchParams({ code: "ABC123" });
     render(<RunWorkoutPage />);
-    await screen.findByText(/ABC123/);
+    await screen.findByDisplayValue("ABC123");
     expect(SessionChannel).toHaveBeenCalledWith("ABC123", "trainer");
   });
 
   it("generates a new code when the URL has none", async () => {
     seedWorkout();
     render(<RunWorkoutPage />);
-    await screen.findByText(/NEWCOD/);
+    await screen.findByDisplayValue("NEWCOD");
     expect(SessionChannel).toHaveBeenCalledWith("NEWCOD", "trainer");
+  });
+
+  it("reuses the saved code for the same workout when URL has none", async () => {
+    seedWorkout();
+    window.localStorage.setItem(
+      "gymtimer.activeSession",
+      JSON.stringify({ workoutId: "w1", code: "SAVED1" })
+    );
+    render(<RunWorkoutPage />);
+    await screen.findByDisplayValue("SAVED1");
+    expect(SessionChannel).toHaveBeenCalledWith("SAVED1", "trainer");
+  });
+
+  it("editing the code reconnects the channel and saves it", async () => {
+    seedWorkout();
+    mockSearchParams = new URLSearchParams({ code: "ABC123" });
+    render(<RunWorkoutPage />);
+    const input = await screen.findByDisplayValue("ABC123");
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "ZZZ99" } });
+      fireEvent.blur(input);
+    });
+
+    await screen.findByDisplayValue("ZZZ99");
+    expect(SessionChannel).toHaveBeenCalledWith("ZZZ99", "trainer");
+    expect(window.localStorage.getItem("gymtimer.activeSession")).toContain("ZZZ99");
   });
 });
 

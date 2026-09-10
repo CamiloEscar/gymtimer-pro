@@ -22,6 +22,7 @@ import { RoundIndicator } from "@/components/timer/RoundIndicator";
 import { TimerControls } from "@/components/timer/TimerControls";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Icon } from "@/components/ui/Icon";
 
 export default function RunWorkoutPage() {
@@ -47,6 +48,21 @@ export default function RunWorkoutPage() {
   );
 }
 
+const ACTIVE_SESSION_KEY = "gymtimer.activeSession";
+
+function loadActiveCode(): { workoutId: string; code: string } | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveActiveCode(workoutId: string, code: string) {
+  localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({ workoutId, code }));
+}
+
 function RunWorkoutContent({
   workout,
   audio,
@@ -55,7 +71,11 @@ function RunWorkoutContent({
   audio: AudioManager;
 }) {
   const searchParams = useSearchParams();
-  const [code] = useState(() => searchParams.get("code") ?? generateCode());
+  const [code, setCode] = useState(() => {
+    const active = loadActiveCode();
+    if (active?.workoutId === workout.id) return active.code;
+    return searchParams.get("code") ?? generateCode();
+  });
   const session = useWorkoutSession(workout, audio);
   const channelRef = useRef<SessionChannel | null>(null);
   const sessionStartedAtRef = useRef<number | null>(null);
@@ -63,6 +83,7 @@ function RunWorkoutContent({
   const { toggle: toggleFullscreen } = useFullscreen();
   const [resetPending, setResetPending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [codeDraft, setCodeDraft] = useState(code);
   const [overrides, setOverrides] = useState<UserExerciseOverride[]>([]);
   const [settings, setSettings] = useState<DisplaySettings>({ showVideoOnDisplay: false });
 
@@ -80,13 +101,14 @@ function RunWorkoutContent({
   // of effects always pairs a channel's creation with its own destroy call,
   // instead of destroying a memoized channel that a later effect still holds.
   useEffect(() => {
+    saveActiveCode(workout.id, code);
     const channel = new SessionChannel(code, "trainer");
     channelRef.current = channel;
     return () => {
       channel.destroy();
       channelRef.current = null;
     };
-  }, [code]);
+  }, [code, workout.id]);
 
   useEffect(() => {
     channelRef.current?.sendState({
@@ -142,7 +164,7 @@ function RunWorkoutContent({
   }
 
   async function handleCopyCode() {
-    await navigator.clipboard.writeText(code);
+    await navigator.clipboard.writeText(codeDraft);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -153,9 +175,28 @@ function RunWorkoutContent({
 
   return (
     <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-6 p-4">
-      <p className="text-phosphor-dim flex items-center gap-2">
-        Código de pantalla: <span className="font-mono text-phosphor">{code}</span>
-        <Button size="md" variant="secondary" onClick={handleCopyCode} aria-label="Copiar código">
+      <p className="text-phosphor-dim flex items-center gap-2 flex-wrap justify-center">
+        <span className="shrink-0">Código de pantalla:</span>
+        <Input
+          value={codeDraft}
+          onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
+          onBlur={() => {
+            if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          aria-label="Editar código de pantalla"
+          className="w-40 font-mono uppercase"
+        />
+        <Button
+          size="md"
+          variant="secondary"
+          onClick={handleCopyCode}
+          aria-label="Copiar código"
+        >
           {copied ? (
             <>
               <Icon name="check" />

@@ -35,7 +35,7 @@ export function ExerciseDetail({ exercise }: ExerciseDetailProps) {
       ],
     };
     const result = new LocalWorkoutRepository().save(workout);
-    if (result.ok) router.push(`/app/workouts/${result.value.id}/run`);
+    if (result.ok) router.push(`/app/workouts/${result.value.id}`);
   }
 
   return (

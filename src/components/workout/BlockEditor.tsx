@@ -15,12 +15,12 @@ import { formatTimeInput } from "@/lib/workout/formatTimeInput";
 import { ExerciseEditor } from "./ExerciseEditor";
 
 const BLOCK_TYPES: BlockType[] = [
-  "amrap",
-  "forTime",
-  "emom",
-  "tabata",
   "interval",
+  "tabata",
+  "amrap",
+  "emom",
   "otm",
+  "forTime",
   "basic",
   "rm",
   "fightGoneBad",

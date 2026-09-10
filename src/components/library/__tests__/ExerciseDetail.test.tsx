@@ -41,11 +41,11 @@ describe("ExerciseDetail", () => {
     expect(screen.getByTestId("exercise-video")).toBeInTheDocument();
   });
 
-  it("quick start saves a workout and navigates to run", async () => {
+  it("quick start saves a workout and navigates to the editor", async () => {
     const user = userEvent.setup();
     render(<ExerciseDetail exercise={EXERCISE} />);
     await user.click(screen.getByRole("button", { name: /Arrancar con este ejercicio/ }));
-    expect(pushMock).toHaveBeenCalledWith(expect.stringMatching(/^\/app\/workouts\/[^/]+\/run$/));
+    expect(pushMock).toHaveBeenCalledWith(expect.stringMatching(/^\/app\/workouts\/[^/]+$/));
     const raw = window.localStorage.getItem("gymtimer.workouts");
     const saved = JSON.parse(raw ?? "[]");
     expect(saved[0].blocks[0].type).toBe("basic");

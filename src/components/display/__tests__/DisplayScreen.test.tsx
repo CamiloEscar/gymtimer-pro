@@ -424,12 +424,17 @@ describe("DisplayScreen side panel", () => {
     expect(panel).toHaveTextContent("Thruster");
   });
 
-  it("hides the side panel for finished phase", () => {
+  it("keeps the exercise list visible during finished phase but hides video", () => {
     const state = buildState({ currentPhase: "finished" });
     render(
       <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
 
-    expect(screen.queryByTestId("display-side-panel")).not.toBeInTheDocument();
+    const panel = screen.getByTestId("display-side-panel");
+    expect(panel).toBeInTheDocument();
+    expect(panel).toHaveTextContent("Thruster");
+    expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("display-gym-logo")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("display-video-placeholder")).not.toBeInTheDocument();
   });
 });

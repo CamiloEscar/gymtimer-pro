@@ -78,7 +78,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
               className="inline-block h-2 w-2 rounded-full bg-brand-500"
               style={{ animation: "pulse-live 2s ease-in-out infinite" }}
             />
-            [ EN VIVO ]
+            [ EN VIVO · {state.code} ]
           </span>
         ) : (
           <span className="flex items-center gap-2 text-xs uppercase tracking-widest text-phosphor-muted shrink-0 ml-4">
@@ -141,39 +141,43 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
           </p>
         )}
         </div>
-        {currentExercise && currentBlock && currentBlock.type !== "rest" && state.currentPhase !== "finished" && (
+        {currentBlock && currentBlock.type !== "rest" && (
           <aside className="w-[420px] max-w-[32vw] flex flex-col gap-4 mr-32" data-testid="display-side-panel">
-            {hasWorkoutVideo ? (
-              <VideoPlayer
-                ref={videoPlayerRef}
-                src={currentVideo.videoUrl}
-                thumbnailSrc={currentVideo.thumbnailUrl}
-                alt={currentExercise.name}
-                rounded
-              />
-            ) : gymProfile?.logoUrl ? (
-              <div
-                className="relative aspect-square max-h-[420px] bg-surface-900/60 rounded-lg border border-surface-800 flex items-center justify-center overflow-hidden"
-                data-testid="display-gym-logo"
-              >
-                <Image
-                  src={gymProfile.logoUrl}
-                  alt={`Logo de ${gymProfile.name || "gimnasio"}`}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 768px) 100vw, 32vw"
-                  className="object-contain p-4"
-                />
-              </div>
-            ) : (
-              <div
-                role="img"
-                aria-label="Video no disponible"
-                data-testid="display-video-placeholder"
-                className="aspect-video bg-surface-900 rounded-lg flex items-center justify-center"
-              >
-                <Icon name="dumbbell" className="size-16 text-phosphor-muted" />
-              </div>
+            {state.currentPhase !== "finished" && (
+              <>
+                {hasWorkoutVideo ? (
+                  <VideoPlayer
+                    ref={videoPlayerRef}
+                    src={currentVideo.videoUrl}
+                    thumbnailSrc={currentVideo.thumbnailUrl}
+                    alt={currentExercise.name}
+                    rounded
+                  />
+                ) : gymProfile?.logoUrl ? (
+                  <div
+                    className="relative aspect-square max-h-[420px] bg-surface-900/60 rounded-lg border border-surface-800 flex items-center justify-center overflow-hidden"
+                    data-testid="display-gym-logo"
+                  >
+                    <Image
+                      src={gymProfile.logoUrl}
+                      alt={`Logo de ${gymProfile.name || "gimnasio"}`}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 32vw"
+                      className="object-contain p-4"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    role="img"
+                    aria-label="Video no disponible"
+                    data-testid="display-video-placeholder"
+                    className="aspect-video bg-surface-900 rounded-lg flex items-center justify-center"
+                  >
+                    <Icon name="dumbbell" className="size-16 text-phosphor-muted" />
+                  </div>
+                )}
+              </>
             )}
             {currentBlock.type !== "rm" && (
               <ExerciseListDisplay

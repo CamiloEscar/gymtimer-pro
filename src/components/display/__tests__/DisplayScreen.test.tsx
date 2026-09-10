@@ -393,6 +393,23 @@ describe("DisplayScreen workout video", () => {
     expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
     expect(screen.getByTestId("display-video-placeholder")).toBeInTheDocument();
   });
+
+  it("shows the gym logo in place of the video placeholder when a gym profile is stored", () => {
+    window.localStorage.setItem(
+      "gymtimer.gymProfile",
+      JSON.stringify({ name: "Box del Sur", logoUrl: "/logos/box.png" })
+    );
+    const state = buildState({ currentPhase: "work" });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("display-video-placeholder")).not.toBeInTheDocument();
+    expect(screen.getByTestId("display-gym-logo")).toBeInTheDocument();
+
+    window.localStorage.removeItem("gymtimer.gymProfile");
+  });
 });
 
 describe("DisplayScreen side panel", () => {

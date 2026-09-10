@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { ConnectionStatus, SessionState } from "@/types";
+import { useGymProfile } from "@/hooks/useGymProfile";
 import { TimerDisplay } from "@/components/timer/TimerDisplay";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
 import { RoundIndicator } from "@/components/timer/RoundIndicator";
@@ -27,6 +29,7 @@ interface DisplayScreenProps {
 
 export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: DisplayScreenProps) {
   const videoPlayerRef = useRef<VideoPlayerHandle>(null);
+  const gymProfile = useGymProfile();
   const currentBlock = state.workout.blocks[state.currentBlockIndex];
   const blockExerciseCount = currentBlock?.exercises.length ?? 0;
   const highlightIndex =
@@ -139,7 +142,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
         )}
         </div>
         {currentExercise && currentBlock && currentBlock.type !== "rest" && state.currentPhase !== "finished" && (
-          <aside className="w-[420px] max-w-[32vw] flex flex-col gap-4" data-testid="display-side-panel">
+          <aside className="w-[420px] max-w-[32vw] flex flex-col gap-4 mr-32" data-testid="display-side-panel">
             {hasWorkoutVideo ? (
               <VideoPlayer
                 ref={videoPlayerRef}
@@ -148,6 +151,20 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
                 alt={currentExercise.name}
                 rounded
               />
+            ) : gymProfile?.logoUrl ? (
+              <div
+                className="relative aspect-square max-h-[420px] bg-surface-900/60 rounded-lg border border-surface-800 flex items-center justify-center overflow-hidden"
+                data-testid="display-gym-logo"
+              >
+                <Image
+                  src={gymProfile.logoUrl}
+                  alt={`Logo de ${gymProfile.name || "gimnasio"}`}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 768px) 100vw, 32vw"
+                  className="object-contain p-4"
+                />
+              </div>
             ) : (
               <div
                 role="img"

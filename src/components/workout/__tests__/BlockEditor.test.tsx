@@ -87,8 +87,8 @@ describe("BlockEditor — basic block type", () => {
 
   it("renders the 4 basic-specific labeled inputs with their current values", () => {
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByLabelText("Tiempo de ejercicio")).toHaveValue("0:30");
-    expect(screen.getByLabelText("Tiempo de pausa")).toHaveValue("0:10");
+    expect(screen.getByLabelText("Tiempo de ejercicio")).toHaveValue("00:00:30");
+    expect(screen.getByLabelText("Tiempo de pausa")).toHaveValue("00:00:10");
     expect(screen.getByLabelText("Cantidad de series")).toHaveValue(3);
     expect(screen.getByLabelText("Reps por serie")).toHaveValue(12);
   });
@@ -199,16 +199,10 @@ describe("BlockEditor — EMOM/OTM interval cap input + hint", () => {
     expect(screen.getByLabelText("Rondas")).toBeInTheDocument();
   });
 
-  it("uses a '1:00' placeholder for EMOM and '2:00' for OTM", () => {
-    const { rerender } = render(
-      <BlockEditor block={renderCycling("emom")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />,
-    );
-    expect(screen.getByLabelText("Cada cuánto")).toHaveAttribute("placeholder", "1:00");
-
-    rerender(
-      <BlockEditor block={renderCycling("otm")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />,
-    );
-    expect(screen.getByLabelText("Cada cuánto")).toHaveAttribute("placeholder", "2:00");
+  it("uses a native time picker with step=1 (seconds included)", () => {
+    render(<BlockEditor block={renderCycling("emom")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.getByLabelText("Cada cuánto")).toHaveAttribute("type", "time");
+    expect(screen.getByLabelText("Cada cuánto")).toHaveAttribute("step", "1");
   });
 
   it("shows the missing-interval hint when EMOM has no intervalSeconds", () => {
@@ -262,7 +256,7 @@ describe("BlockEditor — EMOM/OTM interval cap input + hint", () => {
     const onChange = vi.fn();
     render(<BlockEditor block={renderCycling("emom")} index={1} onChange={onChange} onRemove={vi.fn()} />);
 
-    fireEvent.change(screen.getByLabelText("Cada cuánto"), { target: { value: "1:30" } });
+    fireEvent.change(screen.getByLabelText("Cada cuánto"), { target: { value: "00:01:30" } });
 
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ intervalSeconds: 90 }));
   });

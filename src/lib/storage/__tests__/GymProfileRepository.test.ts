@@ -13,17 +13,17 @@ describe("GymProfileRepository", () => {
     if (result.ok) expect(result.value).toEqual({ name: "" });
   });
 
-  it("persists a profile with name and videoUrl", () => {
+  it("persists a profile with name and logoUrl", () => {
     const repo = new GymProfileRepository();
-    const saveResult = repo.save({ name: "Box del Sur", videoUrl: "/videos/box.mp4" });
+    const saveResult = repo.save({ name: "Box del Sur", logoUrl: "/logos/box.png" });
     expect(saveResult.ok).toBe(true);
     const result = new GymProfileRepository().get();
     expect(result.ok).toBe(true);
     if (result.ok)
-      expect(result.value).toEqual({ name: "Box del Sur", videoUrl: "/videos/box.mp4" });
+      expect(result.value).toEqual({ name: "Box del Sur", logoUrl: "/logos/box.png" });
   });
 
-  it("strips undefined videoUrl from stored JSON", () => {
+  it("strips undefined logoUrl from stored JSON", () => {
     const repo = new GymProfileRepository();
     repo.save({ name: "CrossFit Norte" });
     const raw = window.localStorage.getItem("gymtimer.gymProfile");
@@ -33,12 +33,12 @@ describe("GymProfileRepository", () => {
   it("tolerates a stored profile with extra fields and returns only known ones", () => {
     window.localStorage.setItem(
       "gymtimer.gymProfile",
-      JSON.stringify({ name: "Gym X", videoUrl: "/v.mp4", extra: "ignored" })
+      JSON.stringify({ name: "Gym X", logoUrl: "/l.png", extra: "ignored" })
     );
     const repo = new GymProfileRepository();
     const result = repo.get();
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value).toEqual({ name: "Gym X", videoUrl: "/v.mp4" });
+    if (result.ok) expect(result.value).toEqual({ name: "Gym X", logoUrl: "/l.png" });
   });
 
   it("corrupt JSON returns read_failed", () => {

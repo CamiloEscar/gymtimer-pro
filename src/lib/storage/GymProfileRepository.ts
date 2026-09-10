@@ -2,7 +2,7 @@ import type { Result, StorageError } from "./WorkoutRepository";
 
 export interface GymProfile {
   name: string;
-  videoUrl?: string;
+  logoUrl?: string;
 }
 
 const STORAGE_KEY = "gymtimer.gymProfile";
@@ -26,16 +26,16 @@ export class GymProfileRepository {
       }
       const record = parsed as Record<string, unknown>;
       const name = typeof record.name === "string" ? record.name : "";
-      const videoUrl = typeof record.videoUrl === "string" ? record.videoUrl : undefined;
-      return ok(videoUrl ? { name, videoUrl } : { name });
+      const logoUrl = typeof record.logoUrl === "string" ? record.logoUrl : undefined;
+      return ok(logoUrl ? { name, logoUrl } : { name });
     } catch {
       return err("read_failed", "No se pudo leer el perfil del gimnasio");
     }
   }
 
   save(profile: GymProfile): Result<GymProfile, StorageError> {
-    const cleaned: GymProfile = profile.videoUrl
-      ? { name: profile.name, videoUrl: profile.videoUrl }
+    const cleaned: GymProfile = profile.logoUrl
+      ? { name: profile.name, logoUrl: profile.logoUrl }
       : { name: profile.name };
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));

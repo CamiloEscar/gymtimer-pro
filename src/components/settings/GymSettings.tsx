@@ -26,13 +26,13 @@ export function GymSettings() {
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const dirty =
-    draft.name !== profile.name || (draft.videoUrl ?? "") !== (profile.videoUrl ?? "");
+    draft.name !== profile.name || (draft.logoUrl ?? "") !== (profile.logoUrl ?? "");
 
   return (
     <Card className="space-y-4">
       <h2 className="font-tactical text-xs uppercase tracking-widest text-brand-500">Gimnasio</h2>
 
-      <p className="text-phosphor">Nombre y video del gimnasio en la pantalla de conexión</p>
+      <p className="text-phosphor">Nombre y logo del gimnasio en la pantalla de conexión</p>
 
       <div className="space-y-3">
         <label className="block space-y-1">
@@ -47,13 +47,13 @@ export function GymSettings() {
 
         <label className="block space-y-1">
           <span className="text-sm uppercase tracking-widest text-phosphor-dim">
-            Video URL (opcional)
+            Logo URL (opcional)
           </span>
           <Input
-            value={draft.videoUrl ?? ""}
-            onChange={(e) => setDraft({ ...draft, videoUrl: e.target.value })}
-            placeholder="/videos/gimnasio.mp4"
-            aria-label="Video URL del gimnasio"
+            value={draft.logoUrl ?? ""}
+            onChange={(e) => setDraft({ ...draft, logoUrl: e.target.value })}
+            placeholder="/logos/gimnasio.png"
+            aria-label="Logo URL del gimnasio"
           />
         </label>
       </div>
@@ -65,8 +65,8 @@ export function GymSettings() {
           variant="primary"
           disabled={!dirty}
           onClick={() => {
-            const next: GymProfile = draft.videoUrl
-              ? { name: draft.name, videoUrl: draft.videoUrl }
+            const next: GymProfile = draft.logoUrl
+              ? { name: draft.name, logoUrl: draft.logoUrl }
               : { name: draft.name };
             repo.save(next);
             setProfile(next);

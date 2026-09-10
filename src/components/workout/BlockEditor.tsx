@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { BlockType, UserExerciseOverride, WorkoutBlock } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
@@ -11,7 +11,7 @@ import { EXERCISE_CATALOG, getEffectiveCatalog } from "@/lib/workout/exerciseCat
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
 import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
 import { BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
-import { parseTimeInput, formatTimeInput } from "@/lib/workout/parseTimeInput";
+import { formatTimeInput } from "@/lib/workout/formatTimeInput";
 import { ExerciseEditor } from "./ExerciseEditor";
 
 const BLOCK_TYPES: BlockType[] = [
@@ -46,38 +46,44 @@ interface BlockEditorProps {
   overrides?: UserExerciseOverride[];
 }
 
-function timeInputToDisplay(seconds: number): string {
-  return seconds > 0 ? formatTimeInput(seconds) : "";
+function secondsToTimeValue(seconds: number): string {
+  if (seconds <= 0) return "";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function timeValueToSeconds(value: string): number | null {
+  if (!value) return null;
+  const parts = value.split(":");
+  if (parts.length < 2 || parts.length > 3) return null;
+  const nums = parts.map(Number);
+  if (nums.some((n) => Number.isNaN(n))) return null;
+  const [h, m = 0, s = 0] = parts.length === 2 ? [nums[0], nums[1]] : nums;
+  if (m >= 60 || s >= 60) return null;
+  return h * 3600 + m * 60 + s;
 }
 
 interface TimeInputProps {
   ariaLabel: string;
   seconds: number;
   onChangeSeconds: (seconds: number) => void;
-  placeholder?: string;
 }
 
-function TimeInput({ ariaLabel, seconds, onChangeSeconds, placeholder }: TimeInputProps) {
-  const [raw, setRaw] = useState(() => timeInputToDisplay(seconds));
-  /* eslint-disable react-hooks/set-state-in-effect -- the parent's `seconds` prop is the source of truth; local `raw` state mirrors the formatted display value */
-  useEffect(() => {
-    setRaw(timeInputToDisplay(seconds));
-  }, [seconds]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+function TimeInput({ ariaLabel, seconds, onChangeSeconds }: TimeInputProps) {
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
       <Input
         aria-label={ariaLabel}
-        type="text"
-        inputMode="numeric"
-        value={raw}
+        type="time"
+        step={1}
+        value={secondsToTimeValue(seconds)}
         onChange={(e) => {
-          const next = e.target.value;
-          setRaw(next);
-          const parsed = parseTimeInput(next);
+          const parsed = timeValueToSeconds(e.target.value);
           if (parsed !== null) onChangeSeconds(parsed);
         }}
-        placeholder={placeholder}
         className="flex-1 min-w-0"
       />
       {seconds > 0 && (
@@ -150,7 +156,6 @@ export function BlockEditor({
             ariaLabel="Duración"
             seconds={block.durationSeconds}
             onChangeSeconds={(seconds) => onChange({ ...block, durationSeconds: seconds })}
-            placeholder="10:00"
           />
         </div>
       )}
@@ -164,7 +169,6 @@ export function BlockEditor({
             ariaLabel="Timcap"
             seconds={block.durationSeconds}
             onChangeSeconds={(seconds) => onChange({ ...block, durationSeconds: seconds })}
-            placeholder="2:00"
           />
         </div>
       )}
@@ -192,7 +196,6 @@ export function BlockEditor({
                 ariaLabel="Segundos por estación"
                 seconds={block.stationSeconds ?? 0}
                 onChangeSeconds={(seconds) => onChange({ ...block, stationSeconds: seconds })}
-                placeholder="1:00"
               />
             </div>
             <div className="space-y-1">
@@ -203,7 +206,6 @@ export function BlockEditor({
                 ariaLabel="Descanso entre rondas"
                 seconds={block.roundRestSeconds ?? 0}
                 onChangeSeconds={(seconds) => onChange({ ...block, roundRestSeconds: seconds })}
-                placeholder="1:00"
               />
             </div>
           </div>
@@ -218,7 +220,6 @@ export function BlockEditor({
                 ariaLabel="Segundos de trabajo"
                 seconds={block.workSeconds ?? 0}
                 onChangeSeconds={(seconds) => onChange({ ...block, workSeconds: seconds })}
-                placeholder="0:45"
               />
             </div>
             <div className="space-y-1">
@@ -226,7 +227,6 @@ export function BlockEditor({
                 ariaLabel="Segundos de descanso"
                 seconds={block.restSeconds ?? 0}
                 onChangeSeconds={(seconds) => onChange({ ...block, restSeconds: seconds })}
-                placeholder="0:15"
               />
             </div>
             <Input
@@ -247,7 +247,6 @@ export function BlockEditor({
                   onChangeSeconds={(seconds) =>
                     onChange({ ...block, intervalSeconds: seconds || undefined })
                   }
-                  placeholder={block.type === "otm" ? "2:00" : "1:00"}
                 />
               </div>
             )}
@@ -265,7 +264,6 @@ export function BlockEditor({
               ariaLabel="Tiempo de ejercicio"
               seconds={block.workSeconds ?? 0}
               onChangeSeconds={(seconds) => onChange({ ...block, workSeconds: seconds })}
-              placeholder="0:45"
             />
           </div>
           <div className="space-y-1">
@@ -273,7 +271,6 @@ export function BlockEditor({
               ariaLabel="Tiempo de pausa"
               seconds={block.restSeconds ?? 0}
               onChangeSeconds={(seconds) => onChange({ ...block, restSeconds: seconds })}
-              placeholder="0:15"
             />
           </div>
           <Input

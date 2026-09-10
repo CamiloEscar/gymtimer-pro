@@ -6,14 +6,6 @@ vi.mock("qrcode.react", () => ({
   QRCodeSVG: ({ value }: { value: string }) => <div data-testid="qr-code" data-value={value} />,
 }));
 
-vi.mock("@/components/ui/VideoPlayer", () => ({
-  VideoPlayer: ({ alt, src }: { alt: string; src: string }) => (
-    <div data-testid="gym-video" data-src={src}>
-      {alt}
-    </div>
-  ),
-}));
-
 describe("DisplayConnection", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -32,13 +24,13 @@ describe("DisplayConnection", () => {
   it("falls back to CONECTAR PANTALLA when no gym profile is stored", () => {
     render(<DisplayConnection code="ABC123" status="waiting" />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("CONECTAR PANTALLA");
-    expect(screen.queryByTestId("gym-video")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("gym-logo")).not.toBeInTheDocument();
   });
 
   it("shows the gym name as the heading when a profile is stored", async () => {
     window.localStorage.setItem(
       "gymtimer.gymProfile",
-      JSON.stringify({ name: "Box del Sur", videoUrl: "/v.mp4" })
+      JSON.stringify({ name: "Box del Sur", logoUrl: "/logos/box.png" })
     );
 
     render(<DisplayConnection code="ABC123" status="waiting" />);
@@ -49,19 +41,17 @@ describe("DisplayConnection", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Box del Sur");
   });
 
-  it("renders the gym video as the connection-screen background when set", async () => {
+  it("renders the gym logo in place of the video", async () => {
     window.localStorage.setItem(
       "gymtimer.gymProfile",
-      JSON.stringify({ name: "Box del Sur", videoUrl: "/videos/gimnasio.mp4" })
+      JSON.stringify({ name: "Box del Sur", logoUrl: "/logos/box.png" })
     );
 
     render(<DisplayConnection code="ABC123" status="waiting" />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("gym-video")).toHaveAttribute(
-        "data-src",
-        "/videos/gimnasio.mp4"
-      );
+      expect(screen.getByTestId("gym-logo")).toHaveAttribute("src", "/logos/box.png");
     });
+    expect(screen.getByTestId("gym-logo")).toHaveAttribute("alt", "Logo de Box del Sur");
   });
 });

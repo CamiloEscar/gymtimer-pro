@@ -1,26 +1,15 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import type { ConnectionStatus } from "@/types";
-import { GymProfileRepository, type GymProfile } from "@/lib/storage/GymProfileRepository";
-import { VideoPlayer } from "@/components/ui/VideoPlayer";
+import { useGymProfile } from "@/hooks/useGymProfile";
 import { Icon } from "@/components/ui/Icon";
 
 interface DisplayConnectionProps {
   code: string;
   status: ConnectionStatus;
-}
-
-let cachedProfile: GymProfile | null = null;
-
-function getProfileSnapshot(): GymProfile | null {
-  const result = new GymProfileRepository().get();
-  const value = result.ok ? result.value : null;
-  if (cachedProfile?.name !== value?.name || cachedProfile?.videoUrl !== value?.videoUrl) {
-    cachedProfile = value;
-  }
-  return cachedProfile;
 }
 
 export function DisplayConnection({ code, status }: DisplayConnectionProps) {
@@ -30,17 +19,10 @@ export function DisplayConnection({ code, status }: DisplayConnectionProps) {
     () => "",
   );
 
-  const profile = useSyncExternalStore(
-    (onStoreChange) => {
-      window.addEventListener("storage", onStoreChange);
-      return () => window.removeEventListener("storage", onStoreChange);
-    },
-    getProfileSnapshot,
-    () => null,
-  );
+  const profile = useGymProfile();
 
   const gymName = profile?.name || null;
-  const gymVideoUrl = profile?.videoUrl ?? null;
+  const gymLogoUrl = profile?.logoUrl ?? null;
 
   return (
     <div className="min-h-[100dvh] bg-surface-950 flex flex-col p-4 font-tactical overflow-hidden">
@@ -98,26 +80,23 @@ export function DisplayConnection({ code, status }: DisplayConnectionProps) {
           style={{ width: "min(420px, 32vw)" }}
           data-testid="display-side-panel"
         >
-          {gymVideoUrl ? (
-            <>
-              <VideoPlayer
-                src={gymVideoUrl}
-                alt={`Video del gimnasio ${gymName ?? ""}`}
-                rounded
-                lazy={false}
+          {gymLogoUrl ? (
+            <div className="relative aspect-square max-h-[420px] bg-surface-900/60 rounded-lg border border-surface-800 flex items-center justify-center overflow-hidden">
+              <Image
+                src={gymLogoUrl}
+                alt={`Logo de ${gymName ?? "gimnasio"}`}
+                fill
+                unoptimized
+                sizes="(max-width: 768px) 100vw, 32vw"
+                className="object-contain p-4"
+                data-testid="gym-logo"
               />
-              <p
-                className="text-[10px] uppercase tracking-widest text-phosphor-muted text-center truncate"
-                title={gymVideoUrl}
-              >
-                {gymVideoUrl}
-              </p>
-            </>
+            </div>
           ) : (
             <div
               role="img"
-              aria-label="Video del gimnasio no disponible"
-              className="aspect-video bg-surface-900 rounded-lg flex items-center justify-center"
+              aria-label="Logo del gimnasio no disponible"
+              className="aspect-square max-h-[420px] bg-surface-900 rounded-lg flex items-center justify-center"
               style={{
                 backgroundImage:
                   "radial-gradient(circle at 85% 15%, oklch(0.7 0.19 150 / 0.12), transparent 55%), radial-gradient(circle at 80% 90%, oklch(0.82 0.16 90 / 0.07), transparent 60%)",

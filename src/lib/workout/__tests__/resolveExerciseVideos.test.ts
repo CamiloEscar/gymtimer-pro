@@ -47,7 +47,10 @@ describe("resolveExerciseVideos", () => {
     expect(result).toEqual({});
   });
 
-  it("ignores exercises that match the catalog but have no videoUrl", () => {
+  it("keeps the catalog videoUrl when an override only renames the exercise", () => {
+    // Override is a partial merge: it supplies `name` but leaves `videoUrl`
+    // (and other fields) inherited from the catalog. The catalog ships a
+    // videoUrl for every entry, so the result still has a video.
     const overrideNameOnly: UserExerciseOverride = { exerciseId: "leg-01", name: "Sentadilla profunda" };
     const workout = buildWorkout([
       {
@@ -58,10 +61,12 @@ describe("resolveExerciseVideos", () => {
       },
     ]);
     const result = resolveExerciseVideos(workout, [overrideNameOnly]);
-    expect(result).toEqual({});
+    expect(result).toEqual({
+      x1: { videoUrl: "/exercises/leg-01.mp4", thumbnailUrl: undefined },
+    });
   });
 
-  it("resolves videos for multiple exercises across blocks", () => {
+  it("uses the catalog videoUrl when an override is absent, and the override value when present", () => {
     const overridePress: UserExerciseOverride = {
       exerciseId: "chest-01",
       videoUrl: "/exercises/bench.mp4",
@@ -81,9 +86,14 @@ describe("resolveExerciseVideos", () => {
       },
     ]);
     const result = resolveExerciseVideos(workout, [overrideSentadilla, overridePress]);
+    // Sentadilla: override provides videoUrl + thumbnailUrl → wins.
+    // Press banca: override provides videoUrl → wins.
+    // Plancha: no override → falls back to the catalog videoUrl for the
+    // matching entry (every catalog entry ships a default videoUrl now).
     expect(result).toEqual({
       x1: { videoUrl: "/exercises/squat.mp4", thumbnailUrl: "/exercises/squat.jpg" },
       x2: { videoUrl: "/exercises/bench.mp4" },
+      x3: { videoUrl: "/exercises/core-01.mp4" },
     });
   });
 });

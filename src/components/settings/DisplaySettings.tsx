@@ -7,12 +7,12 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 export function DisplaySettings() {
-  const [settings, setSettings] = useState<DisplaySettingsModel>({ showVideoOnDisplay: false });
+  const [settings, setSettings] = useState<DisplaySettingsModel>({ showVideoOnDisplay: true });
   const repo = new DisplaySettingsRepository();
 
   function reload() {
     const result = repo.get();
-    setSettings(result.ok ? result.value : { showVideoOnDisplay: false });
+    setSettings(result.ok ? result.value : { showVideoOnDisplay: true });
   }
 
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */

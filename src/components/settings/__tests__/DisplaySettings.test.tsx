@@ -8,14 +8,14 @@ describe("DisplaySettings", () => {
     window.localStorage.clear();
   });
 
-  it("defaults to Apagado", () => {
+  it("defaults to Encendido", () => {
     render(<DisplaySettings />);
 
-    expect(screen.getByRole("button", { name: "Apagado" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Encendido" })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
-    expect(screen.getByRole("button", { name: "Encendido" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Apagado" })).toHaveAttribute(
       "aria-pressed",
       "false"
     );

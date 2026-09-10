@@ -1,16 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { vi, beforeEach } from "vitest";
 
-interface MockIntersectionObserverEntry {
-  isIntersecting: boolean;
-  intersectionRatio: number;
-  target: Element;
-  boundingClientRect: DOMRectReadOnly;
-  intersectionRect: DOMRectReadOnly;
-  rootBounds: DOMRectReadOnly | null;
-  time: number;
-}
-
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
 

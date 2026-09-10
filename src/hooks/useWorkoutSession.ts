@@ -12,6 +12,7 @@ export function useWorkoutSession(workout: Workout, audio: AudioManager | null =
   // subscribed to and interacted with.
   const [state, setState] = useState<SessionState>(() => new WorkoutEngine(workout, audio).getState());
 
+  /* eslint-disable react-hooks/set-state-in-effect -- see engine lifecycle comment below; effect must seed the initial state and subscribe in the same pass so Strict Mode cannot drop subscriptions on a torn-down instance */
   useEffect(() => {
     // Created and destroyed within this single effect (rather than via
     // useMemo + a separate subscribe effect) so React Strict Mode's dev-only
@@ -29,6 +30,7 @@ export function useWorkoutSession(workout: Workout, audio: AudioManager | null =
       if (engineRef.current === engine) engineRef.current = null;
     };
   }, [workout, audio]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return {
     state,

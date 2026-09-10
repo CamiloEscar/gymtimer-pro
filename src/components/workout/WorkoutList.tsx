@@ -21,9 +21,11 @@ export function WorkoutList({ code }: WorkoutListProps) {
     setWorkouts(result.ok ? result.value : []);
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount */
   useEffect(() => {
     reload();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   function confirmDelete() {
     if (!pendingDelete) return;

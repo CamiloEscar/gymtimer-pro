@@ -370,6 +370,7 @@ export class WorkoutEngine {
     }
     if (this.currentStationIndex + 1 < stations) {
       this.currentStationIndex += 1;
+      this.audio?.playRoundChange();
     } else {
       this.round += 1;
       this.currentStationIndex = 0;

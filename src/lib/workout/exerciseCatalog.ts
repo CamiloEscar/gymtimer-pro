@@ -13,6 +13,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   // Piernas
   {
     id: "leg-01",
+    videoUrl: "/exercises/leg-01.mp4",
     name: "Sentadilla",
     category: "Piernas",
     description:
@@ -20,6 +21,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-02",
+    videoUrl: "/exercises/leg-02.mp4",
     name: "Sentadilla búlgara",
     category: "Piernas",
     description:
@@ -27,6 +29,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-03",
+    videoUrl: "/exercises/leg-03.mp4",
     name: "Zancada",
     category: "Piernas",
     description:
@@ -34,6 +37,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-04",
+    videoUrl: "/exercises/leg-04.mp4",
     name: "Peso muerto",
     category: "Piernas",
     description:
@@ -41,6 +45,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-05",
+    videoUrl: "/exercises/leg-05.mp4",
     name: "Peso muerto rumano",
     category: "Piernas",
     description:
@@ -48,6 +53,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-06",
+    videoUrl: "/exercises/leg-06.mp4",
     name: "Hip thrust",
     category: "Piernas",
     description:
@@ -55,6 +61,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-07",
+    videoUrl: "/exercises/leg-07.mp4",
     name: "Prensa de piernas",
     category: "Piernas",
     description:
@@ -62,6 +69,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-08",
+    videoUrl: "/exercises/leg-08.mp4",
     name: "Elevación de talones",
     category: "Piernas",
     description:
@@ -69,6 +77,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-09",
+    videoUrl: "/exercises/leg-09.mp4",
     name: "Sentadilla goblet",
     category: "Piernas",
     description:
@@ -76,6 +85,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "leg-10",
+    videoUrl: "/exercises/leg-10.mp4",
     name: "Step up",
     category: "Piernas",
     description:
@@ -85,6 +95,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   // Pecho
   {
     id: "chest-01",
+    videoUrl: "/exercises/chest-01.mp4",
     name: "Press banca",
     category: "Pecho",
     description:
@@ -92,6 +103,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "chest-02",
+    videoUrl: "/exercises/chest-02.mp4",
     name: "Press banca inclinado",
     category: "Pecho",
     description:
@@ -99,6 +111,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "chest-03",
+    videoUrl: "/exercises/chest-03.mp4",
     name: "Flexiones de brazos",
     category: "Pecho",
     description:
@@ -106,6 +119,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "chest-04",
+    videoUrl: "/exercises/chest-04.mp4",
     name: "Aperturas con mancuernas",
     category: "Pecho",
     description:
@@ -113,6 +127,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "chest-05",
+    videoUrl: "/exercises/chest-05.mp4",
     name: "Fondos en paralelas",
     category: "Pecho",
     description:
@@ -120,6 +135,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "chest-06",
+    videoUrl: "/exercises/chest-06.mp4",
     name: "Press con mancuernas",
     category: "Pecho",
     description:
@@ -127,6 +143,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "chest-07",
+    videoUrl: "/exercises/chest-07.mp4",
     name: "Cruce de poleas",
     category: "Pecho",
     description:
@@ -134,6 +151,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "chest-08",
+    videoUrl: "/exercises/chest-08.mp4",
     name: "Flexiones declinadas",
     category: "Pecho",
     description:
@@ -143,6 +161,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   // Espalda
   {
     id: "back-01",
+    videoUrl: "/exercises/back-01.mp4",
     name: "Dominadas",
     category: "Espalda",
     description:
@@ -150,6 +169,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "back-02",
+    videoUrl: "/exercises/back-02.mp4",
     name: "Remo con barra",
     category: "Espalda",
     description:
@@ -157,6 +177,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "back-03",
+    videoUrl: "/exercises/back-03.mp4",
     name: "Remo con mancuerna",
     category: "Espalda",
     description:
@@ -164,6 +185,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "back-04",
+    videoUrl: "/exercises/back-04.mp4",
     name: "Jalón al pecho",
     category: "Espalda",
     description:
@@ -171,6 +193,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "back-05",
+    videoUrl: "/exercises/back-05.mp4",
     name: "Peso muerto sumo",
     category: "Espalda",
     description:
@@ -178,6 +201,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "back-06",
+    videoUrl: "/exercises/back-06.mp4",
     name: "Remo en polea baja",
     category: "Espalda",
     description:
@@ -185,6 +209,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "back-07",
+    videoUrl: "/exercises/back-07.mp4",
     name: "Face pull",
     category: "Espalda",
     description:
@@ -192,6 +217,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "back-08",
+    videoUrl: "/exercises/back-08.mp4",
     name: "Superman",
     category: "Espalda",
     description:
@@ -201,6 +227,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   // Core
   {
     id: "core-01",
+    videoUrl: "/exercises/core-01.mp4",
     name: "Plancha",
     category: "Core",
     description:
@@ -208,6 +235,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "core-02",
+    videoUrl: "/exercises/core-02.mp4",
     name: "Abdominales",
     category: "Core",
     description:
@@ -215,6 +243,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "core-03",
+    videoUrl: "/exercises/core-03.mp4",
     name: "Elevación de piernas",
     category: "Core",
     description:
@@ -222,6 +251,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "core-04",
+    videoUrl: "/exercises/core-04.mp4",
     name: "Russian twist",
     category: "Core",
     description:
@@ -229,6 +259,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "core-05",
+    videoUrl: "/exercises/core-05.mp4",
     name: "Plancha lateral",
     category: "Core",
     description:
@@ -236,6 +267,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "core-06",
+    videoUrl: "/exercises/core-06.mp4",
     name: "Mountain climbers",
     category: "Core",
     description:
@@ -243,6 +275,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "core-07",
+    videoUrl: "/exercises/core-07.mp4",
     name: "Rueda abdominal",
     category: "Core",
     description:
@@ -250,6 +283,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "core-08",
+    videoUrl: "/exercises/core-08.mp4",
     name: "Hollow hold",
     category: "Core",
     description:
@@ -259,6 +293,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   // Cardio/Funcional
   {
     id: "cardio-01",
+    videoUrl: "/exercises/cardio-01.mp4",
     name: "Burpees",
     category: "Cardio/Funcional",
     description:
@@ -266,6 +301,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "cardio-02",
+    videoUrl: "/exercises/cardio-02.mp4",
     name: "Jumping jacks",
     category: "Cardio/Funcional",
     description:
@@ -273,6 +309,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "cardio-03",
+    videoUrl: "/exercises/cardio-03.mp4",
     name: "Cuerda para saltar",
     category: "Cardio/Funcional",
     description:
@@ -280,6 +317,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "cardio-04",
+    videoUrl: "/exercises/cardio-04.mp4",
     name: "Remo (máquina)",
     category: "Cardio/Funcional",
     description:
@@ -287,6 +325,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "cardio-05",
+    videoUrl: "/exercises/cardio-05.mp4",
     name: "Wall balls",
     category: "Cardio/Funcional",
     description:
@@ -294,6 +333,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "cardio-06",
+    videoUrl: "/exercises/cardio-06.mp4",
     name: "Kettlebell swing",
     category: "Cardio/Funcional",
     description:
@@ -301,6 +341,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "cardio-07",
+    videoUrl: "/exercises/cardio-07.mp4",
     name: "Box jump",
     category: "Cardio/Funcional",
     description:
@@ -308,6 +349,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "cardio-08",
+    videoUrl: "/exercises/cardio-08.mp4",
     name: "Sprint",
     category: "Cardio/Funcional",
     description:
@@ -317,6 +359,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   // Hombros/Brazos
   {
     id: "arms-01",
+    videoUrl: "/exercises/arms-01.mp4",
     name: "Press militar",
     category: "Hombros/Brazos",
     description:
@@ -324,6 +367,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "arms-02",
+    videoUrl: "/exercises/arms-02.mp4",
     name: "Elevaciones laterales",
     category: "Hombros/Brazos",
     description:
@@ -331,6 +375,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "arms-03",
+    videoUrl: "/exercises/arms-03.mp4",
     name: "Curl de bíceps",
     category: "Hombros/Brazos",
     description:
@@ -338,6 +383,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "arms-04",
+    videoUrl: "/exercises/arms-04.mp4",
     name: "Extensión de tríceps",
     category: "Hombros/Brazos",
     description:
@@ -345,6 +391,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "arms-05",
+    videoUrl: "/exercises/arms-05.mp4",
     name: "Press Arnold",
     category: "Hombros/Brazos",
     description:
@@ -352,6 +399,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "arms-06",
+    videoUrl: "/exercises/arms-06.mp4",
     name: "Elevaciones frontales",
     category: "Hombros/Brazos",
     description:
@@ -359,6 +407,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "arms-07",
+    videoUrl: "/exercises/arms-07.mp4",
     name: "Curl martillo",
     category: "Hombros/Brazos",
     description:
@@ -366,6 +415,7 @@ export const EXERCISE_CATALOG: CatalogExercise[] = [
   },
   {
     id: "arms-08",
+    videoUrl: "/exercises/arms-08.mp4",
     name: "Fondos de tríceps en banco",
     category: "Hombros/Brazos",
     description:

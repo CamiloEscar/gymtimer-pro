@@ -3,15 +3,15 @@ import { render, screen } from "@testing-library/react";
 import { DisplayHeader } from "../DisplayHeader";
 
 describe("DisplayHeader", () => {
-  it("renders the back button with href=/", () => {
+  it("renders a floating back button with href=/app/workouts", () => {
     render(<DisplayHeader />);
     const back = screen.getByRole("link", { name: "Atrás" });
-    expect(back).toHaveAttribute("href", "/");
+    expect(back).toHaveAttribute("href", "/app/workouts");
+    expect(back).toHaveClass("fixed");
   });
 
-  it("renders the brand linking to /", () => {
+  it("does not render the brand link", () => {
     render(<DisplayHeader />);
-    const brand = screen.getByRole("link", { name: "GYMTIMER · Pantalla" });
-    expect(brand).toHaveAttribute("href", "/");
+    expect(screen.queryByRole("link", { name: "GYMTIMER · Pantalla" })).not.toBeInTheDocument();
   });
 });

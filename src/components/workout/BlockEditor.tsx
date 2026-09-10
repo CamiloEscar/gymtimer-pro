@@ -15,18 +15,18 @@ import { parseTimeInput, formatTimeInput } from "@/lib/workout/parseTimeInput";
 import { ExerciseEditor } from "./ExerciseEditor";
 
 const BLOCK_TYPES: BlockType[] = [
-  "countdown",
-  "countup",
   "amrap",
-  "emom",
-  "otm",
-  "interval",
-  "tabata",
   "forTime",
-  "rest",
+  "emom",
+  "tabata",
+  "interval",
+  "otm",
   "basic",
   "rm",
   "fightGoneBad",
+  "countdown",
+  "countup",
+  "rest",
 ];
 
 // Hoisted out of JSX so the embedded "" characters don't trip the
@@ -59,9 +59,11 @@ interface TimeInputProps {
 
 function TimeInput({ ariaLabel, seconds, onChangeSeconds, placeholder }: TimeInputProps) {
   const [raw, setRaw] = useState(() => timeInputToDisplay(seconds));
+  /* eslint-disable react-hooks/set-state-in-effect -- the parent's `seconds` prop is the source of truth; local `raw` state mirrors the formatted display value */
   useEffect(() => {
     setRaw(timeInputToDisplay(seconds));
   }, [seconds]);
+  /* eslint-enable react-hooks/set-state-in-effect */
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
       <Input

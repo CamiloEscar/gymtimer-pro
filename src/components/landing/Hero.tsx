@@ -44,7 +44,7 @@ export function Hero() {
                 variant="primary"
                 className="text-lg px-8 py-5 rounded-xl transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-500 focus-visible:ring-offset-surface-950"
               >
-                <span>VER DEMO</span>
+                <span>PROBAR AHORA</span>
                 <span
                   aria-hidden
                   className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1"
@@ -72,7 +72,7 @@ export function Hero() {
 
         <div className="absolute inset-0">
           <VideoPlayer
-            src="/videos/sample.mp4"
+            src="/exercises/sample.mp4"
             alt="Demo del timer"
             className="h-full"
           />

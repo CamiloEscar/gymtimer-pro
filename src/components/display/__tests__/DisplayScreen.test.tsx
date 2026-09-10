@@ -189,7 +189,7 @@ describe("DisplayScreen FGB station indicator", () => {
     });
   }
 
-  it("shows the current station index and exercise name for FGB", () => {
+  it("shows the current station index for FGB", () => {
     render(
       <DisplayScreen
         state={fgbState(1)}
@@ -199,10 +199,81 @@ describe("DisplayScreen FGB station indicator", () => {
     );
 
     expect(screen.getByText(/ESTACI.N 2 \/ 3/)).toBeInTheDocument();
-    expect(screen.getByText((content, element) => {
-      return element?.tagName.toLowerCase() === "span" && /SDHP/.test(content);
-    })).toBeInTheDocument();
   });
+
+  it("highlights the current FGB station in the side panel list", () => {
+    render(
+      <DisplayScreen
+        state={fgbState(1)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    const current = screen.getByTestId("exercise-list-item-current");
+    expect(current).toHaveTextContent("Wall Ball");
+    expect(current.className).toContain("bg-brand-500");
+    expect(screen.getAllByTestId("exercise-list-item-other")).toHaveLength(2);
+  });
+
+  function tabataRoundState(round: number) {
+  return buildState({
+    currentRound: round,
+    totalRounds: 5,
+    workout: {
+      id: "w1",
+      name: "Tabata",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [
+        {
+          id: "b1",
+          type: "tabata",
+          durationSeconds: 240,
+          exercises: [
+            { id: "ex-1", name: "Thruster" },
+            { id: "ex-2", name: "Pull-up" },
+          ],
+        },
+      ],
+    },
+  });
+}
+
+function renderTabataAtRound(round: number) {
+  return render(
+    <DisplayScreen
+      state={tabataRoundState(round)}
+      connectionStatus="connected"
+      onFullscreenToggle={() => {}}
+    />
+  );
+}
+
+it("advances the highlight per round with wrap-around (round 1 → Thruster)", () => {
+  renderTabataAtRound(1);
+  expect(screen.getByTestId("exercise-list-item-current").textContent).toContain("Thruster");
+});
+
+it("advances the highlight per round with wrap-around (round 2 → Pull-up)", () => {
+  renderTabataAtRound(2);
+  expect(screen.getByTestId("exercise-list-item-current").textContent).toContain("Pull-up");
+});
+
+it("advances the highlight per round with wrap-around (round 3 → Thruster)", () => {
+  renderTabataAtRound(3);
+  expect(screen.getByTestId("exercise-list-item-current").textContent).toContain("Thruster");
+});
+
+it("advances the highlight per round with wrap-around (round 4 → Pull-up)", () => {
+  renderTabataAtRound(4);
+  expect(screen.getByTestId("exercise-list-item-current").textContent).toContain("Pull-up");
+});
+
+it("advances the highlight per round with wrap-around (round 5 → Thruster)", () => {
+  renderTabataAtRound(5);
+  expect(screen.getByTestId("exercise-list-item-current").textContent).toContain("Thruster");
+});
 
   it("shows the inter-round rest label while in the rest phase", () => {
     const state = buildState({
@@ -283,7 +354,7 @@ describe("DisplayScreen workout video", () => {
     expect(screen.getByTestId("display-video")).toHaveTextContent("Thruster");
   });
 
-  it("hides the video when videoByExerciseId is empty", () => {
+  it("shows the placeholder when videoByExerciseId is empty", () => {
     const state = buildState({
       currentPhase: "work",
       videoByExerciseId: {},
@@ -293,9 +364,10 @@ describe("DisplayScreen workout video", () => {
     );
 
     expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+    expect(screen.getByTestId("display-video-placeholder")).toBeInTheDocument();
   });
 
-  it("hides the video during the rest phase", () => {
+  it("keeps the video mounted but pauses it during the rest phase", () => {
     const state = buildState({
       currentPhase: "rest",
       videoByExerciseId: { "ex-1": { videoUrl: "/v.mp4" } },
@@ -304,15 +376,43 @@ describe("DisplayScreen workout video", () => {
       <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
 
-    expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+    // Video element stays mounted across the work→rest transition (so the
+    // playback position is preserved); phase change triggers .pause() via
+    // the imperative handle instead of unmounting.
+    expect(screen.getByTestId("display-video")).toHaveTextContent("Thruster");
+    expect(screen.getByTestId("display-side-panel")).toBeInTheDocument();
+    expect(screen.queryByTestId("display-video-placeholder")).not.toBeInTheDocument();
   });
 
-  it("hides the video when videoByExerciseId is absent", () => {
+  it("shows the placeholder when videoByExerciseId is absent", () => {
     const state = buildState({ currentPhase: "work" });
     render(
       <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
 
     expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+    expect(screen.getByTestId("display-video-placeholder")).toBeInTheDocument();
+  });
+});
+
+describe("DisplayScreen side panel", () => {
+  it("renders the exercise list inside the side panel during work for a non-rest block", () => {
+    const state = buildState();
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    const panel = screen.getByTestId("display-side-panel");
+    expect(panel).toBeInTheDocument();
+    expect(panel).toHaveTextContent("Thruster");
+  });
+
+  it("hides the side panel for finished phase", () => {
+    const state = buildState({ currentPhase: "finished" });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.queryByTestId("display-side-panel")).not.toBeInTheDocument();
   });
 });

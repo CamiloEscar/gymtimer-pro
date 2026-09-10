@@ -116,6 +116,7 @@ function RunWorkoutContent({
         });
       }
     }
+  /* eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: this effect mirrors session state to the display channel; reading `workout` here would re-send on every workout ref change without semantic benefit */
   }, [session.state, code, audio, workout.id, workout.name, workout.blocks, settings, overrides]);
 
   useKeyboardShortcuts({

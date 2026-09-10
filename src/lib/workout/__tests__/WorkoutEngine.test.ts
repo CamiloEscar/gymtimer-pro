@@ -704,6 +704,36 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     expect(playRoundChange).toHaveBeenCalledTimes(2);
   });
 
+  it("plays the round-change cue when nextRound() skips ahead within an FGB round", () => {
+    const { audio, playRoundChange } = makeAudioSpy();
+    const engine = new WorkoutEngine(fgbWorkout, audio);
+    engine.start();
+    // Skip from station 0 -> station 1 (manual advance via next button).
+    engine.nextRound();
+    expect(engine.getState().currentExerciseIndex).toBe(1);
+    expect(playRoundChange).toHaveBeenCalledTimes(1);
+    // Skip again -> station 2.
+    engine.nextRound();
+    expect(engine.getState().currentExerciseIndex).toBe(2);
+    expect(playRoundChange).toHaveBeenCalledTimes(2);
+  });
+
+  it("does NOT play the round-change cue when nextRound() rolls FGB over to the next round", () => {
+    const { audio, playRoundChange } = makeAudioSpy();
+    const engine = new WorkoutEngine(fgbWorkout, audio);
+    engine.start();
+    // Burn through all 3 stations of round 1 -> land on station 2 (index 2).
+    engine.nextRound(); // -> station 1
+    engine.nextRound(); // -> station 2
+    expect(playRoundChange).toHaveBeenCalledTimes(2);
+    // One more nextRound wraps to round 2 station 0 (round-to-round, not a
+    // station change within a round) — matches the silent auto-advance path.
+    engine.nextRound();
+    expect(engine.getState().currentRound).toBe(2);
+    expect(engine.getState().currentExerciseIndex).toBe(0);
+    expect(playRoundChange).toHaveBeenCalledTimes(2);
+  });
+
   it("plays the round-change cue when an EMOM rounds over to the next round", () => {
     const { audio, playRoundChange } = makeAudioSpy();
     const engine = new WorkoutEngine(emomWorkout, audio);

@@ -18,7 +18,7 @@ export class DisplaySettingsRepository {
   get(): Result<DisplaySettings, StorageError> {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return ok({ showVideoOnDisplay: false });
+      if (!raw) return ok({ showVideoOnDisplay: true });
       const parsed: unknown = JSON.parse(raw);
       if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
         return err("read_failed", "No se pudieron leer los ajustes de pantalla");

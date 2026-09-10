@@ -78,8 +78,12 @@ export class AudioManager {
     oscillator.frequency.value = frequency;
     oscillator.connect(gain);
     gain.connect(ctx.destination);
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + durationMs / 1000);
+    const peak = 0.5;
+    const attackSec = 0.01;
+    const decaySec = Math.max(0, durationMs / 1000 - attackSec);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(peak, ctx.currentTime + attackSec);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + attackSec + decaySec);
     oscillator.start();
     oscillator.stop(ctx.currentTime + durationMs / 1000);
   }

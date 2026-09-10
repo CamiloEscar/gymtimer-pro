@@ -6,11 +6,11 @@ describe("DisplaySettingsRepository", () => {
     window.localStorage.clear();
   });
 
-  it("defaults to showVideoOnDisplay false", () => {
+  it("defaults to showVideoOnDisplay true", () => {
     const repo = new DisplaySettingsRepository();
     const result = repo.get();
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value).toEqual({ showVideoOnDisplay: false });
+    if (result.ok) expect(result.value).toEqual({ showVideoOnDisplay: true });
   });
 
   it("persists a saved setting and reads it back", () => {

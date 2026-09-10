@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { RefObject } from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { VideoPlayer } from "../VideoPlayer";
+import { VideoPlayer, type VideoPlayerHandle } from "../VideoPlayer";
 
 declare global {
   var __triggerIntersection: (isIntersecting: boolean) => void;
@@ -142,5 +143,95 @@ describe("VideoPlayer — reduced motion", () => {
 
     expect(container.querySelector("video")).toBeNull();
     expect(screen.getByRole("img", { name: "Dominadas" })).toBeInTheDocument();
+  });
+});
+
+describe("VideoPlayer — YouTube", () => {
+  it.each([
+    ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+    ["https://youtu.be/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+    ["https://www.youtube.com/embed/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+    ["https://www.youtube.com/shorts/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+    ["https://m.youtube.com/watch?v=dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+  ])("renders an <iframe> embed for %s", (url) => {
+    const { container } = render(<VideoPlayer src={url} alt="Demo" />);
+    enterViewport();
+    const iframe = screen.getByTestId("video-player-iframe");
+    expect(iframe.tagName).toBe("IFRAME");
+    expect(iframe.getAttribute("src")).toContain("/embed/dQw4w9WgXcQ");
+    expect(iframe.getAttribute("title")).toBe("Demo");
+    expect(container.querySelector("video")).toBeNull();
+  });
+
+  it("does NOT render the iframe until the element enters the viewport", () => {
+    render(<VideoPlayer src="https://youtu.be/dQw4w9WgXcQ" alt="Demo" />);
+    expect(screen.queryByTestId("video-player-iframe")).not.toBeInTheDocument();
+    enterViewport();
+    expect(screen.getByTestId("video-player-iframe")).toBeInTheDocument();
+  });
+
+  it("passes autoplay, muted, loop and playlist params to YouTube", () => {
+    render(<VideoPlayer src="https://youtu.be/dQw4w9WgXcQ" alt="Demo" />);
+    enterViewport();
+    const src = screen.getByTestId("video-player-iframe").getAttribute("src") ?? "";
+    expect(src).toContain("autoplay=1");
+    expect(src).toContain("mute=1");
+    expect(src).toContain("loop=1");
+    expect(src).toContain("playlist=dQw4w9WgXcQ");
+  });
+
+  it("returns null from getYouTubeId for non-YouTube URLs", async () => {
+    const { getYouTubeId } = await import("../VideoPlayer");
+    expect(getYouTubeId("/videos/sample.mp4")).toBeNull();
+    expect(getYouTubeId("https://example.com/video.mp4")).toBeNull();
+    expect(getYouTubeId("not a url")).toBeNull();
+  });
+
+  it("includes enablejsapi=1 so the iframe accepts pause/play commands", () => {
+    render(<VideoPlayer src="https://youtu.be/dQw4w9WgXcQ" alt="Demo" />);
+    enterViewport();
+    const src = screen.getByTestId("video-player-iframe").getAttribute("src") ?? "";
+    expect(src).toContain("enablejsapi=1");
+  });
+});
+
+describe("VideoPlayer — imperative handle", () => {
+  function makeRef(): RefObject<VideoPlayerHandle | null> {
+    return { current: null };
+  }
+
+  it("pause() calls videoRef.pause() for a direct video element", () => {
+    const ref = makeRef();
+    const videoPauseSpy = vi.fn();
+    const originalPause = HTMLMediaElement.prototype.pause;
+    HTMLMediaElement.prototype.pause = videoPauseSpy;
+    try {
+      render(<VideoPlayer ref={ref} src="/exercises/pull-ups.mp4" alt="Dominadas" />);
+      enterViewport();
+      ref.current?.pause();
+      expect(videoPauseSpy).toHaveBeenCalled();
+    } finally {
+      HTMLMediaElement.prototype.pause = originalPause;
+    }
+  });
+
+  it("play() calls videoRef.play() for a direct video element", () => {
+    const ref = makeRef();
+    render(<VideoPlayer ref={ref} src="/exercises/pull-ups.mp4" alt="Dominadas" />);
+    enterViewport();
+    ref.current?.play();
+    const video = screen.getByLabelText("Dominadas") as HTMLVideoElement;
+    expect(video.play).toHaveBeenCalled();
+  });
+
+  it("pause()/play() are callable on the iframe ref without throwing", () => {
+    const ref = makeRef();
+    render(<VideoPlayer ref={ref} src="https://youtu.be/dQw4w9WgXcQ" alt="Demo" />);
+    enterViewport();
+    // jsdom's iframe.contentWindow.postMessage is a no-op stub; we just
+    // verify the imperative methods exist and run without throwing so the
+    // DisplayScreen useEffect wiring stays safe.
+    expect(() => ref.current?.pause()).not.toThrow();
+    expect(() => ref.current?.play()).not.toThrow();
   });
 });

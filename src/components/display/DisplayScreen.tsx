@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import Link from "next/link";
 import type { ConnectionStatus, SessionState } from "@/types";
 import { TimerDisplay } from "@/components/timer/TimerDisplay";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
@@ -7,7 +9,7 @@ import { RoundIndicator } from "@/components/timer/RoundIndicator";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ExerciseListDisplay } from "./ExerciseListDisplay";
-import { VideoPlayer } from "@/components/ui/VideoPlayer";
+import { VideoPlayer, type VideoPlayerHandle } from "@/components/ui/VideoPlayer";
 
 const ROUND_BACKGROUNDS = [
   "bg-surface-950",
@@ -24,16 +26,25 @@ interface DisplayScreenProps {
 }
 
 export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: DisplayScreenProps) {
+  const videoPlayerRef = useRef<VideoPlayerHandle>(null);
   const currentBlock = state.workout.blocks[state.currentBlockIndex];
+  const blockExerciseCount = currentBlock?.exercises.length ?? 0;
+  const highlightIndex =
+    blockExerciseCount > 0 ? (state.currentRound - 1) % blockExerciseCount : 0;
   const currentExercise =
-    currentBlock?.exercises[state.currentExerciseIndex] ?? currentBlock?.exercises[0];
+    currentBlock?.exercises[highlightIndex] ?? currentBlock?.exercises[0];
   const currentVideo = currentExercise
     ? state.videoByExerciseId?.[currentExercise.id]
     : undefined;
-  const showWorkoutVideo =
-    state.currentPhase === "work" &&
+  // Video element is mounted whenever the current exercise has a configured
+  // video URL; pause/play is driven by the timer phase via the imperative
+  // handle so the playback position survives the work→rest transition
+  // (unmounting on rest would force a re-buffer + re-play from 0 each time).
+  const hasWorkoutVideo =
+    !!currentExercise &&
     !!currentBlock &&
-    currentBlock.exercises.length > 0 &&
+    currentBlock.type !== "rest" &&
+    state.currentPhase !== "finished" &&
     currentVideo?.videoUrl != null;
   const blockProgress =
     state.timer.durationMs > 0
@@ -43,6 +54,14 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
     state.totalRounds > 1
       ? ROUND_BACKGROUNDS[(state.currentRound - 1) % ROUND_BACKGROUNDS.length]
       : ROUND_BACKGROUNDS[0];
+
+  useEffect(() => {
+    if (state.currentPhase === "work") {
+      videoPlayerRef.current?.play();
+    } else {
+      videoPlayerRef.current?.pause();
+    }
+  }, [state.currentPhase, currentExercise?.id, hasWorkoutVideo]);
 
   return (
     <div className={`min-h-[100dvh] ${background} grid grid-rows-[auto_1fr_auto] gap-4 p-4 font-tactical overflow-hidden`}>
@@ -67,7 +86,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
       </div>
 
       <div className="grid grid-cols-[1fr_auto] items-center gap-6 min-h-0 overflow-hidden">
-        <div className="flex flex-col items-center justify-center gap-6 overflow-y-auto min-h-0">
+        <div className="flex flex-col items-center justify-center gap-6 min-h-0">
           <PhaseIndicator phase={state.currentPhase} />
         <TimerDisplay
           remainingMs={state.timer.remainingMs}
@@ -76,14 +95,8 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
         />
         {currentBlock && currentBlock.type === "fightGoneBad" && state.currentPhase !== "finished" && (
           <div className="flex flex-col items-center gap-1 text-center">
-            <p className="text-2xl md:text-4xl uppercase tracking-tight leading-tight">
-              <span className="font-tactical text-phosphor-muted">
-                [ ESTACIÓN {state.currentExerciseIndex + 1} / {currentBlock.exercises.length} —
-              </span>
-              <span className="font-industrial text-phosphor-dim">
-                {" "}
-                {currentBlock.exercises[state.currentExerciseIndex]?.name ?? "—"} ]
-              </span>
+            <p className="font-tactical text-2xl md:text-4xl uppercase tracking-tight leading-tight text-phosphor-muted">
+              [ ESTACIÓN {state.currentExerciseIndex + 1} / {currentBlock.exercises.length} ]
             </p>
             {state.currentPhase === "rest" && (
               <p className="font-tactical text-sm md:text-base uppercase tracking-widest text-danger-500">
@@ -118,8 +131,6 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
               RECUPERÁ
             </p>
           </div>
-        ) : currentBlock && currentBlock.type !== "fightGoneBad" && currentBlock.type !== "rm" ? (
-          <ExerciseListDisplay block={currentBlock} phase={state.currentPhase} />
         ) : null}
         {state.currentPhase === "finished" && (
           <p className="font-industrial text-4xl uppercase text-phosphor">
@@ -127,19 +138,48 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
           </p>
         )}
         </div>
-        {showWorkoutVideo && currentExercise && currentVideo && (
-          <div className="w-[420px] max-w-[32vw]">
-            <VideoPlayer
-              src={currentVideo.videoUrl}
-              thumbnailSrc={currentVideo.thumbnailUrl}
-              alt={currentExercise.name}
-              rounded
-            />
-          </div>
+        {currentExercise && currentBlock && currentBlock.type !== "rest" && state.currentPhase !== "finished" && (
+          <aside className="w-[420px] max-w-[32vw] flex flex-col gap-4" data-testid="display-side-panel">
+            {hasWorkoutVideo ? (
+              <VideoPlayer
+                ref={videoPlayerRef}
+                src={currentVideo.videoUrl}
+                thumbnailSrc={currentVideo.thumbnailUrl}
+                alt={currentExercise.name}
+                rounded
+              />
+            ) : (
+              <div
+                role="img"
+                aria-label="Video no disponible"
+                data-testid="display-video-placeholder"
+                className="aspect-video bg-surface-900 rounded-lg flex items-center justify-center"
+              >
+                <Icon name="dumbbell" className="size-16 text-phosphor-muted" />
+              </div>
+            )}
+            {currentBlock.type !== "rm" && (
+              <ExerciseListDisplay
+                block={currentBlock}
+                phase={state.currentPhase}
+                currentExerciseId={currentExercise?.id}
+              />
+            )}
+          </aside>
         )}
       </div>
 
       <div className="border-t border-surface-800 pt-2 flex items-center justify-center gap-4">
+        <Link
+          href={`/app/workouts/${state.workout.id}`}
+          aria-label="Editar rutina"
+          className="fixed top-12 right-3 z-50 opacity-40 hover:opacity-100 focus-visible:opacity-100 transition-opacity duration-200"
+        >
+          <Button variant="ghost">
+            <Icon name="pencil" />
+            Editar rutina
+          </Button>
+        </Link>
         <RoundIndicator round={state.currentRound} totalRounds={state.totalRounds} />
         {state.workout.blocks.length > 1 && (
           <p className="font-tactical text-sm md:text-base uppercase tracking-widest text-phosphor-dim text-center">

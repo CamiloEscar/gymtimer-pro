@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local scratch dirs (memory / probes):
+    ".remember/**",
+    "scratch_probe/**",
+    "scratchpad/**",
   ]),
 ]);
 

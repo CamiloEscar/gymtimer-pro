@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { Workout } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
@@ -8,6 +9,7 @@ import { computeHistoryStats } from "@/lib/history/computeHistoryStats";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { StatsRow } from "./StatsRow";
 import { QuickActions } from "./QuickActions";
 import { WorkoutOfTheDay } from "./WorkoutOfTheDay";
@@ -38,10 +40,12 @@ export function Dashboard() {
     setHistoryStats(computeHistoryStats(historyResult.ok ? historyResult.value : []));
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- localStorage is the source of truth, intentional reload-on-mount; greeting depends on the current hour */
   useEffect(() => {
     reload();
     setGreetingText(greeting(new Date().getHours()));
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   function confirmDelete() {
     if (!pendingDelete) return;
@@ -75,6 +79,18 @@ export function Dashboard() {
       />
 
       {!isSearching && <WorkoutOfTheDay workout={workoutOfTheDay} />}
+
+      {filtered.length === 0 && !isSearching && (
+        <Card className="text-center space-y-2">
+          <p className="text-phosphor">No tenés rutinas todavía</p>
+          <p className="text-sm text-phosphor-dim">
+            Empezá creando una — podés armar AMRAP, EMOM, Tabata o cargar desde el catálogo de ejercicios.
+          </p>
+          <Link href="/app/workouts/new">
+            <Button size="md">+ Crear la primera rutina</Button>
+          </Link>
+        </Card>
+      )}
 
       <RecentWorkouts
         workouts={filtered}

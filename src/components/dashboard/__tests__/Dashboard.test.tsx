@@ -67,4 +67,13 @@ describe("Dashboard", () => {
 
     expect(screen.queryByText("Murph")).not.toBeInTheDocument();
   });
+
+  it("shows a first-run empty state when there are no workouts at all", () => {
+    render(<Dashboard />);
+
+    expect(screen.getByText(/no tenés rutinas todavía/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /crear la primera rutina/i })
+    ).toHaveAttribute("href", "/app/workouts/new");
+  });
 });

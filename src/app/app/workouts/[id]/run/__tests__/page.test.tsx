@@ -174,13 +174,12 @@ describe("RunWorkoutPage history recording", () => {
     try {
       fireEvent.click(startButton);
 
-      // The seeded workout is a 1s countdown block. TimerEngine ticks every
-      // 100ms and self-corrects to "finished" once elapsed >= durationMs, so
-      // advancing the fake clock past 1000ms drives WorkoutEngine's
-      // running -> finished transition, which the page's effect observes and
-      // records into history.
+      // The seeded workout is a 1s countdown block, but start() now spends
+      // a 3-second getReady countdown before the work phase actually begins.
+      // Advancing past 3s + 1s + slack drives the engine all the way through
+      // getReady -> work -> finished.
       act(() => {
-        vi.advanceTimersByTime(1_200);
+        vi.advanceTimersByTime(4_500);
       });
 
       const afterFinish = new WorkoutHistoryRepository().list();
@@ -223,14 +222,16 @@ describe("RunWorkoutPage history recording", () => {
     try {
       fireEvent.click(startButton);
 
-      // Tap +1 REP three times before the timecap elapses.
+      // Tap +1 REP three times during the getReady countdown so the reps land
+      // before the work phase starts.
       fireEvent.click(screen.getByRole("button", { name: "Sumar una rep" }));
       fireEvent.click(screen.getByRole("button", { name: "Sumar una rep" }));
       fireEvent.click(screen.getByRole("button", { name: "Sumar una rep" }));
 
-      // Advance past the 1s timecap so the engine reports finished.
+      // Advance past the 3s getReady countdown + 1s RM timecap so the
+      // engine reports finished.
       act(() => {
-        vi.advanceTimersByTime(1_200);
+        vi.advanceTimersByTime(4_500);
       });
 
       const afterFinish = new WorkoutHistoryRepository().list();

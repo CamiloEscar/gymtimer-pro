@@ -224,7 +224,8 @@ function RunWorkoutContent({
 
   function handleStart() {
     audio.unlock();
-    audio.playStart();
+    // The 3-2-1 countdown and "GO!" tone are emitted from inside the engine
+    // (getReady phase + beginWorkBlock). Just kick off the session here.
     if (sessionStartedAtRef.current === null) sessionStartedAtRef.current = Date.now();
     session.start();
   }
@@ -248,6 +249,14 @@ function RunWorkoutContent({
 
   return (
     <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-6 p-4">
+      <div className="w-full max-w-2xl text-center space-y-1">
+        <p className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted">
+          EN VIVO
+        </p>
+        <h1 className="font-industrial text-2xl md:text-4xl uppercase tracking-tight text-phosphor leading-none">
+          {workout.name || "(sin nombre)"}
+        </h1>
+      </div>
       <div className="w-full max-w-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-2 flex-1">
           <span className="text-xs uppercase tracking-widest text-phosphor-dim shrink-0">Rutina</span>
@@ -377,7 +386,12 @@ function RunWorkoutContent({
           </div>
         )}
       </Modal>
-      <PhaseIndicator phase={session.state.currentPhase} />
+      <PhaseIndicator
+        phase={session.state.currentPhase}
+        {...(session.state.currentPhase === "getReady"
+          ? { remainingMs: session.state.timer.remainingMs }
+          : {})}
+      />
       <TimerDisplay
         remainingMs={session.state.timer.remainingMs}
         elapsedMs={session.state.timer.elapsedMs}

@@ -29,6 +29,10 @@ export class WorkoutEngine {
   // round change, RM rep +1). null = no audio (tests that don't care;
   // production pages pass a shared AudioManager so unlock() applies).
   private readonly audio: AudioManager | null;
+  // Tracks the last whole-second of the getReady countdown we emitted a beep
+  // for, so 3-2-1 only fires once per visible number even though the inner
+  // TimerEngine ticks multiple times per second.
+  private lastGetReadySecond: number | null = null;
 
   constructor(workout: Workout, audio: AudioManager | null = null) {
     this.workout = workout;
@@ -37,10 +41,17 @@ export class WorkoutEngine {
     this.unsubscribeTimer = this.timer.subscribe(() => this.onTimerTick());
   }
 
+  // Standard box countdown before the first work phase. Surfaced via
+  // PhaseIndicator + DisplayScreen as "3", "2", "1" and capped here so the
+  // UI never has to special-case the duration.
+  static readonly GET_READY_SECONDS = 3;
+
   start(): void {
     if (this.status === "running") return;
     this.status = "running";
-    this.phase = "work";
+    this.phase = "getReady";
+    this.lastGetReadySecond = WorkoutEngine.GET_READY_SECONDS;
+    this.replaceTimerWithDuration(WorkoutEngine.GET_READY_SECONDS);
     this.timer.start();
     this.notify();
   }
@@ -210,6 +221,18 @@ export class WorkoutEngine {
   }
 
   private onTimerTick(): void {
+    if (this.phase === "getReady") {
+      const remaining = this.timer.getState().remainingMs;
+      const currentSecond = Math.max(0, Math.ceil(remaining / 1000));
+      // Beep once per whole second as the visible number changes (3 → 2 → 1),
+      // and fire the "GO!" tone when the countdown hits zero.
+      if (currentSecond === 0) {
+        this.lastGetReadySecond = null;
+      } else if (this.lastGetReadySecond !== null && currentSecond < this.lastGetReadySecond) {
+        this.audio?.playCountdownBeep();
+        this.lastGetReadySecond = currentSecond;
+      }
+    }
     const timerState = this.timer.getState();
     if (timerState.status === "finished") {
       this.advancePhase();
@@ -218,6 +241,14 @@ export class WorkoutEngine {
   }
 
   private advancePhase(): void {
+    // The pre-work 3-2-1 countdown is a phase of its own: when the timer
+    // expires, kick off the actual work block instead of falling through to
+    // the round/interval transition logic below.
+    if (this.phase === "getReady") {
+      this.beginWorkBlock();
+      return;
+    }
+
     const block = this.currentBlock();
 
     if (block.type === "interval" || block.type === "tabata" || block.type === "basic") {
@@ -237,6 +268,37 @@ export class WorkoutEngine {
 
     // amrap / countdown / countup / rm / forTime / rest: single duration, then finish.
     this.finish();
+  }
+
+  /**
+   * Transition out of the getReady countdown into the block's work phase.
+   * Mirrors what the old start() did in one step, but now it's only invoked
+   * after the 3-second countdown elapses.
+   */
+  private beginWorkBlock(): void {
+    this.audio?.playStart();
+    this.phase = "work";
+    // FGB carries work in stationSeconds, not workSeconds/durationSeconds,
+    // so we route its first work timer through replaceTimerWithDuration
+    // directly to avoid falling through to a 0-second countdown.
+    const block = this.currentBlock();
+    if (block.type === "fightGoneBad") {
+      this.replaceTimerWithDuration(block.stationSeconds ?? 0);
+    } else {
+      this.replaceTimer("work");
+    }
+    this.timer.start();
+    this.notify();
+  }
+
+  /**
+   * Public hook used only by tests to bypass the 3s pre-work countdown
+   * without having to advance fake timers. In production, start() always
+   * routes through getReady -> beginWorkBlock via onTimerTick.
+   */
+  skipGetReadyForTest(): void {
+    if (this.phase !== "getReady") return;
+    this.beginWorkBlock();
   }
 
   private advanceRoundBlock(block: WorkoutBlock): void {

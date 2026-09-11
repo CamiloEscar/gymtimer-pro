@@ -30,19 +30,16 @@ describe("useWorkoutSession", () => {
     const { result } = renderHook(() => useWorkoutSession(workout));
     act(() => result.current.start());
     expect(result.current.state.status).toBe("running");
-    expect(result.current.state.currentPhase).toBe("work");
+    expect(result.current.state.currentPhase).toBe("getReady");
   });
 
   it("re-renders as time passes", () => {
     const { result } = renderHook(() => useWorkoutSession(workout));
     act(() => result.current.start());
-    // Deviation from brief: dropped the redundant vi.setSystemTime() call —
-    // combining it with vi.advanceTimersByTime() for the same delta
-    // double-counts elapsed time (see TimerEngine.test.ts / WorkoutEngine.test.ts
-    // for the same fix). advanceTimersByTime alone is sufficient here.
+    // 3s getReady countdown then 3s of the 10s AMRAP work phase.
     act(() => {
-      vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(6_000);
     });
-    expect(result.current.state.timer.remainingMs).toBe(7000);
+    expect(result.current.state.timer.remainingMs).toBe(7_000);
   });
 });

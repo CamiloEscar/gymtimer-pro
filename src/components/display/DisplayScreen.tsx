@@ -90,7 +90,12 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
 
       <div className="grid grid-cols-[1fr_auto] items-center gap-6 min-h-0 overflow-hidden">
         <div className="flex flex-col items-center justify-center gap-6 min-h-0">
-          <PhaseIndicator phase={state.currentPhase} />
+          <PhaseIndicator
+            phase={state.currentPhase}
+            {...(state.currentPhase === "getReady"
+              ? { remainingMs: state.timer.remainingMs }
+              : {})}
+          />
         <TimerDisplay
           remainingMs={state.timer.remainingMs}
           elapsedMs={state.timer.elapsedMs}

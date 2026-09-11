@@ -11,6 +11,8 @@ import {
   formatEstimateMinutes,
 } from "@/lib/workout/estimateWorkoutDurationSeconds";
 import { BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
+import { useRunStats } from "@/hooks/useRunStats";
+import { formatLastRun } from "@/lib/history/runStats";
 
 interface WorkoutCardProps {
   workout: Workout;
@@ -22,6 +24,10 @@ interface WorkoutCardProps {
 export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCardProps) {
   const { blocks, exercises } = countBlocksAndExercises(workout);
   const estimatedSeconds = estimateWorkoutDurationSeconds(workout);
+  const runStatsMap = useRunStats();
+  const runStats = runStatsMap.get(workout.id);
+  const runCount = runStats?.count ?? 0;
+  const lastRunAt = runStats?.lastRunAt ?? null;
   // Show the block types the workout is built from as small chips so the
   // trainer can scan the list and pick the right one fast (AMRAP vs Tabata
   // reads very differently on a card).
@@ -50,6 +56,11 @@ export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCar
               </span>
             )}
           </div>
+          <p className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted">
+            {runCount === 0
+              ? "Sin correr todavía"
+              : `Corrida ${runCount} ${runCount === 1 ? "vez" : "veces"} · última ${formatLastRun(lastRunAt)}`}
+          </p>
         </div>
         <div className="flex gap-1 shrink-0">
           <Button

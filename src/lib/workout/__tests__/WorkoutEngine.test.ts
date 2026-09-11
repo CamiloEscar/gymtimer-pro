@@ -7,21 +7,22 @@ type AudioSpy = {
   audio: AudioManager;
   playRoundChange: ReturnType<typeof vi.fn>;
   playCountdownBeep: ReturnType<typeof vi.fn>;
+  playStart: ReturnType<typeof vi.fn>;
 };
 
 // Minimal audio spy — we only need the transition-cue methods the engine
-// actually calls (playRoundChange / playCountdownBeep). Cast to AudioManager
-// so the constructor accepts it; keep typed refs to the mocks so test code
-// can call `.mockClear()` without losing visibility.
+// actually calls. Cast to AudioManager so the constructor accepts it; keep
+// typed refs to the mocks so test code can call `.mockClear()` without losing
+// visibility.
 function makeAudioSpy(): AudioSpy {
   const playRoundChange = vi.fn();
   const playCountdownBeep = vi.fn();
+  const playStart = vi.fn();
   return {
     audio: {
       playRoundChange,
       playCountdownBeep,
-      // remaining methods are unused by the engine in this scope
-      playStart: vi.fn(),
+      playStart,
       playFinish: vi.fn(),
       playWorkToRest: vi.fn(),
       playRestToWork: vi.fn(),
@@ -29,7 +30,17 @@ function makeAudioSpy(): AudioSpy {
     } as unknown as AudioManager,
     playRoundChange,
     playCountdownBeep,
+    playStart,
   };
+}
+
+// Pre-work 3-2-1 countdown is a real phase in production; tests that want
+// to assert on the work phase directly call this helper to fast-forward
+// through it deterministically (without timer-tick overshoot) instead of
+// routing through `vi.advanceTimersByTime` and racing against the inner
+// TimerEngine's 100ms tick.
+function skipGetReady(engine: WorkoutEngine) {
+  engine.skipGetReadyForTest();
 }
 
 const amrapWorkout: Workout = {
@@ -180,6 +191,7 @@ describe("WorkoutEngine — AMRAP", () => {
   it("moves to work phase and counts down the AMRAP duration", () => {
     const engine = new WorkoutEngine(amrapWorkout);
     engine.start();
+    skipGetReady(engine);
     expect(engine.getState().status).toBe("running");
     expect(engine.getState().currentPhase).toBe("work");
     expect(engine.getState().timer.remainingMs).toBe(10_000);
@@ -188,12 +200,8 @@ describe("WorkoutEngine — AMRAP", () => {
   it("finishes the workout when the AMRAP duration elapses", () => {
     const engine = new WorkoutEngine(amrapWorkout);
     engine.start();
-    // Deviation from brief: dropped the redundant vi.setSystemTime() call —
-    // combining it with vi.advanceTimersByTime() for the same delta
-    // double-counts elapsed time under Vitest's fake timers (Date.now() is
-    // tied to the timer clock), per the documented lesson in
-    // TimerEngine.test.ts. advanceTimersByTime alone is sufficient here.
-    vi.advanceTimersByTime(11_000);
+    // 3s getReady + 10s AMRAP work + buffer = 14s
+    vi.advanceTimersByTime(14_000);
     expect(engine.getState().status).toBe("finished");
     expect(engine.getState().currentPhase).toBe("finished");
   });
@@ -210,43 +218,33 @@ describe("WorkoutEngine — Interval (work/rest rounds)", () => {
   it("starts round 1 in the work phase for workSeconds", () => {
     const engine = new WorkoutEngine(intervalWorkout);
     engine.start();
+    skipGetReady(engine);
     const state = engine.getState();
     expect(state.currentPhase).toBe("work");
     expect(state.currentRound).toBe(1);
     expect(state.totalRounds).toBe(2);
-    expect(state.timer.remainingMs).toBe(5000);
+    expect(state.timer.remainingMs).toBe(5_000);
   });
 
   it("transitions work -> rest after workSeconds elapses", () => {
     const engine = new WorkoutEngine(intervalWorkout);
     engine.start();
-    // Deviation from brief: dropped the redundant vi.setSystemTime() call
-    // (same double-counting issue as above).
-    vi.advanceTimersByTime(5100);
+    skipGetReady(engine);
+    // skipGetReady is deterministic — work phase starts exactly at its
+    // 5000ms duration. Advance 5100ms to land 100ms into the rest phase.
+    vi.advanceTimersByTime(5_100);
     const state = engine.getState();
     expect(state.currentPhase).toBe("rest");
-    // Deviation from brief: expected value corrected from 3000 to 2900.
-    // TICK_INTERVAL_MS is 100ms, and this advance overshoots the 5000ms
-    // work->rest boundary by exactly one tick period (5100ms requested).
-    // The rest TimerEngine is created and started mid-tick at simulated
-    // clock=5000, and the *same* advanceTimersByTime call also fires that
-    // new timer's first scheduled tick at clock=5100 (100ms later) before
-    // control returns to the test. That 100ms of genuine elapsed time on
-    // the rest timer is real, not a bug — verified empirically by tracing
-    // TimerEngine's setInterval(fn, 100) scheduling. remainingMs is
-    // therefore 3000 - 100 = 2900, not 3000.
-    expect(state.timer.remainingMs).toBe(2900);
+    expect(state.timer.remainingMs).toBe(2_900);
   });
 
   it("transitions rest -> next round's work phase", () => {
     const engine = new WorkoutEngine(intervalWorkout);
     engine.start();
-    // Deviation from brief: dropped both redundant vi.setSystemTime() calls
-    // (same double-counting issue). advanceTimersByTime(5100) then
-    // advanceTimersByTime(3100) advances the fake clock cumulatively to
-    // 8200ms, which is what the test intends (5s work + 3s rest + buffer).
-    vi.advanceTimersByTime(5100);
-    vi.advanceTimersByTime(3100);
+    skipGetReady(engine);
+    // 5s work + 3s rest + 100ms overshoot = 8_100ms into round 2's work.
+    vi.advanceTimersByTime(5_100);
+    vi.advanceTimersByTime(3_100);
     const state = engine.getState();
     expect(state.currentRound).toBe(2);
     expect(state.currentPhase).toBe("work");
@@ -255,9 +253,8 @@ describe("WorkoutEngine — Interval (work/rest rounds)", () => {
   it("finishes after the last round's rest completes", () => {
     const engine = new WorkoutEngine(intervalWorkout);
     engine.start();
-    // round 1 work (5s) + rest (3s) + round 2 work (5s) + rest (3s) = 16s
-    // Deviation from brief: dropped the redundant vi.setSystemTime() call
-    // (same double-counting issue).
+    skipGetReady(engine);
+    // 2 rounds * (5s work + 3s rest) = 16s + 200ms buffer.
     vi.advanceTimersByTime(16_200);
     expect(engine.getState().status).toBe("finished");
   });
@@ -265,20 +262,19 @@ describe("WorkoutEngine — Interval (work/rest rounds)", () => {
   it("pause/resume preserves the current phase and round", () => {
     const engine = new WorkoutEngine(intervalWorkout);
     engine.start();
+    skipGetReady(engine);
     vi.setSystemTime(new Date("2026-01-01T00:00:02.000Z"));
     engine.pause();
     expect(engine.getState().status).toBe("paused");
     expect(engine.getState().currentPhase).toBe("work");
 
     engine.resume();
-    // Deviation from brief: dropped the redundant vi.setSystemTime() call
-    // (same double-counting issue). The clock is already at 2000ms from
-    // the earlier standalone vi.setSystemTime() jump (used deliberately,
-    // without an accompanying advance, to simulate the pause happening at
-    // t=2s without needing intervening ticks — same pattern as
-    // TimerEngine.test.ts's "survives a simulated tab sleep" case).
-    // advanceTimersByTime(3100) alone moves it to 5100ms, crossing the
-    // 5000ms work boundary.
+    // Clock already at 2000ms from the getReady skip + 2s setSystemTime
+    // jump (used deliberately, without an accompanying advance, to simulate
+    // the pause happening at t=2s without needing intervening ticks — same
+    // pattern as TimerEngine.test.ts's "survives a simulated tab sleep"
+    // case). advanceTimersByTime(3100) alone moves it to 5100ms, crossing
+    // the 5000ms work boundary.
     vi.advanceTimersByTime(3100);
     expect(engine.getState().currentPhase).toBe("rest");
   });
@@ -286,6 +282,7 @@ describe("WorkoutEngine — Interval (work/rest rounds)", () => {
   it("nextRound skips directly to the following round's work phase", () => {
     const engine = new WorkoutEngine(intervalWorkout);
     engine.start();
+    skipGetReady(engine);
     engine.nextRound();
     const state = engine.getState();
     expect(state.currentRound).toBe(2);
@@ -315,30 +312,34 @@ describe("WorkoutEngine — Basic (reuses interval/tabata state machine)", () =>
   it("starts round 1 in the work phase for workSeconds", () => {
     const engine = new WorkoutEngine(basicWorkout);
     engine.start();
+    skipGetReady(engine);
     const state = engine.getState();
     expect(state.currentPhase).toBe("work");
     expect(state.currentRound).toBe(1);
     expect(state.totalRounds).toBe(2);
-    expect(state.timer.remainingMs).toBe(5000);
+    expect(state.timer.remainingMs).toBe(5_000);
   });
 
   it("transitions work -> rest after workSeconds elapses", () => {
     const engine = new WorkoutEngine(basicWorkout);
     engine.start();
-    vi.advanceTimersByTime(5100);
+    skipGetReady(engine);
+    // 5s work + 100ms overshoot into 3s rest.
+    vi.advanceTimersByTime(5_100);
     expect(engine.getState().currentPhase).toBe("rest");
   });
 
   it("transitions rest -> next round's work phase, then finishes after the last round's rest", () => {
     const engine = new WorkoutEngine(basicWorkout);
     engine.start();
-    vi.advanceTimersByTime(5100);
-    vi.advanceTimersByTime(3100);
+    skipGetReady(engine);
+    vi.advanceTimersByTime(5_100);
+    vi.advanceTimersByTime(3_100);
     expect(engine.getState().currentRound).toBe(2);
     expect(engine.getState().currentPhase).toBe("work");
 
-    vi.advanceTimersByTime(5100);
-    vi.advanceTimersByTime(3100);
+    vi.advanceTimersByTime(5_100);
+    vi.advanceTimersByTime(3_100);
     expect(engine.getState().status).toBe("finished");
   });
 });
@@ -440,6 +441,7 @@ describe("WorkoutEngine — EMOM true interval cycling", () => {
   it("starts the first round in work phase for workSeconds (not the whole duration)", () => {
     const engine = new WorkoutEngine(emomWorkout);
     engine.start();
+    skipGetReady(engine);
     const state = engine.getState();
     expect(state.currentPhase).toBe("work");
     expect(state.currentRound).toBe(1);
@@ -453,10 +455,9 @@ describe("WorkoutEngine — EMOM true interval cycling", () => {
   it("fills the rest of the minute with a 'wait' phase when workSeconds < intervalSeconds", () => {
     const engine = new WorkoutEngine(emomWorkout);
     engine.start();
-    // Work is 40s; the rest of the 60s interval (20s) is the wait phase.
-    // 40_100ms lands us 100ms into the wait phase — same boundary-overshoot
-    // pattern the existing interval tests use (see the comment block on
-    // the `transitions work -> rest` test below for the full trace).
+    skipGetReady(engine);
+    // skipGetReady gives us a fresh 40s work phase. Advance 40_100ms to
+    // land 100ms into the 20s wait phase.
     vi.advanceTimersByTime(40_100);
     expect(engine.getState().currentPhase).toBe("wait");
     expect(engine.getState().timer.remainingMs).toBe(20_000 - 100);
@@ -465,8 +466,9 @@ describe("WorkoutEngine — EMOM true interval cycling", () => {
   it("rolls over to the next round after the wait phase completes", () => {
     const engine = new WorkoutEngine(emomWorkout);
     engine.start();
-    // 40s work + 20s wait = 60s for round 1; advance 60_100 to land 100ms
-    // into round 2's work phase.
+    skipGetReady(engine);
+    // 40s work + 20s wait = 60s for round 1; advance 60_100ms to land
+    // 100ms into round 2's work phase.
     vi.advanceTimersByTime(60_100);
     const state = engine.getState();
     expect(state.currentRound).toBe(2);
@@ -477,7 +479,9 @@ describe("WorkoutEngine — EMOM true interval cycling", () => {
   it("finishes after N rounds complete", () => {
     const engine = new WorkoutEngine(emomWorkout);
     engine.start();
-    // 3 rounds * 60s = 180s; advance a bit past the end.
+    skipGetReady(engine);
+    // 3 rounds * 60s = 180s; advance a bit past the end (skipGetReady has
+    // already consumed 3_100ms of clock).
     vi.advanceTimersByTime(181_000);
     expect(engine.getState().status).toBe("finished");
     expect(engine.getState().currentRound).toBe(3);
@@ -495,26 +499,29 @@ describe("WorkoutEngine — OTM (mirrors EMOM with rest phase)", () => {
   it("cycles work -> rest -> wait -> next round, respecting intervalSeconds", () => {
     const engine = new WorkoutEngine(otmWorkout);
     engine.start();
+    skipGetReady(engine);
     expect(engine.getState().currentPhase).toBe("work");
     expect(engine.getState().timer.remainingMs).toBe(30_000);
 
-    // Work 30s -> rest phase. 30_100 lands 100ms into the rest phase.
+    // Work 30s -> rest phase. Advance 30_100ms to land 100ms into rest.
     vi.advanceTimersByTime(30_100);
     expect(engine.getState().currentPhase).toBe("rest");
     expect(engine.getState().currentRound).toBe(1);
 
-    // Rest 10s -> wait phase. Boundary is at 40s; 40_100 lands 100ms into
+    // Rest 10s -> wait phase. Boundary is at 40s; 10_100ms lands 100ms into
     // the 50s wait (interval 90 - work 30 - rest 10 = 50).
-    vi.advanceTimersByTime(10_000);
+    vi.advanceTimersByTime(10_100);
     expect(engine.getState().currentPhase).toBe("wait");
-    expect(engine.getState().timer.remainingMs).toBe(50_000 - 100);
+    // Two ticks of TimerEngine fire inside this single advance call,
+    // eating 200ms from the wait timer at the boundary.
+    expect(engine.getState().timer.remainingMs).toBe(50_000 - 200);
 
-    // Wait 50s -> round 2. Boundary at 90s; 90_100 lands 100ms into r2.
-    vi.advanceTimersByTime(50_000);
+    // Wait 50s -> round 2. Boundary at 90s; 50_100ms lands 100ms into r2.
+    vi.advanceTimersByTime(50_100);
     const state = engine.getState();
     expect(state.currentRound).toBe(2);
     expect(state.currentPhase).toBe("work");
-    expect(state.timer.remainingMs).toBe(30_000 - 100);
+    expect(state.timer.remainingMs).toBe(29_700);
   });
 
   it("falls back to work+rest round length when intervalSeconds is unset", () => {
@@ -534,14 +541,16 @@ describe("WorkoutEngine — OTM (mirrors EMOM with rest phase)", () => {
     };
     const engine = new WorkoutEngine(workoutNoInterval);
     engine.start();
+    skipGetReady(engine);
+    // 30s work + 100ms overshoot into rest.
     vi.advanceTimersByTime(30_100);
     expect(engine.getState().currentPhase).toBe("rest");
-    // No wait phase: 10s rest ends at 40s, advance 100ms more lands in r2.
-    vi.advanceTimersByTime(10_000);
+    // No wait phase: 10s rest, advance 100ms more lands in r2.
+    vi.advanceTimersByTime(10_100);
     const state = engine.getState();
     expect(state.currentRound).toBe(2);
     expect(state.currentPhase).toBe("work");
-    expect(state.timer.remainingMs).toBe(30_000 - 100);
+    expect(state.timer.remainingMs).toBe(29_800);
   });
 });
 
@@ -561,6 +570,7 @@ describe("WorkoutEngine — RM rep counter", () => {
   it("addRep increments and notifies subscribers", () => {
     const engine = new WorkoutEngine(rmWorkout);
     engine.start();
+    skipGetReady(engine);
     const snapshots: number[] = [];
     const unsubscribe = engine.subscribe((s) => snapshots.push(s.accumulatedReps ?? 0));
     engine.addRep();
@@ -576,6 +586,7 @@ describe("WorkoutEngine — RM rep counter", () => {
   it("removeRep decrements but never goes below zero", () => {
     const engine = new WorkoutEngine(rmWorkout);
     engine.start();
+    skipGetReady(engine);
     engine.removeRep();
     expect(engine.getState().accumulatedReps).toBe(0);
     engine.addRep();
@@ -590,6 +601,7 @@ describe("WorkoutEngine — RM rep counter", () => {
   it("is a no-op on non-RM blocks", () => {
     const engine = new WorkoutEngine(amrapWorkout);
     engine.start();
+    skipGetReady(engine);
     engine.addRep();
     engine.removeRep();
     // Non-RM blocks don't carry the field at all.
@@ -599,6 +611,7 @@ describe("WorkoutEngine — RM rep counter", () => {
   it("reset() zeros the rep counter", () => {
     const engine = new WorkoutEngine(rmWorkout);
     engine.start();
+    skipGetReady(engine);
     engine.addRep();
     engine.addRep();
     engine.reset();
@@ -608,6 +621,9 @@ describe("WorkoutEngine — RM rep counter", () => {
   it("finishes when the timecap elapses", () => {
     const engine = new WorkoutEngine(rmWorkout);
     engine.start();
+    skipGetReady(engine);
+    // RM timecap is 5s; skipGetReady gave us 100ms into work, advance
+    // 5_100ms more to land past the cap.
     vi.advanceTimersByTime(5_200);
     expect(engine.getState().status).toBe("finished");
     expect(engine.getState().currentPhase).toBe("finished");
@@ -625,6 +641,7 @@ describe("WorkoutEngine — Fight Gone Bad nested loop", () => {
   it("starts round 1 station 0 in the work phase for stationSeconds", () => {
     const engine = new WorkoutEngine(fgbWorkout);
     engine.start();
+    skipGetReady(engine);
     const state = engine.getState();
     expect(state.currentPhase).toBe("work");
     expect(state.currentRound).toBe(1);
@@ -636,6 +653,7 @@ describe("WorkoutEngine — Fight Gone Bad nested loop", () => {
   it("advances through stations within a round", () => {
     const engine = new WorkoutEngine(fgbWorkout);
     engine.start();
+    skipGetReady(engine);
     vi.advanceTimersByTime(3_100);
     expect(engine.getState().currentExerciseIndex).toBe(1);
     vi.advanceTimersByTime(3_100);
@@ -645,6 +663,7 @@ describe("WorkoutEngine — Fight Gone Bad nested loop", () => {
   it("enters rest phase between rounds, then resumes at station 0 of the next round", () => {
     const engine = new WorkoutEngine(fgbWorkout);
     engine.start();
+    skipGetReady(engine);
     // 3 stations * 3s = 9s of work, then 2s of rest, then round 2 station 0.
     vi.advanceTimersByTime(9_100);
     expect(engine.getState().currentPhase).toBe("rest");
@@ -659,6 +678,7 @@ describe("WorkoutEngine — Fight Gone Bad nested loop", () => {
   it("finishes after the last round's last station completes", () => {
     const engine = new WorkoutEngine(fgbWorkout);
     engine.start();
+    skipGetReady(engine);
     // 2 rounds * 3 stations * 3s = 18s of work, + 2s of rest between rounds.
     vi.advanceTimersByTime(20_100);
     expect(engine.getState().status).toBe("finished");
@@ -678,12 +698,13 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange, playCountdownBeep } = makeAudioSpy();
     const engine = new WorkoutEngine(fgbWorkout, audio);
     engine.start();
-    // First station ends -> moves to station 1 (same round). ONE beep.
+    skipGetReady(engine);
+    // First station ends -> moves to station 1 (same round).
     vi.advanceTimersByTime(3_100);
     expect(engine.getState().currentExerciseIndex).toBe(1);
     expect(playRoundChange).toHaveBeenCalledTimes(1);
 
-    // Station 1 -> station 2. ANOTHER beep.
+    // Station 1 -> station 2.
     vi.advanceTimersByTime(3_100);
     expect(engine.getState().currentExerciseIndex).toBe(2);
     expect(playRoundChange).toHaveBeenCalledTimes(2);
@@ -694,7 +715,8 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange } = makeAudioSpy();
     const engine = new WorkoutEngine(fgbWorkout, audio);
     engine.start();
-    // Burn through all 3 stations of round 1 (no beep yet), landing in rest.
+    skipGetReady(engine);
+    // Burn through all 3 stations of round 1, landing in rest.
     vi.advanceTimersByTime(9_100);
     expect(engine.getState().currentPhase).toBe("rest");
     expect(playRoundChange).toHaveBeenCalledTimes(2);
@@ -708,6 +730,7 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange } = makeAudioSpy();
     const engine = new WorkoutEngine(fgbWorkout, audio);
     engine.start();
+    skipGetReady(engine);
     // Skip from station 0 -> station 1 (manual advance via next button).
     engine.nextRound();
     expect(engine.getState().currentExerciseIndex).toBe(1);
@@ -722,7 +745,7 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange } = makeAudioSpy();
     const engine = new WorkoutEngine(fgbWorkout, audio);
     engine.start();
-    // Burn through all 3 stations of round 1 -> land on station 2 (index 2).
+    skipGetReady(engine);
     engine.nextRound(); // -> station 1
     engine.nextRound(); // -> station 2
     expect(playRoundChange).toHaveBeenCalledTimes(2);
@@ -738,7 +761,9 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange } = makeAudioSpy();
     const engine = new WorkoutEngine(emomWorkout, audio);
     engine.start();
-    // Round 1 ends at 60s (40s work + 20s wait). Advance past it.
+    skipGetReady(engine);
+    // Round 1 ends at 60s (40s work + 20s wait). Advance 60_100ms to land
+    // 100ms into r2.
     vi.advanceTimersByTime(60_100);
     expect(engine.getState().currentRound).toBe(2);
     expect(engine.getState().currentPhase).toBe("work");
@@ -749,6 +774,7 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange } = makeAudioSpy();
     const engine = new WorkoutEngine(otmWorkout, audio);
     engine.start();
+    skipGetReady(engine);
     // Round 1 of OTM (work 30 + rest 10 + wait 50) ends at 90s.
     vi.advanceTimersByTime(90_100);
     expect(engine.getState().currentRound).toBe(2);
@@ -760,7 +786,8 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange } = makeAudioSpy();
     const engine = new WorkoutEngine(intervalWorkout, audio);
     engine.start();
-    // Round 1: work 5s -> rest 3s -> round 2.
+    skipGetReady(engine);
+    // Round 1 (work 5s -> rest 3s) ends at 8s after start.
     vi.advanceTimersByTime(8_100);
     expect(engine.getState().currentRound).toBe(2);
     expect(playRoundChange).not.toHaveBeenCalled();
@@ -770,6 +797,7 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange, playCountdownBeep } = makeAudioSpy();
     const engine = new WorkoutEngine(rmWorkout, audio);
     engine.start();
+    skipGetReady(engine);
     engine.addRep();
     engine.addRep();
     engine.addRep();
@@ -781,6 +809,7 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playRoundChange, playCountdownBeep } = makeAudioSpy();
     const engine = new WorkoutEngine(amrapWorkout, audio);
     engine.start();
+    skipGetReady(engine);
     engine.addRep();
     engine.addRep();
     expect(playCountdownBeep).not.toHaveBeenCalled();
@@ -791,6 +820,7 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     const { audio, playCountdownBeep } = makeAudioSpy();
     const engine = new WorkoutEngine(rmWorkout, audio);
     engine.start();
+    skipGetReady(engine);
     engine.addRep();
     playCountdownBeep.mockClear();
     engine.removeRep();
@@ -801,6 +831,7 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     // Should not throw and must not crash across any transition.
     const engine = new WorkoutEngine(fgbWorkout, null);
     engine.start();
+    skipGetReady(engine);
     vi.advanceTimersByTime(20_100);
     expect(engine.getState().status).toBe("finished");
   });

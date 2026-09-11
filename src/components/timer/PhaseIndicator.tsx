@@ -16,7 +16,26 @@ const PHASE_CLASSES: Record<WorkoutPhase, string> = {
   finished: "text-phosphor",
 };
 
-export function PhaseIndicator({ phase }: { phase: WorkoutPhase }) {
+interface PhaseIndicatorProps {
+  phase: WorkoutPhase;
+  // Remaining ms is only used during the getReady countdown to render the
+  // giant 3-2-1 instead of the PREPARATE label. Optional so callers that
+  // only know the phase (tests, etc.) keep working.
+  remainingMs?: number;
+}
+
+export function PhaseIndicator({ phase, remainingMs }: PhaseIndicatorProps) {
+  if (phase === "getReady" && typeof remainingMs === "number") {
+    const seconds = Math.max(0, Math.ceil(remainingMs / 1000));
+    return (
+      <p
+        aria-live="polite"
+        className={`font-industrial tabular-nums text-center leading-none tracking-tight text-[clamp(8rem,30vw,22rem)] ${PHASE_CLASSES[phase]}`}
+      >
+        {seconds}
+      </p>
+    );
+  }
   return (
     <p
       className={`font-industrial text-4xl md:text-6xl lg:text-7xl uppercase tracking-tight leading-none text-center ${PHASE_CLASSES[phase]}`}

@@ -108,11 +108,26 @@ export function Dashboard() {
             </p>
           </div>
           <h1 className="font-industrial text-3xl md:text-4xl leading-none text-phosphor">
-            {greetingText ?? " "}
+            {greetingText ?? " "}
           </h1>
           <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
-            {dateText ?? " "}
+            {dateText ?? " "}
           </p>
+          {gymProfile?.linkCode && (
+            <Link
+              href={`/display/${gymProfile.linkCode}`}
+              className="inline-flex items-center gap-2 rounded-lg border border-surface-800 bg-surface-950/60 px-3 py-1.5 hover:border-brand-500 transition-colors"
+              aria-label="Abrir display del gimnasio"
+            >
+              <Icon name="display" className="size-3.5 text-brand-500" />
+              <span className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted">
+                Link del gym
+              </span>
+              <span className="font-industrial text-sm uppercase tracking-widest text-phosphor">
+                {gymProfile.linkCode}
+              </span>
+            </Link>
+          )}
           <p className="text-sm text-phosphor-dim pt-1">
             ¿Qué entrenamos hoy?
           </p>

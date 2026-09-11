@@ -49,13 +49,28 @@ export function ExerciseListDisplay({
               )}
             </span>
             <span
-              className={`flex-1 font-industrial uppercase tracking-tight text-left ${
-                isCurrent
-                  ? "text-xl md:text-2xl font-bold leading-tight"
-                  : "text-base md:text-lg leading-snug"
+              className={`flex-1 min-w-0 text-left ${
+                isCurrent ? "text-black" : "text-phosphor-dim"
               }`}
             >
-              {formatExerciseLine(exercise)}
+              <span
+                className={`block font-industrial uppercase tracking-tight ${
+                  isCurrent
+                    ? "text-xl md:text-2xl font-bold leading-tight"
+                    : "text-base md:text-lg leading-snug"
+                }`}
+              >
+                {formatExerciseLine(exercise)}
+              </span>
+              {exercise.notes && (
+                <span
+                  className={`block mt-0.5 text-xs md:text-sm leading-snug font-tactical tracking-wide ${
+                    isCurrent ? "text-black/80" : "text-phosphor-muted"
+                  }`}
+                >
+                  {exercise.notes}
+                </span>
+              )}
             </span>
           </div>
         );

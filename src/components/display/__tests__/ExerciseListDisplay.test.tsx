@@ -79,6 +79,31 @@ describe("ExerciseListDisplay reps line", () => {
   });
 });
 
+describe("ExerciseListDisplay notes", () => {
+  it("renders exercise notes as a secondary line under the formatted line", () => {
+    const block: WorkoutBlock = {
+      ...BLOCK,
+      type: "amrap",
+      exercises: [{ id: "ex-1", name: "Thruster", reps: 21, notes: "chest to bar, kipping only" }],
+    };
+    render(<ExerciseListDisplay block={block} />);
+
+    const row = screen.getByTestId("exercise-list-item-other");
+    expect(row).toHaveTextContent("Thruster · 21reps");
+    expect(row).toHaveTextContent("chest to bar, kipping only");
+  });
+
+  it("does not render a notes line when an exercise has no notes", () => {
+    const { container } = render(<ExerciseListDisplay block={BLOCK} />);
+    const row = container.querySelector("[data-testid^='exercise-list-item-']");
+    expect(row).not.toBeNull();
+    // Exercises without notes only contain the formatted name/reps line — no
+    // secondary text-xs notes line (notes-specific truncation would be needed).
+    // There's no easy selector so we check no `text-xs` span exists:
+    expect(row!.querySelector(".text-xs")).toBeNull();
+  });
+});
+
 describe("ExerciseListDisplay current highlight", () => {
   it("highlights the matching exercise with brand background, bold text and a play icon", () => {
     render(<ExerciseListDisplay block={BLOCK} currentExerciseId="ex-2" />);

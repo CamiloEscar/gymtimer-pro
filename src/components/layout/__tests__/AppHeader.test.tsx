@@ -105,7 +105,8 @@ describe("AppHeader — responsive layout", () => {
     const ul = screen.getByRole("list");
     expect(ul.className).toMatch(/text-xs/);
     expect(ul.className).toMatch(/md:text-sm/);
-    expect(ul.className).toMatch(/gap-2/);
+    expect(ul.className).toMatch(/flex-wrap/);
+    expect(ul.className).toMatch(/gap-x-3/);
     expect(ul.className).toMatch(/md:gap-4/);
   });
 

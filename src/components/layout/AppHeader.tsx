@@ -48,7 +48,7 @@ export function AppHeader() {
             GYMTIMER
           </Link>
         </div>
-        <ul className="flex items-center gap-2 md:gap-4 text-xs md:text-sm font-tactical">
+        <ul className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 md:gap-4 text-xs md:text-sm font-tactical">
           {SECTION_LINKS.map((link) => {
             const active = link.href === activeHref;
             const className = active ? "text-brand-500" : "text-phosphor-dim hover:text-phosphor";

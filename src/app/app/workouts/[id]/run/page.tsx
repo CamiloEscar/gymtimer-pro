@@ -292,10 +292,10 @@ function RunWorkoutContent({
                 setEditOpen(true);
               }}
               aria-label="Editar rutina"
-              className="shrink-0"
+              className="shrink-0 whitespace-nowrap"
             >
               <Icon name="pencil" />
-              <span className="hidden sm:inline">Editar</span>
+              <span>Editar</span>
             </Button>
           )}
         </div>
@@ -453,6 +453,15 @@ function RunWorkoutContent({
           </Button>
         </div>
       </Modal>
+      <Link
+        href={`/display/${code}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Abrir display del gimnasio"
+        className="sm:hidden fixed top-12 right-3 z-50 inline-flex items-center justify-center size-11 rounded-full bg-brand-500 hover:bg-brand-600 text-black shadow-lg shadow-black/40 active:scale-95 transition-opacity"
+      >
+        <Icon name="display" className="size-5" />
+      </Link>
     </div>
   );
 }

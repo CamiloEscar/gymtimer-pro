@@ -13,6 +13,9 @@ import {
 import { BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
 import { useRunStats } from "@/hooks/useRunStats";
 import { formatLastRun } from "@/lib/history/runStats";
+import { useGymProfile } from "@/hooks/useGymProfile";
+import { GymProfileRepository } from "@/lib/storage/GymProfileRepository";
+import { notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 
 interface WorkoutCardProps {
   workout: Workout;
@@ -28,6 +31,16 @@ export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCar
   const runStats = runStatsMap.get(workout.id);
   const runCount = runStats?.count ?? 0;
   const lastRunAt = runStats?.lastRunAt ?? null;
+  const gymProfile = useGymProfile();
+  const isWod = gymProfile?.wodWorkoutId === workout.id;
+
+  function toggleWod() {
+    const repo = new GymProfileRepository();
+    const current = repo.get();
+    const base = current.ok ? current.value : { name: "" };
+    repo.save(isWod ? { ...base, wodWorkoutId: undefined } : { ...base, wodWorkoutId: workout.id });
+    notifyLocalStorageChange();
+  }
   // Show the block types the workout is built from as small chips so the
   // trainer can scan the list and pick the right one fast (AMRAP vs Tabata
   // reads very differently on a card).
@@ -63,6 +76,15 @@ export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCar
           </p>
         </div>
         <div className="flex gap-1 shrink-0">
+          <Button
+            variant={isWod ? "secondary" : "ghost"}
+            size="md"
+            onClick={toggleWod}
+            aria-label={isWod ? "Quitar como entrenamiento del día" : "Fijar como entrenamiento del día"}
+            title={isWod ? "Quitar WOD" : "Fijar WOD"}
+          >
+            <Icon name="calendar" />
+          </Button>
           <Button
             variant="ghost"
             size="md"

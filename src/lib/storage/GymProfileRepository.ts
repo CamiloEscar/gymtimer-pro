@@ -14,6 +14,9 @@ export interface GymProfile {
   // box that always programs 40s work/20s rest doesn't retype it per block.
   defaultWorkSeconds?: number;
   defaultRestSeconds?: number;
+  // Manually pinned Workout-of-the-Day. When set, the dashboard shows this
+  // workout instead of the default last-created fallback.
+  wodWorkoutId?: string;
 }
 
 const STORAGE_KEY = "gymtimer.gymProfile";
@@ -57,6 +60,7 @@ export class GymProfileRepository {
       if (defaultWorkSeconds !== undefined) profile.defaultWorkSeconds = defaultWorkSeconds;
       const defaultRestSeconds = normalizeSeconds(record.defaultRestSeconds);
       if (defaultRestSeconds !== undefined) profile.defaultRestSeconds = defaultRestSeconds;
+      if (typeof record.wodWorkoutId === "string") profile.wodWorkoutId = record.wodWorkoutId;
       return ok(profile);
     } catch {
       return err("read_failed", "No se pudo leer el perfil del gimnasio");
@@ -72,6 +76,7 @@ export class GymProfileRepository {
     if (defaultWorkSeconds !== undefined) cleaned.defaultWorkSeconds = defaultWorkSeconds;
     const defaultRestSeconds = normalizeSeconds(profile.defaultRestSeconds);
     if (defaultRestSeconds !== undefined) cleaned.defaultRestSeconds = defaultRestSeconds;
+    if (profile.wodWorkoutId) cleaned.wodWorkoutId = profile.wodWorkoutId;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
       return ok(cleaned);

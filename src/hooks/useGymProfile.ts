@@ -13,7 +13,8 @@ function getProfileSnapshot(): GymProfile | null {
     cachedProfile?.logoUrl !== value?.logoUrl ||
     cachedProfile?.linkCode !== value?.linkCode ||
     cachedProfile?.defaultWorkSeconds !== value?.defaultWorkSeconds ||
-    cachedProfile?.defaultRestSeconds !== value?.defaultRestSeconds
+    cachedProfile?.defaultRestSeconds !== value?.defaultRestSeconds ||
+    cachedProfile?.wodWorkoutId !== value?.wodWorkoutId
   ) {
     cachedProfile = value;
   }

@@ -74,7 +74,9 @@ export function Dashboard() {
     notifyLocalStorageChange();
   }
 
-  const workoutOfTheDay = workouts.length > 0 ? workouts[workouts.length - 1] : null;
+  const workoutOfTheDay =
+    workouts.find((w) => w.id === gymProfile?.wodWorkoutId) ??
+    (workouts.length > 0 ? workouts[workouts.length - 1] : null);
   const isSearching = query.trim().length > 0;
   const filtered = isSearching
     ? workouts.filter((w) => w.name.toLowerCase().includes(query.trim().toLowerCase()))

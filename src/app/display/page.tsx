@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { generateCode } from "@/lib/session/generateCode";
 import { useGymProfile } from "@/hooks/useGymProfile";
@@ -13,32 +13,31 @@ export default function DisplayEntryPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("choice");
   const [code, setCode] = useState("");
-  // Live snapshot of the gym profile so a linkCode configured in /app/settings
-  // is picked up immediately and routes this TV straight to /display/{code}.
+  // Live snapshot of the gym profile. When a linkCode is configured we
+  // surface it on the primary CTA so the gym TV pairs in one click; if not,
+  // the same button generates a fresh random code.
   const gymProfile = useGymProfile();
   const configuredLinkCode = gymProfile?.linkCode ?? null;
 
-  useEffect(() => {
-    if (!configuredLinkCode) return;
-    router.replace(`/display/${configuredLinkCode}`);
-  }, [configuredLinkCode, router]);
-
-  if (configuredLinkCode) {
-    return (
-      <div className="min-h-[100dvh] bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
-        <p className="text-phosphor-dim uppercase tracking-widest text-xs">
-          Conectando a {configuredLinkCode}…
-        </p>
-      </div>
-    );
-  }
-
   if (mode === "choice") {
+    // Single CTA path: a configured linkCode replaces the random generator
+    // so the gym's TV never lands on a code that no trainer is using.
+    const pairedCode = configuredLinkCode ?? generateCode();
     return (
       <div className="min-h-[100dvh] bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
         <h1 className="text-2xl font-bold text-phosphor">Abrir una pantalla</h1>
-        <Button size="lg" onClick={() => router.push(`/display/${generateCode()}`)}>
-          Generar código nuevo
+        {configuredLinkCode && (
+          <>
+            <p className="text-xs uppercase tracking-widest text-phosphor-dim">
+              Código fijo del gimnasio
+            </p>
+            <p className="font-industrial text-4xl uppercase tracking-widest text-brand-500">
+              {configuredLinkCode}
+            </p>
+          </>
+        )}
+        <Button size="lg" onClick={() => router.push(`/display/${pairedCode}`)}>
+          {configuredLinkCode ? `Conectar a ${configuredLinkCode}` : "Generar código nuevo"}
         </Button>
         <Button size="lg" variant="secondary" onClick={() => setMode("manual")}>
           Ya tengo un código
@@ -59,6 +58,9 @@ export default function DisplayEntryPage() {
       />
       <Button size="lg" onClick={() => router.push(`/display/${code}`)} disabled={code.length !== 6}>
         Conectar
+      </Button>
+      <Button size="md" variant="ghost" onClick={() => setMode("choice")}>
+        Volver
       </Button>
     </div>
   );

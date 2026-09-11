@@ -133,14 +133,33 @@ export function Dashboard() {
       {!isSearching && <WorkoutOfTheDay workout={workoutOfTheDay} />}
 
       {filtered.length === 0 && !isSearching && (
-        <Card className="text-center space-y-2">
-          <p className="text-phosphor">No tenés rutinas todavía</p>
-          <p className="text-sm text-phosphor-dim">
-            Empezá creando una — podés armar AMRAP, EMOM, Tabata o cargar desde el catálogo de ejercicios.
-          </p>
-          <Link href="/app/workouts/new">
-            <Button size="md">+ Crear la primera rutina</Button>
-          </Link>
+        <Card className="relative overflow-hidden text-center space-y-3 border-dashed">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-40"
+            aria-hidden
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 50% 0%, oklch(0.7 0.19 150 / 0.10), transparent 70%)",
+            }}
+          />
+          <div className="relative space-y-2">
+            <Icon name="dumbbell" className="size-10 text-phosphor-muted mx-auto" />
+            <p className="font-industrial text-xl text-phosphor">No tenés rutinas todavía</p>
+            <p className="text-sm text-phosphor-dim max-w-md mx-auto">
+              Empezá creando una — podés armar AMRAP, EMOM, Tabata o cargar ejercicios desde el
+              catálogo. Después la lanzás a la pantalla del gym con un click.
+            </p>
+          </div>
+          <div className="relative flex flex-wrap items-center justify-center gap-2 pt-1">
+            <Link href="/app/workouts/new">
+              <Button size="lg">+ Crear la primera rutina</Button>
+            </Link>
+            <Link href="/app/workouts">
+              <Button size="md" variant="ghost">
+                Ver listado
+              </Button>
+            </Link>
+          </div>
         </Card>
       )}
 

@@ -480,6 +480,21 @@ export class WorkoutEngine {
   }
 
   private finish(): void {
+    const hasNextBlock = this.blockIndex < this.workout.blocks.length - 1;
+    if (hasNextBlock) {
+      this.audio?.playRoundChange();
+      this.blockIndex += 1;
+      this.round = 1;
+      this.currentStationIndex = 0;
+      this.accumulatedReps = 0;
+      this.status = "running";
+      this.phase = "getReady";
+      this.lastGetReadySecond = WorkoutEngine.GET_READY_SECONDS;
+      this.replaceTimerWithDuration(WorkoutEngine.GET_READY_SECONDS);
+      this.timer.start();
+      this.notify();
+      return;
+    }
     this.timer.pause();
     this.phase = "finished";
     this.status = "finished";

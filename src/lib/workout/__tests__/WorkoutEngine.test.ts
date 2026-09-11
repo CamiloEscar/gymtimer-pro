@@ -164,6 +164,27 @@ const rmWorkout: Workout = {
   ],
 };
 
+const multiBlockRMWorkout: Workout = {
+  id: "w8",
+  name: "RM Multi",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  favorite: false,
+  blocks: [
+    {
+      id: "b1",
+      type: "rm",
+      durationSeconds: 3,
+      exercises: [{ id: "e1", name: "Push Press" }],
+    },
+    {
+      id: "b2",
+      type: "rm",
+      durationSeconds: 3,
+      exercises: [{ id: "e2", name: "Deadlift" }],
+    },
+  ],
+};
+
 const fgbWorkout: Workout = {
   id: "w7",
   name: "Fight Gone Bad",
@@ -639,6 +660,34 @@ describe("WorkoutEngine — RM rep counter", () => {
     vi.advanceTimersByTime(5_200);
     expect(engine.getState().status).toBe("finished");
     expect(engine.getState().currentPhase).toBe("finished");
+  });
+
+  it("advances to the next RM block (getReady) and resets reps when the timecap elapses", () => {
+    const engine = new WorkoutEngine(multiBlockRMWorkout);
+    engine.start();
+    skipGetReady(engine);
+    engine.addRep();
+    engine.addRep();
+    expect(engine.getState().accumulatedReps).toBe(2);
+
+    vi.advanceTimersByTime(3_200);
+    expect(engine.getState().currentBlockIndex).toBe(1);
+    expect(engine.getState().currentPhase).toBe("getReady");
+    expect(engine.getState().status).toBe("running");
+    expect(engine.getState().accumulatedReps).toBe(0);
+  });
+
+  it("finishes the workout when the last RM block's timecap elapses", () => {
+    const engine = new WorkoutEngine(multiBlockRMWorkout);
+    engine.start();
+    skipGetReady(engine);
+    // Block 1: 3s timecap.
+    vi.advanceTimersByTime(3_200);
+    // Block 2 getReady 3s + work 3s + buffer.
+    vi.advanceTimersByTime(6_300);
+    expect(engine.getState().status).toBe("finished");
+    expect(engine.getState().currentPhase).toBe("finished");
+    expect(engine.getState().currentBlockIndex).toBe(1);
   });
 });
 

@@ -168,15 +168,12 @@ export function GymSettings() {
               </span>
               <Select
                 value={form.weeklyPlan?.[dayKey] ?? ""}
-                onChange={(e) =>
-                  setDraft({
-                    ...form,
-                    weeklyPlan: {
-                      ...form.weeklyPlan,
-                      [dayKey]: e.target.value || undefined,
-                    },
-                  })
-                }
+                onChange={(e) => {
+                  const weeklyPlan = { ...form.weeklyPlan };
+                  if (e.target.value) weeklyPlan[dayKey] = e.target.value;
+                  else delete weeklyPlan[dayKey];
+                  setDraft({ ...form, weeklyPlan });
+                }}
                 aria-label={`Rutina para ${dayLabel[dayKey]}`}
                 className="flex-1"
               >

@@ -12,6 +12,7 @@ import { GymProfileRepository } from "@/lib/storage/GymProfileRepository";
 import { resolveExerciseVideos } from "@/lib/workout/resolveExerciseVideos";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { useAudioManager } from "@/hooks/useAudioManager";
+import type { AudioManager } from "@/lib/audio/AudioManager";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { useGymProfile } from "@/hooks/useGymProfile";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";

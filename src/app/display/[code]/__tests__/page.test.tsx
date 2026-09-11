@@ -13,7 +13,7 @@ let destroyMock: ReturnType<typeof vi.fn>;
 
 vi.mock("@/lib/session/SessionChannel", () => ({
   SessionChannel: vi.fn(
-    function MockSessionChannel() {
+    function MockSessionChannel(this: Record<string, unknown>) {
       this.onState = vi.fn((handler: (state: SessionState) => void) => {
         stateHandler = handler;
         return () => {

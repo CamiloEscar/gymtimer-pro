@@ -11,7 +11,9 @@ function getProfileSnapshot(): GymProfile | null {
   if (
     cachedProfile?.name !== value?.name ||
     cachedProfile?.logoUrl !== value?.logoUrl ||
-    cachedProfile?.linkCode !== value?.linkCode
+    cachedProfile?.linkCode !== value?.linkCode ||
+    cachedProfile?.defaultWorkSeconds !== value?.defaultWorkSeconds ||
+    cachedProfile?.defaultRestSeconds !== value?.defaultRestSeconds
   ) {
     cachedProfile = value;
   }

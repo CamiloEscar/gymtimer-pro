@@ -12,6 +12,7 @@ import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
 import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
 import { BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
 import { formatTimeInput } from "@/lib/workout/formatTimeInput";
+import { useGymProfile } from "@/hooks/useGymProfile";
 import { ExerciseEditor } from "./ExerciseEditor";
 
 const BLOCK_TYPES: BlockType[] = [
@@ -106,6 +107,7 @@ export function BlockEditor({
   const [catalogKind, setCatalogKind] = useState<CatalogKind>("gym");
   const catalog = catalogKind === "gym" ? EXERCISE_CATALOG : CROSSFIT_CATALOG;
   const effectiveCatalog = getEffectiveCatalog(catalog, overrides ?? []);
+  const profile = useGymProfile();
   const typeInfo = BLOCK_TYPE_INFO[block.type];
   const isBasic = block.type === "basic";
   const isRm = block.type === "rm";
@@ -133,7 +135,26 @@ export function BlockEditor({
         <Select
           aria-label="Tipo de bloque"
           value={block.type}
-          onChange={(e) => onChange({ ...block, type: e.target.value as BlockType })}
+          onChange={(e) => {
+            const type = e.target.value as BlockType;
+            if (
+              !block.workSeconds &&
+              (type === "interval" || type === "tabata" || type === "emom" || type === "otm")
+            ) {
+              // Prefill work/rest from the gym profile defaults so a box that
+              // always uses the same cadence doesn't retype it per block.
+              onChange({
+                ...block,
+                type,
+                ...(profile?.defaultWorkSeconds
+                  ? { workSeconds: profile.defaultWorkSeconds }
+                  : {}),
+                ...(profile?.defaultRestSeconds ? { restSeconds: profile.defaultRestSeconds } : {}),
+              });
+              return;
+            }
+            onChange({ ...block, type });
+          }}
           className="flex-1"
         >
           {BLOCK_TYPES.map((type) => (

@@ -16,7 +16,7 @@ export function ExerciseListDisplay({
 }: ExerciseListDisplayProps) {
   if (block.type === "rest") return null;
 
-  const { visible, overflowCount } = selectVisibleExercises(block.exercises);
+  const { visible } = selectVisibleExercises(block.exercises);
   if (visible.length === 0) return null;
 
   return (
@@ -75,11 +75,6 @@ export function ExerciseListDisplay({
           </div>
         );
       })}
-      {overflowCount > 0 && (
-        <div className="px-4 py-2 text-center font-tactical text-xs uppercase tracking-widest text-phosphor-muted bg-surface-900/40">
-          [ +{overflowCount} MÁS ]
-        </div>
-      )}
       {block.repsPerRound && phase === "work" && (
         <div className="px-4 py-3 border-t-2 border-brand-500 text-center bg-surface-900/40">
           <span className="font-tactical text-base uppercase tracking-widest text-brand-500 inline-flex items-center gap-2">

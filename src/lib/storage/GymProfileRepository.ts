@@ -10,6 +10,10 @@ export interface GymProfile {
   // routines or reloading the page. Optional — empty means keep the
   // current random-per-session behavior.
   linkCode?: string;
+  // Seconds prefilled into every new interval/tabata/emom/otm block, so a
+  // box that always programs 40s work/20s rest doesn't retype it per block.
+  defaultWorkSeconds?: number;
+  defaultRestSeconds?: number;
 }
 
 const STORAGE_KEY = "gymtimer.gymProfile";
@@ -29,6 +33,10 @@ function normalizeLinkCode(value: unknown): string | undefined {
   return trimmed;
 }
 
+function normalizeSeconds(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
 export class GymProfileRepository {
   get(): Result<GymProfile, StorageError> {
     try {
@@ -45,6 +53,10 @@ export class GymProfileRepository {
       const profile: GymProfile = { name };
       if (logoUrl) profile.logoUrl = logoUrl;
       if (linkCode) profile.linkCode = linkCode;
+      const defaultWorkSeconds = normalizeSeconds(record.defaultWorkSeconds);
+      if (defaultWorkSeconds !== undefined) profile.defaultWorkSeconds = defaultWorkSeconds;
+      const defaultRestSeconds = normalizeSeconds(record.defaultRestSeconds);
+      if (defaultRestSeconds !== undefined) profile.defaultRestSeconds = defaultRestSeconds;
       return ok(profile);
     } catch {
       return err("read_failed", "No se pudo leer el perfil del gimnasio");
@@ -56,6 +68,10 @@ export class GymProfileRepository {
     if (profile.logoUrl) cleaned.logoUrl = profile.logoUrl;
     const linkCode = normalizeLinkCode(profile.linkCode);
     if (linkCode) cleaned.linkCode = linkCode;
+    const defaultWorkSeconds = normalizeSeconds(profile.defaultWorkSeconds);
+    if (defaultWorkSeconds !== undefined) cleaned.defaultWorkSeconds = defaultWorkSeconds;
+    const defaultRestSeconds = normalizeSeconds(profile.defaultRestSeconds);
+    if (defaultRestSeconds !== undefined) cleaned.defaultRestSeconds = defaultRestSeconds;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
       return ok(cleaned);

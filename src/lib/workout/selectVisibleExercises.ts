@@ -2,7 +2,7 @@ import type { Exercise } from "@/types";
 
 export function selectVisibleExercises(
   exercises: Exercise[],
-  max = 4
+  max = Infinity
 ): { visible: Exercise[]; overflowCount: number } {
   return {
     visible: exercises.slice(0, max),

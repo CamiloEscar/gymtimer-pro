@@ -28,7 +28,7 @@ describe("ExerciseListDisplay numbering", () => {
     expect(screen.getByText("Pull-up · 12reps")).toBeInTheDocument();
   });
 
-  it("numbers up to the max visible exercises without renumbering the overflow", () => {
+  it("renders every exercise without an overflow row (list is always complete now)", () => {
     const block: WorkoutBlock = {
       ...BLOCK,
       exercises: [
@@ -43,8 +43,8 @@ describe("ExerciseListDisplay numbering", () => {
 
     expect(screen.getByText("Thruster")).toBeInTheDocument();
     expect(screen.getByText("Burpee")).toBeInTheDocument();
-    expect(screen.queryByText("Sit-up")).not.toBeInTheDocument();
-    expect(screen.getByText("[ +1 MÁS ]")).toBeInTheDocument();
+    expect(screen.getByText("Sit-up")).toBeInTheDocument();
+    expect(screen.queryByText(/MÁS/)).not.toBeInTheDocument();
   });
 
   it("returns null for rest blocks", () => {

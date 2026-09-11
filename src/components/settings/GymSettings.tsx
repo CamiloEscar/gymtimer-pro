@@ -24,13 +24,17 @@ export function GymSettings() {
   const dirty =
     form.name !== profile.name ||
     (form.logoUrl ?? "") !== (profile.logoUrl ?? "") ||
-    (form.linkCode ?? "") !== (profile.linkCode ?? "");
+    (form.linkCode ?? "") !== (profile.linkCode ?? "") ||
+    (form.defaultWorkSeconds ?? 0) !== (profile.defaultWorkSeconds ?? 0) ||
+    (form.defaultRestSeconds ?? 0) !== (profile.defaultRestSeconds ?? 0);
 
   function handleSave() {
     const next: GymProfile = { name: form.name };
     if (form.logoUrl) next.logoUrl = form.logoUrl;
     const linkCode = form.linkCode?.trim().toUpperCase();
     if (linkCode) next.linkCode = linkCode;
+    if (form.defaultWorkSeconds) next.defaultWorkSeconds = form.defaultWorkSeconds;
+    if (form.defaultRestSeconds) next.defaultRestSeconds = form.defaultRestSeconds;
     repo.save(next);
     setDraft(null);
     notifyLocalStorageChange();
@@ -82,6 +86,50 @@ export function GymSettings() {
             Dejalo vacío para generar uno nuevo cada sesión.
           </span>
         </label>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block space-y-1">
+            <span className="text-sm uppercase tracking-widest text-phosphor-dim">
+              Trabajo por defecto
+            </span>
+            <Input
+              type="number"
+              min={0}
+              value={form.defaultWorkSeconds ?? ""}
+              onChange={(e) =>
+                setDraft({
+                  ...form,
+                  defaultWorkSeconds: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+              placeholder="40"
+              aria-label="Segundos de trabajo por defecto"
+            />
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-sm uppercase tracking-widest text-phosphor-dim">
+              Descanso por defecto
+            </span>
+            <Input
+              type="number"
+              min={0}
+              value={form.defaultRestSeconds ?? ""}
+              onChange={(e) =>
+                setDraft({
+                  ...form,
+                  defaultRestSeconds: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+              placeholder="20"
+              aria-label="Segundos de descanso por defecto"
+            />
+          </label>
+        </div>
+
+        <span className="text-xs text-phosphor-dim">
+          Cada bloque de tipo interval/tabata/emom/otm que crees arranca con estos tiempos.
+        </span>
       </div>
 
       <div className="flex items-center gap-3">

@@ -8,9 +8,11 @@ import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
 import { DisplaySettingsRepository } from "@/lib/storage/DisplaySettingsRepository";
 import type { DisplaySettings } from "@/lib/storage/DisplaySettingsRepository";
+import { GymProfileRepository } from "@/lib/storage/GymProfileRepository";
 import { resolveExerciseVideos } from "@/lib/workout/resolveExerciseVideos";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
+import { useGymProfile } from "@/hooks/useGymProfile";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { SessionChannel } from "@/lib/session/SessionChannel";
@@ -24,6 +26,7 @@ import { TimerControls } from "@/components/timer/TimerControls";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Icon } from "@/components/ui/Icon";
 import { BlockEditor } from "@/components/workout/BlockEditor";
 import { emptyBlock } from "@/components/workout/WorkoutBuilder";
@@ -66,6 +69,12 @@ function saveActiveCode(workoutId: string, code: string) {
   localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({ workoutId, code }));
 }
 
+function readConfiguredLinkCode(): string | null {
+  const result = new GymProfileRepository().get();
+  if (!result.ok) return null;
+  return result.value.linkCode ?? null;
+}
+
 function RunWorkoutContent({
   workout,
   setWorkout,
@@ -76,11 +85,33 @@ function RunWorkoutContent({
   audio: AudioManager;
 }) {
   const searchParams = useSearchParams();
+  // Live snapshot of the gym profile so changes in /app/settings take effect
+  // without a page reload (e.g. trainer sets linkCode mid-session, the run
+  // page picks it up on the next state change).
+  const gymProfile = useGymProfile();
   const [code, setCode] = useState(() => {
+    // Priority: explicit ?code=... param wins, then a configured fixed
+    // linkCode, then the last-used session code for this workout, then a
+    // fresh random code.
+    const fromUrl = searchParams.get("code");
+    if (fromUrl) return fromUrl.toUpperCase();
+    const fixed = readConfiguredLinkCode();
+    if (fixed) return fixed;
     const active = loadActiveCode();
     if (active?.workoutId === workout.id) return active.code;
-    return searchParams.get("code") ?? generateCode();
+    return generateCode();
   });
+  // If a linkCode gets configured (or changed) AFTER the page first renders
+  // and we still have a random code, swap to it so the trainer's view and
+  // the TV display agree on the pairing without manual entry. Same rationale
+  // as the other intentional setState-in-effect sites in this file:
+  // external localStorage source-of-truth that React needs to mirror.
+  const fixedFromProfile = gymProfile?.linkCode ?? null;
+  useEffect(() => {
+    if (!fixedFromProfile) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: mirror configured linkCode into local state
+    setCode((current) => (current === fixedFromProfile ? current : fixedFromProfile));
+  }, [fixedFromProfile]);
   const session = useWorkoutSession(workout, audio);
   const channelRef = useRef<SessionChannel | null>(null);
   const sessionStartedAtRef = useRef<number | null>(null);
@@ -107,11 +138,22 @@ function RunWorkoutContent({
     },
     { showVideoOnDisplay: false }
   );
+  const allWorkouts = useLocalStorageSnapshot<Workout[]>(
+    "gymtimer.workouts",
+    () => {
+      const result = new LocalWorkoutRepository().list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
 
   // Created and destroyed in the same effect (rather than via useMemo + a
   // separate cleanup effect) so React Strict Mode's dev-only double-invoke
   // of effects always pairs a channel's creation with its own destroy call,
   // instead of destroying a memoized channel that a later effect still holds.
+  // Effect deps are intentionally just `code` — switching the active workout
+  // (e.g. trainer picks a different routine mid-session) keeps the same
+  // Pusher channel so the TV display never disconnects.
   useEffect(() => {
     saveActiveCode(workout.id, code);
     const channel = new SessionChannel(code, "trainer");
@@ -120,11 +162,26 @@ function RunWorkoutContent({
       channel.destroy();
       channelRef.current = null;
     };
-  }, [code, workout.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: channel lifetime is tied to the session code, not the workout
+  }, [code]);
+
+  useEffect(() => {
+    saveActiveCode(workout.id, code);
+  }, [workout.id, code]);
 
   useEffect(() => {
     new LocalWorkoutRepository().save(workout);
   }, [workout]);
+
+  // Switching routines mid-session must reset the run-scoped refs that the
+  // mirror-effect below reads; otherwise the previous session's
+  // sessionStartedAt would be reused for duration math and hasRecorded would
+  // skip re-recording the new run. Engine itself rebuilds from the new
+  // workout prop (see useWorkoutSession), so timer state already resets.
+  useEffect(() => {
+    sessionStartedAtRef.current = null;
+    hasRecordedRef.current = false;
+  }, [workout.id]);
 
   useEffect(() => {
     channelRef.current?.sendState({
@@ -191,41 +248,68 @@ function RunWorkoutContent({
 
   return (
     <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-6 p-4">
-      <p className="text-phosphor-dim flex items-center gap-2 flex-wrap justify-center">
-        <span className="shrink-0">Código de pantalla:</span>
-        <Input
-          value={codeDraft}
-          onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
-          onBlur={() => {
-            if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.blur();
-            }
-          }}
-          aria-label="Editar código de pantalla"
-          className="w-40 font-mono uppercase"
-        />
-        <Button
-          size="md"
-          variant="secondary"
-          onClick={handleCopyCode}
-          aria-label="Copiar código"
-        >
-          {copied ? (
-            <>
-              <Icon name="check" />
-              Copiado
-            </>
-          ) : (
-            "Copiar código"
-          )}
-        </Button>
-        <Link href={`/display/${code}`} className="text-brand-500 underline">
-          abrir pantalla
-        </Link>
-      </p>
+      <div className="w-full max-w-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 flex-1">
+          <span className="text-xs uppercase tracking-widest text-phosphor-dim shrink-0">Rutina</span>
+          <Select
+            aria-label="Cambiar de rutina en vivo"
+            value={workout.id}
+            onChange={(e) => {
+              const next = allWorkouts.find((w) => w.id === e.target.value);
+              if (next) setWorkout(next);
+            }}
+            className="flex-1 font-industrial uppercase tracking-wide"
+          >
+            {allWorkouts.length === 0 ? (
+              <option value={workout.id}>{workout.name || "(sin nombre)"}</option>
+            ) : (
+              allWorkouts
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name || "(sin nombre)"}
+                  </option>
+                ))
+            )}
+          </Select>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs uppercase tracking-widest text-phosphor-dim shrink-0">Pantalla</span>
+          <Input
+            value={codeDraft}
+            onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
+            onBlur={() => {
+              if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+              }
+            }}
+            aria-label="Editar código de pantalla"
+            className="w-28 font-mono uppercase"
+          />
+          <Button
+            size="md"
+            variant="secondary"
+            onClick={handleCopyCode}
+            aria-label="Copiar código"
+          >
+            {copied ? (
+              <>
+                <Icon name="check" />
+                Copiado
+              </>
+            ) : (
+              "Copiar"
+            )}
+          </Button>
+          <Link href={`/display/${code}`} className="text-brand-500 underline text-sm shrink-0">
+            abrir TV
+          </Link>
+        </div>
+      </div>
       {session.state.status === "ready" && (
         <Button
           size="md"

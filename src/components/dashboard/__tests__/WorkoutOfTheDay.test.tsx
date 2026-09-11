@@ -22,7 +22,17 @@ describe("WorkoutOfTheDay", () => {
     };
     render(<WorkoutOfTheDay workout={workout} />);
     expect(screen.getByText("Murph")).toBeInTheDocument();
-    expect(screen.getByText(/2 bloques/i)).toBeInTheDocument();
+    // Block count is split across nodes (number + word). Use a function
+    // matcher that joins textContent AND requires the trailing "s" so we
+    // match the container rather than the inner span (which is "2 bloque" +
+    // an "s" text node adjacent to the inner span, not a match).
+    expect(
+      screen.getByText((_, node) => {
+        if (!node) return false;
+        const text = node.textContent ?? "";
+        return /\b2\s+bloques\b/i.test(text.replace(/\s+/g, " "));
+      })
+    ).toBeInTheDocument();
     // (600 + 60)s = 660s = 11m
     expect(screen.getByText(/11m/)).toBeInTheDocument();
   });

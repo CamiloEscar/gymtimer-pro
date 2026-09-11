@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { generateCode } from "@/lib/session/generateCode";
+import { useGymProfile } from "@/hooks/useGymProfile";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -12,6 +13,25 @@ export default function DisplayEntryPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("choice");
   const [code, setCode] = useState("");
+  // Live snapshot of the gym profile so a linkCode configured in /app/settings
+  // is picked up immediately and routes this TV straight to /display/{code}.
+  const gymProfile = useGymProfile();
+  const configuredLinkCode = gymProfile?.linkCode ?? null;
+
+  useEffect(() => {
+    if (!configuredLinkCode) return;
+    router.replace(`/display/${configuredLinkCode}`);
+  }, [configuredLinkCode, router]);
+
+  if (configuredLinkCode) {
+    return (
+      <div className="min-h-[100dvh] bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
+        <p className="text-phosphor-dim uppercase tracking-widest text-xs">
+          Conectando a {configuredLinkCode}…
+        </p>
+      </div>
+    );
+  }
 
   if (mode === "choice") {
     return (

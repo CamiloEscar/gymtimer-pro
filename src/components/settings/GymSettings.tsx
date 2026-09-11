@@ -22,7 +22,19 @@ export function GymSettings() {
   const form = draft ?? profile;
 
   const dirty =
-    form.name !== profile.name || (form.logoUrl ?? "") !== (profile.logoUrl ?? "");
+    form.name !== profile.name ||
+    (form.logoUrl ?? "") !== (profile.logoUrl ?? "") ||
+    (form.linkCode ?? "") !== (profile.linkCode ?? "");
+
+  function handleSave() {
+    const next: GymProfile = { name: form.name };
+    if (form.logoUrl) next.logoUrl = form.logoUrl;
+    const linkCode = form.linkCode?.trim().toUpperCase();
+    if (linkCode) next.linkCode = linkCode;
+    repo.save(next);
+    setDraft(null);
+    notifyLocalStorageChange();
+  }
 
   return (
     <Card className="space-y-4">
@@ -52,6 +64,24 @@ export function GymSettings() {
             aria-label="Logo URL del gimnasio"
           />
         </label>
+
+        <label className="block space-y-1">
+          <span className="text-sm uppercase tracking-widest text-phosphor-dim">
+            Código de enlace fijo (opcional)
+          </span>
+          <Input
+            value={form.linkCode ?? ""}
+            onChange={(e) => setDraft({ ...form, linkCode: e.target.value.toUpperCase() })}
+            placeholder="BOXDEL"
+            maxLength={6}
+            aria-label="Código de enlace fijo del gimnasio"
+            className="font-mono uppercase tracking-widest"
+          />
+          <span className="text-xs text-phosphor-dim">
+            Si lo configurás, el trainer y el display usan siempre este mismo código (6 caracteres).
+            Dejalo vacío para generar uno nuevo cada sesión.
+          </span>
+        </label>
       </div>
 
       <div className="flex items-center gap-3">
@@ -60,14 +90,7 @@ export function GymSettings() {
           size="md"
           variant="primary"
           disabled={!dirty}
-          onClick={() => {
-            const next: GymProfile = form.logoUrl
-              ? { name: form.name, logoUrl: form.logoUrl }
-              : { name: form.name };
-            repo.save(next);
-            setDraft(null);
-            notifyLocalStorageChange();
-          }}
+          onClick={handleSave}
         >
           Guardar
         </Button>

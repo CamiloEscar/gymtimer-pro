@@ -20,14 +20,16 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
 
   if (!hasHistory) {
     return (
-      <Card className="text-center">
-        <p className="text-phosphor font-semibold inline-flex items-center gap-2">
-          Arrancá tu racha hoy
+      <Card className="flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 text-brand-500">
           <Icon name="flame" />
-        </p>
-        <p className="text-sm text-phosphor-dim mt-1">
-          Todavía no completaste ningún entrenamiento. Iniciá uno y volvé acá.
-        </p>
+        </span>
+        <div className="space-y-0.5">
+          <p className="text-phosphor font-semibold">Arrancá tu racha hoy</p>
+          <p className="text-xs text-phosphor-dim">
+            Todavía no completaste ningún entrenamiento. Iniciá uno y volvé acá.
+          </p>
+        </div>
       </Card>
     );
   }
@@ -42,9 +44,13 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {items.map((item) => (
-        <Card key={item.label} className="text-center">
-          <p className="font-tactical text-2xl text-brand-500">{item.value}</p>
-          <p className="text-xs text-phosphor-dim uppercase tracking-wide mt-1">{item.label}</p>
+        <Card key={item.label} className="text-center space-y-1 py-5">
+          <p className="font-industrial text-3xl leading-none text-phosphor tabular-nums">
+            {item.value}
+          </p>
+          <p className="font-tactical text-[10px] text-phosphor-dim uppercase tracking-widest">
+            {item.label}
+          </p>
         </Card>
       ))}
     </div>

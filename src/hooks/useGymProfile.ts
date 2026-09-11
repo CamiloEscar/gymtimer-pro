@@ -8,7 +8,11 @@ let cachedProfile: GymProfile | null = null;
 function getProfileSnapshot(): GymProfile | null {
   const result = new GymProfileRepository().get();
   const value = result.ok ? result.value : null;
-  if (cachedProfile?.name !== value?.name || cachedProfile?.logoUrl !== value?.logoUrl) {
+  if (
+    cachedProfile?.name !== value?.name ||
+    cachedProfile?.logoUrl !== value?.logoUrl ||
+    cachedProfile?.linkCode !== value?.linkCode
+  ) {
     cachedProfile = value;
   }
   return cachedProfile;

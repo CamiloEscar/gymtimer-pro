@@ -7,10 +7,12 @@ import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { computeHistoryStats } from "@/lib/history/computeHistoryStats";
 import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
+import { useGymProfile } from "@/hooks/useGymProfile";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Icon } from "@/components/ui/Icon";
 import { StatsRow } from "./StatsRow";
 import { QuickActions } from "./QuickActions";
 import { WorkoutOfTheDay } from "./WorkoutOfTheDay";
@@ -20,6 +22,14 @@ function greeting(hour: number): string {
   if (hour < 12) return "Buenos días";
   if (hour < 19) return "Buenas tardes";
   return "Buenas noches";
+}
+
+function formatLongDate(date: Date): string {
+  return new Intl.DateTimeFormat("es", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(date);
 }
 
 export function Dashboard() {
@@ -46,10 +56,14 @@ export function Dashboard() {
   // server's timezone — computed client-side in the effect below instead,
   // avoiding a hydration mismatch against the user's local hour.
   const [greetingText, setGreetingText] = useState<string | null>(null);
+  const [dateText, setDateText] = useState<string | null>(null);
+  const gymProfile = useGymProfile();
 
   /* eslint-disable react-hooks/set-state-in-effect -- client-only greeting, hour must not come from the server */
   useEffect(() => {
-    setGreetingText(greeting(new Date().getHours()));
+    const now = new Date();
+    setGreetingText(greeting(now.getHours()));
+    setDateText(formatLongDate(now));
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -68,14 +82,46 @@ export function Dashboard() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
-      <div>
-        <p className="text-brand-500 text-sm uppercase tracking-wide">{greetingText}</p>
-        <h1 className="text-2xl font-bold text-phosphor font-industrial">¿Qué entrenamos hoy?</h1>
-      </div>
+      <header className="relative overflow-hidden rounded-2xl border border-surface-800 bg-surface-900 p-6">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-60"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 85% 15%, oklch(0.7 0.19 150 / 0.18), transparent 55%), radial-gradient(circle at 10% 90%, oklch(0.82 0.16 90 / 0.08), transparent 60%)",
+          }}
+        />
+        <div className="relative space-y-2">
+          <div className="flex items-center gap-2">
+            {gymProfile?.logoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element -- dashboard logo comes from user-configured URL, no optimization guarantees */
+              <img
+                src={gymProfile.logoUrl}
+                alt=""
+                className="h-7 w-7 rounded-md border border-surface-800 bg-surface-950 object-contain"
+              />
+            ) : (
+              <Icon name="dumbbell" className="size-5 text-brand-500" />
+            )}
+            <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
+              {gymProfile?.name?.trim() ? gymProfile.name : "GymTimer Pro"}
+            </p>
+          </div>
+          <h1 className="font-industrial text-3xl md:text-4xl leading-none text-phosphor">
+            {greetingText ?? " "}
+          </h1>
+          <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+            {dateText ?? " "}
+          </p>
+          <p className="text-sm text-phosphor-dim pt-1">
+            ¿Qué entrenamos hoy?
+          </p>
+        </div>
+      </header>
 
       <StatsRow stats={historyStats} totalRoutines={workouts.length} />
 
-      <QuickActions workoutOfTheDay={workoutOfTheDay} />
+      <QuickActions />
 
       <Input
         placeholder="Buscar entrenamiento..."

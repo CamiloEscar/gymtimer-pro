@@ -20,6 +20,7 @@ import { SessionChannel } from "@/lib/session/SessionChannel";
 import { generateCode } from "@/lib/session/generateCode";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { TimerDisplay } from "@/components/timer/TimerDisplay";
+import { TimerProgressBar } from "@/components/timer/TimerProgressBar";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
 import { RoundIndicator } from "@/components/timer/RoundIndicator";
 import { TimerControls } from "@/components/timer/TimerControls";
@@ -396,6 +397,11 @@ function RunWorkoutContent({
         remainingMs={session.state.timer.remainingMs}
         elapsedMs={session.state.timer.elapsedMs}
         mode={session.state.timer.mode}
+      />
+      <TimerProgressBar
+        mode={session.state.timer.mode}
+        elapsedMs={session.state.timer.elapsedMs}
+        durationMs={session.state.timer.durationMs}
       />
       <RoundIndicator round={session.state.currentRound} totalRounds={session.state.totalRounds} />
       {isRmBlock && (

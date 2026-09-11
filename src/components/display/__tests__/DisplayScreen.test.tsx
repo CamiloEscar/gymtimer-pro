@@ -48,7 +48,7 @@ describe("DisplayScreen block time progress bar", () => {
       <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
 
-    const bar = screen.getByTestId("block-progress-bar");
+    const bar = screen.getByTestId("timer-progress-bar");
     expect(bar).toHaveStyle({ width: "25%" });
   });
 
@@ -60,7 +60,7 @@ describe("DisplayScreen block time progress bar", () => {
       <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
 
-    expect(screen.getByTestId("block-progress-bar")).toHaveStyle({ width: "100%" });
+    expect(screen.getByTestId("timer-progress-bar")).toHaveStyle({ width: "100%" });
   });
 
   it("does not render the progress bar when timer mode is countup", () => {
@@ -71,7 +71,7 @@ describe("DisplayScreen block time progress bar", () => {
       <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
     );
 
-    expect(screen.queryByTestId("block-progress-bar")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("timer-progress-bar")).not.toBeInTheDocument();
   });
 });
 

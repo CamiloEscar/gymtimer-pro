@@ -8,6 +8,7 @@ import { useGymProfile } from "@/hooks/useGymProfile";
 import { TimerDisplay } from "@/components/timer/TimerDisplay";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
 import { RoundIndicator } from "@/components/timer/RoundIndicator";
+import { TimerProgressBar } from "@/components/timer/TimerProgressBar";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ExerciseListDisplay } from "./ExerciseListDisplay";
@@ -49,10 +50,6 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
     currentBlock.type !== "rest" &&
     state.currentPhase !== "finished" &&
     currentVideo?.videoUrl != null;
-  const blockProgress =
-    state.timer.durationMs > 0
-      ? Math.min(1, Math.max(0, state.timer.elapsedMs / state.timer.durationMs))
-      : 0;
   const background =
     state.totalRounds > 1
       ? ROUND_BACKGROUNDS[(state.currentRound - 1) % ROUND_BACKGROUNDS.length]
@@ -122,13 +119,11 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
           </p>
         )}
         {state.timer.mode === "countdown" && (
-          <div className="w-full max-w-md h-1 bg-surface-800">
-            <div
-              data-testid="block-progress-bar"
-              className="h-full bg-phosphor"
-              style={{ width: `${blockProgress * 100}%` }}
-            />
-          </div>
+          <TimerProgressBar
+            mode={state.timer.mode}
+            elapsedMs={state.timer.elapsedMs}
+            durationMs={state.timer.durationMs}
+          />
         )}
         {currentBlock && currentBlock.type === "rest" ? (
           <div className="flex flex-col items-center gap-2 border-t border-surface-800 pt-6 w-full max-w-md">

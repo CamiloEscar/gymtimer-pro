@@ -50,7 +50,7 @@ export function Navbar() {
           aria-expanded={menuOpen}
           aria-controls="mobile-menu"
           onClick={() => setMenuOpen(true)}
-          className="md:hidden inline-flex items-center justify-center w-10 h-10 -mr-2 text-phosphor hover:text-brand-500 transition-colors"
+          className="md:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 text-phosphor hover:text-brand-500 transition-colors"
         >
           <svg
             viewBox="0 0 24 24"

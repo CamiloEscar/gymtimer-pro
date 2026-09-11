@@ -9,6 +9,14 @@ const FEATURES = [
     description: "El atleta ve en grande qué falta: trabajo, descanso, preparate y la ronda actual.",
   },
   {
+    title: "Audio cues de inicio y fin",
+    description: "Beeps entre trabajo y descanso, get-ready de 3 segundos y aviso de cierre de bloque.",
+  },
+  {
+    title: "Plan semanal asignado por día",
+    description: "Asigná la rutina de cada día de la semana y los alumnos ya saben qué toca.",
+  },
+  {
     title: "Sincronización live por Pusher",
     description: "Pausás o corregís en el celu y el display lo refleja al instante.",
   },
@@ -24,30 +32,30 @@ const FEATURES = [
 
 export function CoachSection() {
   return (
-    <section className="px-6 md:px-10 lg:px-16 py-20 lg:py-28">
-      <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-        <Reveal>
+    <section id="para-tu-box" className="px-6 md:px-10 lg:px-16 py-20 lg:py-28">
+      <div className="max-w-5xl mx-auto">
+        <span className="font-tactical text-xs uppercase tracking-[0.18em] text-brand-500">
+          Para el box
+        </span>
+        <h2 className="mt-3 font-display-condensed font-normal uppercase tracking-[-0.01em] leading-[0.85] text-4xl md:text-5xl text-phosphor">
+          Un display que aguanta el ritmo
+        </h2>
+
+        <Reveal className="mt-10">
           <VideoPlayer
             src="/exercises/chest-01.mp4"
             alt="Demo del display del entrenador"
-            className="aspect-[4/5] rounded-xl"
+            className="aspect-[16/9] rounded-xl"
             lazy={false}
           />
         </Reveal>
 
-        <div>
-          <span className="font-tactical text-xs uppercase tracking-[0.18em] text-brand-500">
-            Para el box
-          </span>
-          <h2 className="mt-3 font-display-condensed font-normal uppercase tracking-[-0.01em] leading-[0.85] text-4xl md:text-5xl text-phosphor">
-            Un display que aguanta el ritmo
-          </h2>
-          <p className="mt-4 text-sm text-phosphor-dim leading-relaxed max-w-md">
+        <div className="mt-12 grid gap-x-12 gap-y-8 md:grid-cols-2">
+          <p className="text-sm text-phosphor-dim leading-relaxed max-w-md">
             Pensado para correr clases en vivo: el monitor del box espeja el teléfono del profe, y
             sigue marcando aunque bloqueen el celu.
           </p>
-
-          <div className="mt-8 border-t border-surface-800/50">
+          <div className="border-t border-surface-800/50">
             {FEATURES.map((feature) => (
               <div
                 key={feature.title}
@@ -55,7 +63,7 @@ export function CoachSection() {
               >
                 <div className="shrink-0 size-2 rotate-45 bg-brand-500 self-center" />
                 <div>
-                  <h3 className="font-tactical text-sm uppercase tracking-widest text-phosphor">
+                  <h3 className="font-tactical text-[15px] uppercase tracking-widest text-phosphor leading-tight">
                     {feature.title}
                   </h3>
                   <p className="mt-1 text-sm text-phosphor-dim leading-relaxed">

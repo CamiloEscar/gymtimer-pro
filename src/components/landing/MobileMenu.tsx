@@ -46,35 +46,35 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
           type="button"
           aria-label="Cerrar menú"
           onClick={onClose}
-          className="inline-flex items-center justify-center w-10 h-10 -mr-2 text-phosphor hover:text-brand-500 transition-colors"
+          className="inline-flex items-center justify-center w-11 h-11 -mr-2 text-phosphor hover:text-brand-500 transition-colors"
         >
           <Icon name="close" className="size-6" />
         </button>
       </div>
 
-      <nav className="flex-1 flex flex-col justify-center px-8 gap-8">
+      <nav className="flex-1 flex flex-col justify-center px-8 gap-6">
         <Link
           href="#modos"
           onClick={onClose}
-          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
+          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors py-3"
         >
           Modos
         </Link>
         <Link
           href="#como-funciona"
           onClick={onClose}
-          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
+          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors py-3"
         >
           Cómo funciona
         </Link>
         <Link
           href="/app/workouts"
           onClick={onClose}
-          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
+          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors py-3"
         >
           Entrenamientos
         </Link>
-        <Link href="/app" onClick={onClose} className="self-start">
+        <Link href="/app" onClick={onClose} className="self-start mt-2">
           <Button size="lg" variant="primary" className="text-lg px-8 py-5">
             PROBAR AHORA →
           </Button>

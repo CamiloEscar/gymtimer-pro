@@ -205,7 +205,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               onClick={() => {
                 videoRef.current?.play().catch(() => {});
               }}
-              className="absolute bottom-3 right-3 size-10 rounded-full bg-brand-500/90 text-black flex items-center justify-center hover:bg-brand-500 transition-colors"
+              className="absolute bottom-3 right-3 size-11 rounded-full bg-brand-500/90 text-black flex items-center justify-center hover:bg-brand-500 transition-colors"
             >
               <Icon name="play" className="size-5" />
             </button>

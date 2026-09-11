@@ -7,21 +7,21 @@ export function Footer() {
         <span className="font-industrial text-xl text-phosphor uppercase tracking-tight">
           GYMTIMER
         </span>
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-2">
           <Link
             href="/app/workouts"
-            className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim hover:text-phosphor transition-colors"
+            className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim hover:text-phosphor transition-colors py-3.5"
           >
             Entrenamientos
           </Link>
           <Link
             href="/app"
-            className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim hover:text-phosphor transition-colors"
+            className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim hover:text-phosphor transition-colors py-3.5 px-1"
           >
             App
           </Link>
         </nav>
-        <p className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted">
+        <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim">
           Hecho para boxes con estándar
         </p>
       </div>

@@ -21,7 +21,7 @@ export function FinalCta() {
           minutos.
         </p>
         <div>
-          <Link href="/app">
+          <Link href="/app" className="inline-block py-3">
             <Button size="lg" className="text-lg px-8 py-5 rounded-xl">
               PROBAR AHORA →
             </Button>

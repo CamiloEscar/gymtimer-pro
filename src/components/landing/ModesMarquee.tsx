@@ -1,13 +1,13 @@
 const MODES = [
   "AMRAP",
   "EMOM",
+  "OTM",
   "TABATA",
   "FOR TIME",
-  "OTM",
+  "COUNTDOWN",
+  "COUNTUP",
   "INTERVALOS",
-  "ROUNDS",
-  "RM",
-  "FIGHT GONE BAD",
+  "REST",
 ];
 
 export function ModesMarquee() {

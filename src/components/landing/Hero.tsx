@@ -72,7 +72,7 @@ export function Hero() {
 
         <div className="absolute inset-0">
           <VideoPlayer
-            src="/exercises/arms-01.mp4"
+            src="/videos/ketbell.mp4"
             alt="Demo del timer"
             className="h-full"
           />

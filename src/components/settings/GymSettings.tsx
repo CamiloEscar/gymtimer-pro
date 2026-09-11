@@ -3,10 +3,12 @@
 import { useState } from "react";
 import type { GymProfile } from "@/lib/storage/GymProfileRepository";
 import { GymProfileRepository } from "@/lib/storage/GymProfileRepository";
+import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 
 export function GymSettings() {
   const repo = new GymProfileRepository();
@@ -18,6 +20,14 @@ export function GymSettings() {
     },
     { name: "" }
   );
+  const workouts = useLocalStorageSnapshot(
+    "gymtimer.workouts",
+    () => {
+      const result = new LocalWorkoutRepository().list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
   const [draft, setDraft] = useState<GymProfile | null>(null);
   const form = draft ?? profile;
 
@@ -26,7 +36,8 @@ export function GymSettings() {
     (form.logoUrl ?? "") !== (profile.logoUrl ?? "") ||
     (form.linkCode ?? "") !== (profile.linkCode ?? "") ||
     (form.defaultWorkSeconds ?? 0) !== (profile.defaultWorkSeconds ?? 0) ||
-    (form.defaultRestSeconds ?? 0) !== (profile.defaultRestSeconds ?? 0);
+    (form.defaultRestSeconds ?? 0) !== (profile.defaultRestSeconds ?? 0) ||
+    JSON.stringify(form.weeklyPlan ?? {}) !== JSON.stringify(profile.weeklyPlan ?? {});
 
   function handleSave() {
     const next: GymProfile = { name: form.name };
@@ -35,6 +46,7 @@ export function GymSettings() {
     if (linkCode) next.linkCode = linkCode;
     if (form.defaultWorkSeconds) next.defaultWorkSeconds = form.defaultWorkSeconds;
     if (form.defaultRestSeconds) next.defaultRestSeconds = form.defaultRestSeconds;
+    if (form.weeklyPlan && Object.keys(form.weeklyPlan).length > 0) next.weeklyPlan = form.weeklyPlan;
     repo.save(next);
     setDraft(null);
     notifyLocalStorageChange();
@@ -130,6 +142,54 @@ export function GymSettings() {
         <span className="text-xs text-phosphor-dim">
           Cada bloque de tipo interval/tabata/emom/otm que crees arranca con estos tiempos.
         </span>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="font-tactical text-xs uppercase tracking-widest text-brand-500">
+          Plan semanal
+        </h2>
+        <p className="text-sm text-phosphor-dim">
+          Asigná una rutina por día. Aparece en el dashboard como rutina del día.
+        </p>
+        {(["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const).map((dayKey) => {
+          const dayLabel: Record<string, string> = {
+            mon: "Lunes",
+            tue: "Martes",
+            wed: "Miércoles",
+            thu: "Jueves",
+            fri: "Viernes",
+            sat: "Sábado",
+            sun: "Domingo",
+          };
+          return (
+            <label key={dayKey} className="flex items-center gap-3">
+              <span className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim w-24 shrink-0">
+                {dayLabel[dayKey]}
+              </span>
+              <Select
+                value={form.weeklyPlan?.[dayKey] ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...form,
+                    weeklyPlan: {
+                      ...form.weeklyPlan,
+                      [dayKey]: e.target.value || undefined,
+                    },
+                  })
+                }
+                aria-label={`Rutina para ${dayLabel[dayKey]}`}
+                className="flex-1"
+              >
+                <option value="">Sin asignar</option>
+                {workouts.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name || "(sin nombre)"}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          );
+        })}
       </div>
 
       <div className="flex items-center gap-3">

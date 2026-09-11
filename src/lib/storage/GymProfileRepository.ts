@@ -17,6 +17,9 @@ export interface GymProfile {
   // Manually pinned Workout-of-the-Day. When set, the dashboard shows this
   // workout instead of the default last-created fallback.
   wodWorkoutId?: string;
+  // Weekly plan: maps day keys ("mon".."sun") to workout IDs so the trainer
+  // can pre-assign routines per day and the dashboard highlights today's WOD.
+  weeklyPlan?: Record<string, string>;
 }
 
 const STORAGE_KEY = "gymtimer.gymProfile";
@@ -61,6 +64,9 @@ export class GymProfileRepository {
       const defaultRestSeconds = normalizeSeconds(record.defaultRestSeconds);
       if (defaultRestSeconds !== undefined) profile.defaultRestSeconds = defaultRestSeconds;
       if (typeof record.wodWorkoutId === "string") profile.wodWorkoutId = record.wodWorkoutId;
+      if (record.weeklyPlan && typeof record.weeklyPlan === "object" && !Array.isArray(record.weeklyPlan)) {
+        profile.weeklyPlan = record.weeklyPlan as Record<string, string>;
+      }
       return ok(profile);
     } catch {
       return err("read_failed", "No se pudo leer el perfil del gimnasio");
@@ -77,6 +83,7 @@ export class GymProfileRepository {
     const defaultRestSeconds = normalizeSeconds(profile.defaultRestSeconds);
     if (defaultRestSeconds !== undefined) cleaned.defaultRestSeconds = defaultRestSeconds;
     if (profile.wodWorkoutId) cleaned.wodWorkoutId = profile.wodWorkoutId;
+    if (profile.weeklyPlan) cleaned.weeklyPlan = profile.weeklyPlan;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
       return ok(cleaned);

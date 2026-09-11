@@ -74,7 +74,15 @@ export function Dashboard() {
     notifyLocalStorageChange();
   }
 
+  const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+  function getTodayKey(): string {
+    return DAY_KEYS[new Date().getDay()];
+  }
+
+  const weeklyPlanWodId = gymProfile?.weeklyPlan?.[getTodayKey()];
   const workoutOfTheDay =
+    workouts.find((w) => w.id === weeklyPlanWodId) ??
     workouts.find((w) => w.id === gymProfile?.wodWorkoutId) ??
     (workouts.length > 0 ? workouts[workouts.length - 1] : null);
   const isSearching = query.trim().length > 0;

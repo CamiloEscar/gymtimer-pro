@@ -52,11 +52,25 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         </button>
       </div>
 
-      <nav className="flex-1 flex flex-col justify-center px-8 gap-10">
+      <nav className="flex-1 flex flex-col justify-center px-8 gap-8">
+        <Link
+          href="#modos"
+          onClick={onClose}
+          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
+        >
+          Modos
+        </Link>
+        <Link
+          href="#como-funciona"
+          onClick={onClose}
+          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
+        >
+          Cómo funciona
+        </Link>
         <Link
           href="/app/workouts"
           onClick={onClose}
-          className="font-industrial text-4xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
+          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
         >
           Entrenamientos
         </Link>

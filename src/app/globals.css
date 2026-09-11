@@ -85,6 +85,19 @@ body {
   }
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.anim-marquee {
+  animation: marquee 30s linear infinite;
+}
+
 .anim-fade-down {
   animation: fadeDown 600ms ease both;
 }

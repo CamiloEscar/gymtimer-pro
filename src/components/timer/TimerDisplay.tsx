@@ -21,7 +21,7 @@ function formatTime(ms: number): string {
 export function TimerDisplay({ remainingMs, elapsedMs, mode }: TimerDisplayProps) {
   const value = mode === "countdown" ? remainingMs : elapsedMs;
   return (
-    <p className="font-industrial tabular-nums text-phosphor text-center leading-none tracking-tight text-[clamp(6rem,20vw,16rem)]">
+    <p className="font-industrial tabular-nums text-phosphor text-center leading-none tracking-tight text-[clamp(4rem,17vw,14rem)]">
       {formatTime(value)}
     </p>
   );

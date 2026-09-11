@@ -249,18 +249,17 @@ function RunWorkoutContent({
   const accumulatedReps = session.state.accumulatedReps ?? 0;
 
   return (
-    <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center gap-6 p-4">
+    <div className="bg-surface-950 flex flex-col items-center sm:min-h-dvh sm:justify-center gap-3 sm:gap-6 p-3 sm:p-4">
       <div className="w-full max-w-2xl text-center space-y-1">
         <p className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted">
           EN VIVO
         </p>
-        <h1 className="font-industrial text-2xl md:text-4xl uppercase tracking-tight text-phosphor leading-none">
+        <h1 className="font-industrial text-xl md:text-3xl uppercase tracking-tight text-phosphor leading-none">
           {workout.name || "(sin nombre)"}
         </h1>
       </div>
-      <div className="w-full max-w-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-        <div className="flex items-center gap-2 flex-1">
-          <span className="text-xs uppercase tracking-widest text-phosphor-dim shrink-0">Rutina</span>
+      <div className="w-full max-w-2xl space-y-2">
+        <div className="flex items-center gap-2">
           <Select
             aria-label="Cambiar de rutina en vivo"
             value={workout.id}
@@ -283,9 +282,23 @@ function RunWorkoutContent({
                 ))
             )}
           </Select>
+          {session.state.status === "ready" && (
+            <Button
+              size="md"
+              variant="secondary"
+              onClick={() => {
+                setDraft({ ...workout });
+                setEditOpen(true);
+              }}
+              aria-label="Editar rutina"
+              className="shrink-0"
+            >
+              <Icon name="pencil" />
+              <span className="hidden sm:inline">Editar</span>
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs uppercase tracking-widest text-phosphor-dim shrink-0">Pantalla</span>
           <Input
             value={codeDraft}
             onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
@@ -298,42 +311,37 @@ function RunWorkoutContent({
               }
             }}
             aria-label="Editar código de pantalla"
-            className="w-28 font-mono uppercase"
+            placeholder="CÓDIGO"
+            className="w-24 sm:w-28 font-mono uppercase"
           />
           <Button
             size="md"
             variant="secondary"
             onClick={handleCopyCode}
             aria-label="Copiar código"
+            className="shrink-0"
           >
             {copied ? (
               <>
                 <Icon name="check" />
-                Copiado
+                <span className="hidden sm:inline">Copiado</span>
               </>
             ) : (
-              "Copiar"
+              <>
+                <Icon name="copy" />
+                <span className="hidden sm:inline">Copiar</span>
+              </>
             )}
           </Button>
-          <Link href={`/display/${code}`} className="text-brand-500 underline text-sm shrink-0">
-            abrir TV
+          <Link
+            href={`/display/${code}`}
+            className="inline-flex items-center gap-1.5 text-brand-500 text-sm underline py-2.5 px-1 shrink-0"
+          >
+            <Icon name="display" className="size-4" />
+            <span>abrir TV</span>
           </Link>
         </div>
       </div>
-      {session.state.status === "ready" && (
-        <Button
-          size="md"
-          variant="secondary"
-          onClick={() => {
-            setDraft({ ...workout });
-            setEditOpen(true);
-          }}
-          aria-label="Editar rutina"
-        >
-          <Icon name="pencil" />
-          Editar rutina
-        </Button>
-      )}
       <Modal
         open={editOpen}
         onClose={() => setEditOpen(false)}

@@ -33,14 +33,14 @@ export function AppHeader() {
     .sort((a, b) => b.length - a.length)[0];
 
   return (
-    <header className="sticky top-0 z-10 bg-surface-900 border-b border-surface-800 px-4 py-3">
+    <header className="sticky top-0 z-10 bg-surface-900 border-b border-surface-800 px-4 py-2 md:py-3">
       <nav className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 md:gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {backHref && (
             <Link href={backHref}>
-              <Button variant="ghost">
+              <Button variant="ghost" size="md" className="px-2 py-2">
                 <Icon name="arrow-left" />
-                Atrás
+                <span className="hidden sm:inline">Atrás</span>
               </Button>
             </Link>
           )}
@@ -48,7 +48,7 @@ export function AppHeader() {
             GYMTIMER
           </Link>
         </div>
-        <ul className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 md:gap-4 text-xs md:text-sm font-tactical">
+        <ul className="hidden md:flex flex-wrap items-center justify-end gap-x-3 gap-y-1 md:gap-4 text-xs md:text-sm font-tactical">
           {SECTION_LINKS.map((link) => {
             const active = link.href === activeHref;
             const className = active ? "text-brand-500" : "text-phosphor-dim hover:text-phosphor";

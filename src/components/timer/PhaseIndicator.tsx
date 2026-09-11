@@ -30,7 +30,7 @@ export function PhaseIndicator({ phase, remainingMs }: PhaseIndicatorProps) {
     return (
       <p
         aria-live="polite"
-        className={`font-industrial tabular-nums text-center leading-none tracking-tight text-[clamp(8rem,30vw,22rem)] ${PHASE_CLASSES[phase]}`}
+        className={`font-industrial tabular-nums text-center leading-none tracking-tight text-[clamp(4.5rem,20vw,14rem)] ${PHASE_CLASSES[phase]}`}
       >
         {seconds}
       </p>
@@ -38,7 +38,7 @@ export function PhaseIndicator({ phase, remainingMs }: PhaseIndicatorProps) {
   }
   return (
     <p
-      className={`font-industrial text-4xl md:text-6xl lg:text-7xl uppercase tracking-tight leading-none text-center ${PHASE_CLASSES[phase]}`}
+      className={`font-industrial text-3xl md:text-5xl lg:text-6xl uppercase tracking-tight leading-none text-center ${PHASE_CLASSES[phase]}`}
     >
       {PHASE_LABELS[phase]}
     </p>

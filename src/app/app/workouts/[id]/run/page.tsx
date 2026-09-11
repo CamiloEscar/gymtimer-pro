@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { Suspense, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Workout, UserExerciseOverride } from "@/types";
@@ -11,6 +11,7 @@ import type { DisplaySettings } from "@/lib/storage/DisplaySettingsRepository";
 import { GymProfileRepository } from "@/lib/storage/GymProfileRepository";
 import { resolveExerciseVideos } from "@/lib/workout/resolveExerciseVideos";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { useAudioManager } from "@/hooks/useAudioManager";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { useGymProfile } from "@/hooks/useGymProfile";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -18,7 +19,6 @@ import { useFullscreen } from "@/hooks/useFullscreen";
 import { SessionChannel } from "@/lib/session/SessionChannel";
 import { generateCode } from "@/lib/session/generateCode";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
-import { AudioManager } from "@/lib/audio/AudioManager";
 import { TimerDisplay } from "@/components/timer/TimerDisplay";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
 import { RoundIndicator } from "@/components/timer/RoundIndicator";
@@ -34,7 +34,7 @@ import { emptyBlock } from "@/components/workout/WorkoutBuilder";
 export default function RunWorkoutPage() {
   const params = useParams<{ id: string }>();
   const [workout, setWorkout] = useState<Workout | null | undefined>(undefined);
-  const audio = useMemo(() => new AudioManager({ enabled: true, voiceEnabled: false }), []);
+  const audio = useAudioManager();
 
   /* eslint-disable react-hooks/set-state-in-effect -- localStorage is the source of truth, intentional reload-on-mount */
   useEffect(() => {
@@ -134,9 +134,9 @@ function RunWorkoutContent({
     "gymtimer.displaySettings",
     () => {
       const result = new DisplaySettingsRepository().get();
-      return result.ok ? result.value : { showVideoOnDisplay: false };
+      return result.ok ? result.value : { showVideoOnDisplay: true };
     },
-    { showVideoOnDisplay: false }
+    { showVideoOnDisplay: true }
   );
   const allWorkouts = useLocalStorageSnapshot<Workout[]>(
     "gymtimer.workouts",

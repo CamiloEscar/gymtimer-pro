@@ -102,4 +102,23 @@ describe("AudioManager", () => {
     manager.playStart();
     expect(fakeCtx.createOscillator).not.toHaveBeenCalled();
   });
+
+  it("uses the configured volume as the peak gain", () => {
+    const manager = new AudioManager({ enabled: true, volume: 0.8 });
+    manager.unlock();
+    manager.playStart();
+    // playTone ramps gain to volume(0.8) then back to 0.
+    const gain = fakeCtx.createGain.mock.results[0].value;
+    expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.8, expect.any(Number));
+    expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, expect.any(Number));
+  });
+
+  it("setVolume updates the peak for subsequent plays", () => {
+    const manager = new AudioManager({ enabled: true, volume: 0.5 });
+    manager.unlock();
+    manager.setVolume(0.25);
+    manager.playStart();
+    const gain = fakeCtx.createGain.mock.results[0].value;
+    expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.25, expect.any(Number));
+  });
 });

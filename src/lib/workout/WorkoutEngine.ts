@@ -277,6 +277,7 @@ export class WorkoutEngine {
    */
   private beginWorkBlock(): void {
     this.audio?.playStart();
+    this.audio?.speak("TRABAJO");
     this.phase = "work";
     // FGB carries work in stationSeconds, not workSeconds/durationSeconds,
     // so we route its first work timer through replaceTimerWithDuration
@@ -307,6 +308,7 @@ export class WorkoutEngine {
       if (block.restSeconds && block.restSeconds > 0) {
         this.phase = "rest";
         this.audio?.playWorkToRest();
+        this.audio?.speak("DESCANSO");
         this.replaceTimer("rest");
         this.timer.start();
         return;
@@ -316,6 +318,7 @@ export class WorkoutEngine {
     }
     if (this.phase === "rest") {
       this.audio?.playRestToWork();
+      this.audio?.speak("TRABAJO");
       this.advanceRoundOrFinish(totalRounds);
       return;
     }
@@ -336,6 +339,7 @@ export class WorkoutEngine {
       if (restSec > 0) {
         this.phase = "rest";
         this.audio?.playWorkToRest();
+        this.audio?.speak("DESCANSO");
         this.replaceTimer("rest");
         this.timer.start();
         return;
@@ -347,6 +351,7 @@ export class WorkoutEngine {
 
     if (this.phase === "rest") {
       this.audio?.playRestToWork();
+      this.audio?.speak("TRABAJO");
       this.advanceAfterRest(totalRounds, workSec, restSec, intervalSec);
       return;
     }
@@ -394,12 +399,14 @@ export class WorkoutEngine {
         this.replaceTimerWithDuration(stationSec);
         this.timer.start();
         this.audio?.playRoundChange();
+        this.audio?.speak(stations[this.currentStationIndex].name);
         return;
       }
       // All stations in this round are done.
       if (this.round < totalRounds && roundRestSec > 0) {
         this.phase = "rest";
         this.audio?.playWorkToRest();
+        this.audio?.speak("DESCANSO");
         this.replaceTimerWithDuration(roundRestSec);
         this.timer.start();
         return;
@@ -410,6 +417,7 @@ export class WorkoutEngine {
         this.round += 1;
         this.currentStationIndex = 0;
         this.audio?.playRestToWork();
+        this.audio?.speak(stations[0].name);
         this.replaceTimerWithDuration(stationSec);
         this.timer.start();
         return;
@@ -423,6 +431,7 @@ export class WorkoutEngine {
       this.currentStationIndex = 0;
       this.phase = "work";
       this.audio?.playRestToWork();
+      this.audio?.speak(stations[0].name);
       this.replaceTimerWithDuration(stationSec);
       this.timer.start();
     }
@@ -440,9 +449,11 @@ export class WorkoutEngine {
     if (this.currentStationIndex + 1 < stations) {
       this.currentStationIndex += 1;
       this.audio?.playRoundChange();
+      this.audio?.speak(block.exercises[this.currentStationIndex].name);
     } else {
       this.round += 1;
       this.currentStationIndex = 0;
+      this.audio?.speak(block.exercises[0].name);
     }
     this.phase = "work";
     this.replaceTimerWithDuration(block.stationSeconds ?? 0);
@@ -462,6 +473,7 @@ export class WorkoutEngine {
     // cadence already has work→rest cues separately if needed).
     if (this.currentBlock().type === "emom" || this.currentBlock().type === "otm") {
       this.audio?.playRoundChange();
+      this.audio?.speak("TRABAJO");
     }
     this.replaceTimer("work");
     this.timer.start();
@@ -471,6 +483,8 @@ export class WorkoutEngine {
     this.timer.pause();
     this.phase = "finished";
     this.status = "finished";
+    this.audio?.playFinish();
+    this.audio?.speak("TIEMPO");
     this.notify();
   }
 

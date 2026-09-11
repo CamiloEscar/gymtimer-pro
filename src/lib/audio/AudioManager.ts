@@ -1,6 +1,7 @@
 interface AudioManagerOptions {
   enabled?: boolean;
   voiceEnabled?: boolean;
+  volume?: number;
 }
 
 type ToneSpec = { frequency: number; durationMs: number };
@@ -8,6 +9,7 @@ type ToneSpec = { frequency: number; durationMs: number };
 export class AudioManager {
   private enabled: boolean;
   private voiceEnabled: boolean;
+  private volume: number;
   private ctx: AudioContext | null = null;
   /** True only after unlock() has run at least once. Playback methods must
    * treat this as a hard gate so no sound can play before the first
@@ -17,6 +19,7 @@ export class AudioManager {
   constructor(options: AudioManagerOptions = {}) {
     this.enabled = options.enabled ?? true;
     this.voiceEnabled = options.voiceEnabled ?? false;
+    this.volume = clampVolume(options.volume ?? 0.5);
   }
 
   /** Must be called from a user gesture (e.g. the first START tap) to satisfy
@@ -34,6 +37,10 @@ export class AudioManager {
 
   setVoiceEnabled(enabled: boolean): void {
     this.voiceEnabled = enabled;
+  }
+
+  setVolume(volume: number): void {
+    this.volume = clampVolume(volume);
   }
 
   playStart(): void {
@@ -64,6 +71,7 @@ export class AudioManager {
     if (!this.unlocked || !this.enabled || !this.voiceEnabled) return;
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.volume = this.volume;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   }
@@ -78,7 +86,7 @@ export class AudioManager {
     oscillator.frequency.value = frequency;
     oscillator.connect(gain);
     gain.connect(ctx.destination);
-    const peak = 0.5;
+    const peak = this.volume;
     const attackSec = 0.01;
     const decaySec = Math.max(0, durationMs / 1000 - attackSec);
     gain.gain.setValueAtTime(0, ctx.currentTime);
@@ -87,4 +95,8 @@ export class AudioManager {
     oscillator.start();
     oscillator.stop(ctx.currentTime + durationMs / 1000);
   }
+}
+
+function clampVolume(v: number): number {
+  return Math.min(1, Math.max(0, v));
 }

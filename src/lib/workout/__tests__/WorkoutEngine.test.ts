@@ -8,6 +8,10 @@ type AudioSpy = {
   playRoundChange: ReturnType<typeof vi.fn>;
   playCountdownBeep: ReturnType<typeof vi.fn>;
   playStart: ReturnType<typeof vi.fn>;
+  playWorkToRest: ReturnType<typeof vi.fn>;
+  playRestToWork: ReturnType<typeof vi.fn>;
+  playFinish: ReturnType<typeof vi.fn>;
+  speak: ReturnType<typeof vi.fn>;
 };
 
 // Minimal audio spy — we only need the transition-cue methods the engine
@@ -18,19 +22,27 @@ function makeAudioSpy(): AudioSpy {
   const playRoundChange = vi.fn();
   const playCountdownBeep = vi.fn();
   const playStart = vi.fn();
+  const playWorkToRest = vi.fn();
+  const playRestToWork = vi.fn();
+  const playFinish = vi.fn();
+  const speak = vi.fn();
   return {
     audio: {
       playRoundChange,
       playCountdownBeep,
       playStart,
-      playFinish: vi.fn(),
-      playWorkToRest: vi.fn(),
-      playRestToWork: vi.fn(),
-      speak: vi.fn(),
+      playWorkToRest,
+      playRestToWork,
+      playFinish,
+      speak,
     } as unknown as AudioManager,
     playRoundChange,
     playCountdownBeep,
     playStart,
+    playWorkToRest,
+    playRestToWork,
+    playFinish,
+    speak,
   };
 }
 
@@ -834,5 +846,68 @@ describe("WorkoutEngine — audio cues for transitions", () => {
     skipGetReady(engine);
     vi.advanceTimersByTime(20_100);
     expect(engine.getState().status).toBe("finished");
+  });
+});
+
+describe("WorkoutEngine — voice announcements", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it('speaks "TRABAJO" when getReady countdown ends', () => {
+    const { audio, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(intervalWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    expect(speak).toHaveBeenCalledWith("TRABAJO");
+  });
+
+  it('speaks "DESCANSO" on work→rest transition', () => {
+    const { audio, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(intervalWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+    vi.advanceTimersByTime(5_100);
+    expect(engine.getState().currentPhase).toBe("rest");
+    expect(speak).toHaveBeenCalledWith("DESCANSO");
+  });
+
+  it('speaks "TRABAJO" on rest→work transition', () => {
+    const { audio, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(intervalWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    vi.advanceTimersByTime(5_100);
+    speak.mockClear();
+    vi.advanceTimersByTime(3_100);
+    expect(engine.getState().currentRound).toBe(2);
+    expect(engine.getState().currentPhase).toBe("work");
+    expect(speak).toHaveBeenCalledWith("TRABAJO");
+  });
+
+  it('speaks "TIEMPO" when the workout finishes', () => {
+    const { audio, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(intervalWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    // Round 1 (5+3) + Round 2 (5+3) = 16s.
+    vi.advanceTimersByTime(16_200);
+    expect(engine.getState().status).toBe("finished");
+    expect(speak).toHaveBeenCalledWith("TIEMPO");
+  });
+
+  it("speaks the next station name when FGB advances within a round", () => {
+    const { audio, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(fgbWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+    vi.advanceTimersByTime(3_100);
+    expect(engine.getState().currentExerciseIndex).toBe(1);
+    expect(speak).toHaveBeenCalledWith("SDHP");
   });
 });

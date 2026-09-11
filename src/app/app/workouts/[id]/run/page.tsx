@@ -284,7 +284,7 @@ function RunWorkoutContent({
           </Select>
           {session.state.status === "ready" && (
             <Button
-              size="md"
+              size="sm"
               variant="secondary"
               onClick={() => {
                 setDraft({ ...workout });
@@ -298,47 +298,38 @@ function RunWorkoutContent({
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Input
-            value={codeDraft}
-            onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
-            onBlur={() => {
-              if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.currentTarget.blur();
-              }
-            }}
-            aria-label="Editar código de pantalla"
-            placeholder="CÓDIGO"
-            className="w-24 sm:w-28 font-mono uppercase"
-          />
-          <Button
-            size="md"
-            variant="secondary"
-            onClick={handleCopyCode}
-            aria-label="Copiar código"
-            className="shrink-0"
-          >
-            {copied ? (
-              <>
-                <Icon name="check" />
-                <span className="hidden sm:inline">Copiado</span>
-              </>
-            ) : (
-              <>
-                <Icon name="copy" />
-                <span className="hidden sm:inline">Copiar</span>
-              </>
-            )}
-          </Button>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Input
+              value={codeDraft}
+              onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
+              onBlur={() => {
+                if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                }
+              }}
+              aria-label="Editar código de pantalla"
+              placeholder="CÓDIGO"
+              className="w-full pr-10 font-mono uppercase"
+            />
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              aria-label={copied ? "Código copiado" : "Copiar código"}
+              className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center size-10 rounded-md text-phosphor-dim hover:text-brand-500 active:scale-95 transition-colors cursor-pointer"
+            >
+              <Icon name={copied ? "check" : "copy"} className="size-4" />
+            </button>
+          </div>
           <Link
             href={`/display/${code}`}
-            className="inline-flex items-center gap-1.5 text-brand-500 text-sm underline py-2.5 px-1 shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 size-11 shrink-0 rounded-lg border border-surface-700 text-phosphor hover:text-brand-500 hover:border-brand-500 active:scale-95 transition-colors"
+            aria-label="Abrir display del gimnasio en una pestaña nueva"
           >
             <Icon name="display" className="size-4" />
-            <span>abrir TV</span>
           </Link>
         </div>
       </div>

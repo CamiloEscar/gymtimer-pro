@@ -135,3 +135,31 @@ describe("ExerciseListDisplay current highlight", () => {
     expect(screen.getAllByTestId("exercise-list-item-other")).toHaveLength(2);
   });
 });
+
+describe("ExerciseListDisplay next exercise preview", () => {
+  it("shows the next exercise when nextExerciseId matches a visible exercise", () => {
+    render(<ExerciseListDisplay block={BLOCK} nextExerciseId="ex-2" />);
+
+    expect(screen.getByTestId("next-exercise-preview")).toBeInTheDocument();
+    expect(screen.getByTestId("next-exercise-preview")).toHaveTextContent("SIGUIENTE");
+    expect(screen.getByTestId("next-exercise-preview")).toHaveTextContent("Pull-up · 12reps");
+  });
+
+  it("hides the preview when nextExerciseId does not match", () => {
+    render(<ExerciseListDisplay block={BLOCK} nextExerciseId="unknown" />);
+
+    expect(screen.queryByTestId("next-exercise-preview")).not.toBeInTheDocument();
+  });
+
+  it("hides the preview when phase is finished", () => {
+    render(<ExerciseListDisplay block={BLOCK} nextExerciseId="ex-2" phase="finished" />);
+
+    expect(screen.queryByTestId("next-exercise-preview")).not.toBeInTheDocument();
+  });
+
+  it("does not render the preview when nextExerciseId is omitted", () => {
+    render(<ExerciseListDisplay block={BLOCK} />);
+
+    expect(screen.queryByTestId("next-exercise-preview")).not.toBeInTheDocument();
+  });
+});

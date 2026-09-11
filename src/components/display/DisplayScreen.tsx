@@ -37,6 +37,10 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
     blockExerciseCount > 0 ? (state.currentRound - 1) % blockExerciseCount : 0;
   const currentExercise =
     currentBlock?.exercises[highlightIndex] ?? currentBlock?.exercises[0];
+  const nextExercise =
+    blockExerciseCount > 1
+      ? currentBlock?.exercises[(highlightIndex + 1) % blockExerciseCount]
+      : undefined;
   const currentVideo = currentExercise
     ? state.videoByExerciseId?.[currentExercise.id]
     : undefined;
@@ -184,6 +188,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
                 block={currentBlock}
                 phase={state.currentPhase}
                 currentExerciseId={currentExercise?.id}
+                nextExerciseId={nextExercise?.id}
               />
             )}
           </aside>

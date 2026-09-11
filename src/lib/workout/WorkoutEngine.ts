@@ -306,6 +306,7 @@ export class WorkoutEngine {
     if (this.phase === "work") {
       if (block.restSeconds && block.restSeconds > 0) {
         this.phase = "rest";
+        this.audio?.playWorkToRest();
         this.replaceTimer("rest");
         this.timer.start();
         return;
@@ -314,6 +315,7 @@ export class WorkoutEngine {
       return;
     }
     if (this.phase === "rest") {
+      this.audio?.playRestToWork();
       this.advanceRoundOrFinish(totalRounds);
       return;
     }
@@ -333,6 +335,7 @@ export class WorkoutEngine {
     if (this.phase === "work") {
       if (restSec > 0) {
         this.phase = "rest";
+        this.audio?.playWorkToRest();
         this.replaceTimer("rest");
         this.timer.start();
         return;
@@ -343,6 +346,7 @@ export class WorkoutEngine {
     }
 
     if (this.phase === "rest") {
+      this.audio?.playRestToWork();
       this.advanceAfterRest(totalRounds, workSec, restSec, intervalSec);
       return;
     }
@@ -395,6 +399,7 @@ export class WorkoutEngine {
       // All stations in this round are done.
       if (this.round < totalRounds && roundRestSec > 0) {
         this.phase = "rest";
+        this.audio?.playWorkToRest();
         this.replaceTimerWithDuration(roundRestSec);
         this.timer.start();
         return;
@@ -404,6 +409,7 @@ export class WorkoutEngine {
       if (this.round < totalRounds) {
         this.round += 1;
         this.currentStationIndex = 0;
+        this.audio?.playRestToWork();
         this.replaceTimerWithDuration(stationSec);
         this.timer.start();
         return;
@@ -416,6 +422,7 @@ export class WorkoutEngine {
       this.round += 1;
       this.currentStationIndex = 0;
       this.phase = "work";
+      this.audio?.playRestToWork();
       this.replaceTimerWithDuration(stationSec);
       this.timer.start();
     }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { ScrollIndicator } from "./ScrollIndicator";
 
-const HEADLINE = ["CONTROLÁ DESDE", "EL CELU.", "TIMER EN EL TV."];
+const HEADLINE = ["EL TIMER.", "DESDE TU CELU.", "EN EL TV."];
 const SUBTITLE =
   "El timer para tu box o gym. Controlá desde el celular, mostralo en cualquier TV.";
 

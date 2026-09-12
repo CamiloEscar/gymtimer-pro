@@ -144,12 +144,13 @@ export function GymSettings() {
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 border-t border-surface-800 pt-4">
         <h2 className="font-tactical text-xs uppercase tracking-widest text-brand-500">
           Plan semanal
         </h2>
         <p className="text-sm text-phosphor-dim">
-          Asigná una rutina por día. Aparece en el dashboard como rutina del día.
+          Asigná una rutina por día. Es lo primero que aparece en el dashboard de cada día —
+          tiene prioridad sobre el WOD fijado manualmente.
         </p>
         {(["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const).map((dayKey) => {
           const dayLabel: Record<string, string> = {

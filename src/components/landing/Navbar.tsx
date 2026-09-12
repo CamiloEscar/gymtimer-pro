@@ -20,12 +20,6 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-8">
           <Link
-            href="#modos"
-            className="text-sm font-medium text-phosphor-dim hover:text-phosphor transition-colors"
-          >
-            Modos
-          </Link>
-          <Link
             href="#como-funciona"
             className="text-sm font-medium text-phosphor-dim hover:text-phosphor transition-colors"
           >
@@ -35,7 +29,13 @@ export function Navbar() {
             href="#modos"
             className="text-sm font-medium text-phosphor-dim hover:text-phosphor transition-colors"
           >
-            Entrenamientos
+            Modos
+          </Link>
+          <Link
+            href="#para-tu-box"
+            className="text-sm font-medium text-phosphor-dim hover:text-phosphor transition-colors"
+          >
+            Pantalla
           </Link>
           <Link href="/app">
             <Button size="md" variant="secondary">

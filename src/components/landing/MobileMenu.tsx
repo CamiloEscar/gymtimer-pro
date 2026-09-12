@@ -54,13 +54,6 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
       <nav className="flex-1 flex flex-col justify-center px-8 gap-6">
         <Link
-          href="#modos"
-          onClick={onClose}
-          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors py-3"
-        >
-          Modos
-        </Link>
-        <Link
           href="#como-funciona"
           onClick={onClose}
           className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors py-3"
@@ -68,11 +61,18 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
           Cómo funciona
         </Link>
         <Link
-          href="/app/workouts"
+          href="#modos"
           onClick={onClose}
           className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors py-3"
         >
-          Entrenamientos
+          Modos
+        </Link>
+        <Link
+          href="#para-tu-box"
+          onClick={onClose}
+          className="font-industrial text-3xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors py-3"
+        >
+          Pantalla
         </Link>
         <Link href="/app" onClick={onClose} className="self-start mt-2">
           <Button size="lg" variant="primary" className="text-lg px-8 py-5">

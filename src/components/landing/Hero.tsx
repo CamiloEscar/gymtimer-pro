@@ -12,6 +12,26 @@ const SUBTITLE =
 export function Hero() {
   return (
     <section className="relative min-h-[100dvh] bg-surface-950 text-phosphor overflow-hidden flex flex-col lg:grid lg:grid-cols-2">
+      {/* Mobile: video is a full-bleed backdrop behind the text. Desktop:
+          it slots into the right column of the grid below. */}
+      <div
+        className="absolute inset-0 z-0 lg:hidden pointer-events-none"
+        aria-hidden
+      >
+        <VideoPlayer
+          src="/videos/ketbell.mp4"
+          alt="Demo del timer"
+          className="h-full opacity-40"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, var(--color-surface-950) 0%, transparent 35%, transparent 65%, var(--color-surface-950) 100%)",
+          }}
+        />
+      </div>
+
       <div className="relative z-10 flex flex-col justify-start px-6 md:px-10 lg:px-16 pt-24 md:pt-28 lg:pt-28 pb-10 lg:pb-16">
         <div className="flex flex-col gap-8 max-w-[600px]">
           <h1

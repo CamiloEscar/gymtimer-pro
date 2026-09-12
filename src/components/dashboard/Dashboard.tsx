@@ -85,6 +85,16 @@ export function Dashboard() {
     workouts.find((w) => w.id === weeklyPlanWodId) ??
     workouts.find((w) => w.id === gymProfile?.wodWorkoutId) ??
     (workouts.length > 0 ? workouts[workouts.length - 1] : null);
+  // Track which priority bucket won so the card can tell the trainer why
+  // this WOD is on top today.
+  const wodSource: "weeklyPlan" | "pinned" | "latest" | undefined =
+    workoutOfTheDay == null
+      ? undefined
+      : workoutOfTheDay.id === weeklyPlanWodId
+        ? "weeklyPlan"
+        : workoutOfTheDay.id === gymProfile?.wodWorkoutId
+          ? "pinned"
+          : "latest";
   const isSearching = query.trim().length > 0;
   const filtered = isSearching
     ? workouts.filter((w) => w.name.toLowerCase().includes(query.trim().toLowerCase()))
@@ -155,7 +165,7 @@ export function Dashboard() {
         aria-label="Buscar entrenamiento"
       />
 
-      {!isSearching && <WorkoutOfTheDay workout={workoutOfTheDay} />}
+      {!isSearching && <WorkoutOfTheDay workout={workoutOfTheDay} source={wodSource} />}
 
       {filtered.length === 0 && !isSearching && (
         <Card className="relative overflow-hidden text-center space-y-3 border-dashed">

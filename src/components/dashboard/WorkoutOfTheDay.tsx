@@ -10,9 +10,21 @@ import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/wor
 
 interface WorkoutOfTheDayProps {
   workout: Workout | null;
+  // Where this WOD came from. The dashboard resolves three priority levels
+  // (weekly plan > pinned > latest) and the trainer benefits from seeing
+  // which one is currently winning — otherwise a pinned WOD can get
+  // silently overridden by a new entry in the weekly plan with no
+  // explanation.
+  source?: "weeklyPlan" | "pinned" | "latest";
 }
 
-export function WorkoutOfTheDay({ workout }: WorkoutOfTheDayProps) {
+const SOURCE_LABEL: Record<NonNullable<WorkoutOfTheDayProps["source"]>, string> = {
+  weeklyPlan: "del plan semanal",
+  pinned: "fijado manualmente",
+  latest: "último creado",
+};
+
+export function WorkoutOfTheDay({ workout, source }: WorkoutOfTheDayProps) {
   if (!workout) {
     return (
       <Card className="space-y-3">
@@ -38,10 +50,18 @@ export function WorkoutOfTheDay({ workout }: WorkoutOfTheDayProps) {
         }}
       />
       <div className="relative space-y-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="font-tactical text-xs uppercase tracking-widest text-brand-500">
             ▸ Entrenamiento del día
           </span>
+          {source && (
+            <span
+              data-testid="wod-source"
+              className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted border border-surface-800 rounded-full px-2 py-0.5"
+            >
+              {SOURCE_LABEL[source]}
+            </span>
+          )}
         </div>
         <p className="font-industrial text-2xl md:text-3xl leading-tight text-phosphor">
           {workout.name || "(sin nombre)"}

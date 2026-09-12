@@ -23,7 +23,7 @@ export function FinalCta() {
         <div>
           <Link href="/app" className="inline-block py-3">
             <Button size="lg" className="text-lg px-8 py-5 rounded-xl">
-              QUIERO PROBARLO →
+              PROBAR AHORA →
             </Button>
           </Link>
         </div>

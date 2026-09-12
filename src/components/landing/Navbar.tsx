@@ -39,7 +39,7 @@ export function Navbar() {
           </Link>
           <Link href="/app">
             <Button size="md" variant="secondary">
-              PROBAR AHORA
+              ENTRAR
             </Button>
           </Link>
         </div>

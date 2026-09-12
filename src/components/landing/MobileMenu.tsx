@@ -76,7 +76,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         </Link>
         <Link href="/app" onClick={onClose} className="self-start mt-2">
           <Button size="lg" variant="primary" className="text-lg px-8 py-5">
-            PROBAR AHORA →
+            ENTRAR →
           </Button>
         </Link>
       </nav>

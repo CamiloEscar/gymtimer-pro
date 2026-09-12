@@ -32,7 +32,7 @@ export function Navbar() {
             Cómo funciona
           </Link>
           <Link
-            href="/app/workouts"
+            href="#modos"
             className="text-sm font-medium text-phosphor-dim hover:text-phosphor transition-colors"
           >
             Entrenamientos

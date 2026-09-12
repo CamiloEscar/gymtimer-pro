@@ -235,6 +235,10 @@ function RunWorkoutContent({
     channelRef.current?.sendState({
       ...session.state,
       code,
+      // Always carry the toggle so the TV can render an explicit
+      // "video oculto" affordance instead of falling silently to the gym
+      // logo when the trainer turned it off.
+      showVideoOnDisplay: settings.showVideoOnDisplay,
       ...(settings.showVideoOnDisplay
         ? { videoByExerciseId: resolveExerciseVideos(workout, overrides) }
         : {}),

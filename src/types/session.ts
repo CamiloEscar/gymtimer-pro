@@ -27,6 +27,10 @@ export interface SessionState {
   // Videos to show on the TV display, keyed by the workout-exercise UUID.
   // undefined when no exercise in the workout has an associated video.
   videoByExerciseId?: Record<string, SessionVideoInfo>;
+  // Mirrors the trainer's "show video on display" toggle. Carried
+  // explicitly so the TV can render an "video oculto" affordance instead
+  // of falling silently to the gym logo when the trainer turned it off.
+  showVideoOnDisplay?: boolean;
   timer: TimerState;
 }
 

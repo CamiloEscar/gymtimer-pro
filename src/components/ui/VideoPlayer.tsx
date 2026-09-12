@@ -26,6 +26,11 @@ interface VideoPlayerProps {
 export interface VideoPlayerHandle {
   pause(): void;
   play(): void;
+  // TVs sometimes drop the first autoplay attempt (browser autoplay
+  // quirks, race with hydration, network stall). Re-issue the play call
+  // without surfacing an error so the caller can wire it up to a
+  // retry loop on phase transitions.
+  retryPlay(): void;
 }
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -129,6 +134,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           videoRef.current?.pause();
         },
         play() {
+          if (youTubeId) {
+            iframeRef.current?.contentWindow?.postMessage(
+              JSON.stringify({ event: "command", func: "playVideo" }),
+              "*"
+            );
+            return;
+          }
+          videoRef.current?.play().catch(() => {});
+        },
+        retryPlay() {
           if (youTubeId) {
             iframeRef.current?.contentWindow?.postMessage(
               JSON.stringify({ event: "command", func: "playVideo" }),

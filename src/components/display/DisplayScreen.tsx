@@ -62,9 +62,16 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
   useEffect(() => {
     if (state.currentPhase === "work") {
       videoPlayerRef.current?.play();
-    } else {
-      videoPlayerRef.current?.pause();
+      // TV browsers often drop the first autoplay attempt (race with
+      // hydration, autoplay policy, network stall). Re-issue the play
+      // call once after a short delay so the video still appears without
+      // surfacing a play button nobody on a TV can press.
+      const retry = setTimeout(() => {
+        videoPlayerRef.current?.retryPlay();
+      }, 600);
+      return () => clearTimeout(retry);
     }
+    videoPlayerRef.current?.pause();
   }, [state.currentPhase, currentExercise?.id, hasWorkoutVideo]);
 
   return (
@@ -157,6 +164,20 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
                     alt={currentExercise.name}
                     rounded
                   />
+                ) : state.showVideoOnDisplay === false ? (
+                  <div
+                    role="status"
+                    data-testid="display-video-disabled"
+                    className="aspect-video bg-surface-900 rounded-lg flex flex-col items-center justify-center gap-2 p-4 text-center border border-surface-800"
+                  >
+                    <Icon name="display" className="size-10 text-phosphor-muted" />
+                    <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                      Video oculto
+                    </p>
+                    <p className="font-sans text-[10px] text-phosphor-muted leading-snug">
+                      Activá &ldquo;Mostrar video&rdquo; en Ajustes del entrenador
+                    </p>
+                  </div>
                 ) : gymProfile?.logoUrl ? (
                   <div
                     className="relative aspect-square max-h-[420px] bg-surface-900/60 rounded-lg border border-surface-800 flex items-center justify-center overflow-hidden"

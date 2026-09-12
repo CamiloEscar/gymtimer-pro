@@ -507,6 +507,7 @@ function RunWorkoutContent({
         remainingMs={session.state.timer.remainingMs}
         elapsedMs={session.state.timer.elapsedMs}
         mode={session.state.timer.mode}
+        phase={session.state.currentPhase}
       />
       <TimerProgressBar
         mode={session.state.timer.mode}

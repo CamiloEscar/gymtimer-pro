@@ -1,7 +1,14 @@
+import type { WorkoutPhase } from "@/types";
+
 interface TimerDisplayProps {
   remainingMs: number;
   elapsedMs: number;
   mode: "countdown" | "countup";
+  // When the engine is in getReady, PhaseIndicator already paints the
+  // giant 3-2-1 countdown; rendering TimerDisplay here too stacks two
+  // huge numbers on top of each other. Hiding the timer during the
+  // preroll keeps a single visual anchor.
+  phase?: WorkoutPhase;
 }
 
 function formatTime(ms: number): string {
@@ -18,7 +25,8 @@ function formatTime(ms: number): string {
   return `${sign}${pad(minutes)}:${pad(seconds)}`;
 }
 
-export function TimerDisplay({ remainingMs, elapsedMs, mode }: TimerDisplayProps) {
+export function TimerDisplay({ remainingMs, elapsedMs, mode, phase }: TimerDisplayProps) {
+  if (phase === "getReady") return null;
   const value = mode === "countdown" ? remainingMs : elapsedMs;
   return (
     <p className="font-industrial tabular-nums text-phosphor text-center leading-none tracking-tight text-[clamp(4rem,17vw,14rem)]">

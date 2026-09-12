@@ -8,6 +8,17 @@ const PHASE_LABELS: Record<WorkoutPhase, string> = {
   finished: "TIEMPO",
 };
 
+// Glyph prefix per phase so the difference between work and rest doesn't
+// ride solely on color (a red/green colorblind athlete should still be
+// able to tell work from rest at a glance).
+const PHASE_GLYPH: Record<WorkoutPhase, string> = {
+  getReady: "",
+  work: "▸",
+  rest: "■",
+  wait: "",
+  finished: "",
+};
+
 const PHASE_CLASSES: Record<WorkoutPhase, string> = {
   getReady: "text-phase-ready",
   // Red = effort (work); brand = recovery (rest). Inverted from a
@@ -43,6 +54,11 @@ export function PhaseIndicator({ phase, remainingMs }: PhaseIndicatorProps) {
     <p
       className={`font-industrial text-3xl md:text-5xl lg:text-6xl uppercase tracking-tight leading-none text-center ${PHASE_CLASSES[phase]}`}
     >
+      {PHASE_GLYPH[phase] && (
+        <span aria-hidden className="mr-2 align-baseline">
+          {PHASE_GLYPH[phase]}
+        </span>
+      )}
       {PHASE_LABELS[phase]}
     </p>
   );

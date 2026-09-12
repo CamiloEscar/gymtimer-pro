@@ -11,6 +11,9 @@ interface TimerControlsProps {
   onPrevious: () => void;
   onAddTime: () => void;
   onSubtractTime: () => void;
+  // Visible label step for ±SEG buttons. The runner scales this so a Tabata
+  // (20s phase) doesn't get +10s jumps, while a 10min AMRAP stays snappy.
+  stepSeconds: number;
 }
 
 export function TimerControls({
@@ -23,7 +26,9 @@ export function TimerControls({
   onPrevious,
   onAddTime,
   onSubtractTime,
+  stepSeconds,
 }: TimerControlsProps) {
+  const safeStep = Math.max(1, Math.round(stepSeconds));
   return (
     <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-md mx-auto">
       {status === "ready" || status === "finished" ? (
@@ -48,10 +53,10 @@ export function TimerControls({
         <Icon name="arrow-left" className="size-4 rotate-180" />
       </Button>
       <Button size="md" variant="secondary" onClick={onSubtractTime}>
-        -10 SEG
+        -{safeStep} SEG
       </Button>
       <Button size="md" variant="secondary" onClick={onAddTime}>
-        +10 SEG
+        +{safeStep} SEG
       </Button>
       <Button size="md" variant="danger" className="col-span-2" onClick={onReset}>
         REINICIAR

@@ -314,6 +314,15 @@ function RunWorkoutContent({
   const currentBlock = workout.blocks[session.state.currentBlockIndex];
   const isRmBlock = currentBlock?.type === "rm";
   const accumulatedReps = session.state.accumulatedReps ?? 0;
+  // Scale the ±SEG step to the current phase length so a Tabata (20s) doesn't
+  // get a 50% time jump and a 10-minute AMRAP stays snappy. Capped to a
+  // sensible range: minimum 2s, maximum 10s, default 10s when no phase is
+  // active.
+  const phaseMs = session.state.timer.durationMs;
+  const stepMs = phaseMs > 0
+    ? Math.min(10_000, Math.max(2_000, Math.floor(phaseMs / 5)))
+    : 10_000;
+  const stepSeconds = stepMs / 1000;
 
   return (
     <div className="bg-surface-950 flex flex-col items-center sm:min-h-dvh sm:justify-center gap-3 sm:gap-6 p-3 sm:p-4">
@@ -536,8 +545,9 @@ function RunWorkoutContent({
         onReset={() => setResetPending(true)}
         onNext={session.nextRound}
         onPrevious={session.previousRound}
-        onAddTime={() => session.addTime(10_000)}
-        onSubtractTime={() => session.subtractTime(10_000)}
+        onAddTime={() => session.addTime(stepMs)}
+        onSubtractTime={() => session.subtractTime(stepMs)}
+        stepSeconds={stepSeconds}
       />
       <Modal
         open={resetPending}

@@ -314,6 +314,12 @@ function RunWorkoutContent({
   const currentBlock = workout.blocks[session.state.currentBlockIndex];
   const isRmBlock = currentBlock?.type === "rm";
   const accumulatedReps = session.state.accumulatedReps ?? 0;
+  // "Live" = the timer is mid-flight. Switching the active workout or the
+  // session code while a round is running would disconnect the display from
+  // the workout the trainer actually intends to show. Lock both selectors
+  // down until the trainer resets or finishes.
+  const isLive =
+    session.state.status === "running" || session.state.status === "paused";
   // Scale the ±SEG step to the current phase length so a Tabata (20s) doesn't
   // get a 50% time jump and a 10-minute AMRAP stays snappy. Capped to a
   // sensible range: minimum 2s, maximum 10s, default 10s when no phase is
@@ -339,6 +345,7 @@ function RunWorkoutContent({
           <Select
             aria-label="Cambiar de rutina en vivo"
             value={workout.id}
+            disabled={isLive}
             onChange={(e) => {
               const next = allWorkouts.find((w) => w.id === e.target.value);
               if (next) setWorkout(next);
@@ -378,6 +385,7 @@ function RunWorkoutContent({
           <div className="relative flex-1">
             <Input
               value={codeDraft}
+              disabled={isLive}
               onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
               onBlur={() => {
                 if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
@@ -389,7 +397,7 @@ function RunWorkoutContent({
               }}
               aria-label="Editar código de pantalla"
               placeholder="CÓDIGO"
-              className="w-full pr-10 font-mono uppercase"
+              className="w-full pr-10 font-mono uppercase disabled:opacity-60"
             />
             <button
               type="button"

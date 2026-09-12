@@ -17,8 +17,7 @@ export function FinalCta() {
           Llevá tu box a la siguiente ronda
         </h2>
         <p className="text-base md:text-lg text-phosphor-dim leading-relaxed mx-auto max-w-md">
-          Gratis, sin backend y sin cuentas. Arrancá a correr tu primer entrenamiento en dos
-          minutos.
+          Gratis y sin cuentas. Arrancá a correr tu primer entrenamiento en dos minutos.
         </p>
         <div>
           <Link href="/app" className="inline-block py-3">

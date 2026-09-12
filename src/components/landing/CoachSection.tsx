@@ -42,20 +42,20 @@ export function CoachSection() {
         </h2>
 
         <Reveal className="mt-10">
-          <div className="relative mx-auto max-w-4xl">
+          <div className="relative mx-auto w-full max-w-3xl lg:max-w-4xl">
             <Image
               src="/images/display.png"
               alt="Display del box mostrando un timer"
               width={1919}
               height={1079}
-              className="relative z-10 w-[78%] rounded-xl border border-surface-800/60 bg-surface-900 p-2 shadow-2xl shadow-black/50 rotate-2"
+              className="relative z-10 w-full rounded-xl border border-surface-800/60 bg-surface-900 p-2 shadow-2xl shadow-black/50 rotate-2"
             />
             <Image
               src="/images/run.png"
               alt="App del entrenador controlando el timer"
               width={1897}
               height={1075}
-              className="absolute -bottom-8 -left-2 z-20 w-[38%] rounded-xl border border-surface-800/60 bg-surface-900 p-2 shadow-2xl shadow-black/50 -rotate-3"
+              className="absolute -bottom-10 left-0 z-20 w-[40%] rounded-xl border border-surface-800/60 bg-surface-900 p-2 shadow-2xl shadow-black/50 -rotate-3"
             />
           </div>
         </Reveal>

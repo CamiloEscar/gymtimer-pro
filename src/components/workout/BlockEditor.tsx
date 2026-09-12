@@ -137,6 +137,13 @@ export function BlockEditor({
           value={block.type}
           onChange={(e) => {
             const type = e.target.value as BlockType;
+            if (type === "rest") {
+              // Rest blocks are a single-shot duration; rounds don't apply.
+              // Strip any stale value so the engine doesn't carry dead data
+              // (older drafts or quick re-types might have left rounds set).
+              onChange({ ...block, type, rounds: undefined });
+              return;
+            }
             if (
               !block.workSeconds &&
               (type === "interval" || type === "tabata" || type === "emom" || type === "otm")

@@ -68,6 +68,34 @@ describe("BlockEditor — index header", () => {
   });
 });
 
+describe("BlockEditor — switching to rest clears stale rounds", () => {
+  it("strips rounds off a block when the trainer retypes it to 'rest'", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    // Interval block with rounds=4 — switching to rest should drop the rounds
+    // field so the engine doesn't carry dead data and hasTimingChanges()
+    // comparisons stay clean.
+    const intervalBlock: WorkoutBlock = {
+      id: "block-rest",
+      type: "interval",
+      durationSeconds: 0,
+      workSeconds: 30,
+      restSeconds: 10,
+      rounds: 4,
+      exercises: [],
+    };
+    render(<BlockEditor block={intervalBlock} index={1} onChange={onChange} onRemove={vi.fn()} />);
+
+    await user.selectOptions(screen.getByLabelText("Tipo de bloque"), "rest");
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      ...intervalBlock,
+      type: "rest",
+      rounds: undefined,
+    });
+  });
+});
+
 describe("BlockEditor — basic block type", () => {
   const BASIC_BLOCK: WorkoutBlock = {
     id: "block-2",

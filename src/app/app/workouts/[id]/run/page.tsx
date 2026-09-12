@@ -71,6 +71,42 @@ function saveActiveCode(workoutId: string, code: string) {
   localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({ workoutId, code }));
 }
 
+// True iff `draft` changes any field that affects session timing relative
+// to `current`. Comparing only the timing fields (not name/exercises/etc.)
+// means cosmetic edits don't force a display reset — the engine rebuilds
+// either way, but we only prompt the user when the change would visibly
+// restart a running TV.
+function hasTimingChanges(current: Workout, draft: Workout): boolean {
+  if (current.blocks.length !== draft.blocks.length) return true;
+  for (let i = 0; i < current.blocks.length; i++) {
+    const a = current.blocks[i];
+    const b = draft.blocks[i];
+    if (a.id !== b.id) return true;
+    if (a.type !== b.type) return true;
+    if (a.durationSeconds !== b.durationSeconds) return true;
+    if ((a.workSeconds ?? 0) !== (b.workSeconds ?? 0)) return true;
+    if ((a.restSeconds ?? 0) !== (b.restSeconds ?? 0)) return true;
+    if ((a.rounds ?? 0) !== (b.rounds ?? 0)) return true;
+    if ((a.intervalSeconds ?? 0) !== (b.intervalSeconds ?? 0)) return true;
+    if ((a.roundRestSeconds ?? 0) !== (b.roundRestSeconds ?? 0)) return true;
+    if ((a.stationSeconds ?? 0) !== (b.stationSeconds ?? 0)) return true;
+  }
+  return false;
+}
+
+// Strip stale `rounds` off any rest block in `workout`. Older drafts (pre
+// auto-cleanup) may have left rounds on rest blocks; the engine ignores
+// them but carrying the dead field is a footgun for future comparisons
+// (hasTimingChanges would flag them as changes).
+function sanitizeDraft(workout: Workout): Workout {
+  return {
+    ...workout,
+    blocks: workout.blocks.map((b) =>
+      b.type === "rest" ? { ...b, rounds: undefined } : b,
+    ),
+  };
+}
+
 function readConfiguredLinkCode(): string | null {
   const result = new GymProfileRepository().get();
   if (!result.ok) return null;
@@ -124,6 +160,7 @@ function RunWorkoutContent({
   const [codeDraft, setCodeDraft] = useState(code);
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState<Workout | null>(null);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
     "gymtimer.exerciseOverrides",
     () => {
@@ -288,7 +325,7 @@ function RunWorkoutContent({
               size="sm"
               variant="secondary"
               onClick={() => {
-                setDraft({ ...workout });
+                setDraft(sanitizeDraft(workout));
                 setEditOpen(true);
               }}
               aria-label="Editar rutina"
@@ -377,8 +414,17 @@ function RunWorkoutContent({
               </Button>
               <Button
                 onClick={() => {
-                  setWorkout(draft);
-                  setEditOpen(false);
+                  // Display connection + timing change is the only combo that
+                  // visibly disrupts the TV; everything else (cosmetic edits,
+                  // exercise text, etc.) applies silently.
+                  const displayLive =
+                    channelRef.current?.getConnectionStatus() === "connected";
+                  if (displayLive && draft && hasTimingChanges(workout, draft)) {
+                    setConfirmResetOpen(true);
+                  } else if (draft) {
+                    setWorkout(draft);
+                    setEditOpen(false);
+                  }
                 }}
               >
                 Guardar
@@ -450,6 +496,31 @@ function RunWorkoutContent({
           </Button>
           <Button variant="danger" onClick={confirmReset}>
             Reiniciar
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        open={confirmResetOpen}
+        onClose={() => setConfirmResetOpen(false)}
+        title="¿Aplicar cambios y reiniciar el display?"
+      >
+        <p className="text-phosphor-dim mb-4">
+          Hay un display conectado mostrando esta rutina. Aplicar los cambios de
+          tiempo reiniciará el temporizador del TV también.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConfirmResetOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              if (!draft) return;
+              setWorkout(draft);
+              setEditOpen(false);
+              setConfirmResetOpen(false);
+            }}
+          >
+            Sí, reiniciar
           </Button>
         </div>
       </Modal>

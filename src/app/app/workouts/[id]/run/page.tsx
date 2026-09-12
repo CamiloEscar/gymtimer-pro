@@ -155,6 +155,9 @@ function RunWorkoutContent({
   const [displayStatus, setDisplayStatus] = useState<ConnectionStatus>("waiting");
   const sessionStartedAtRef = useRef<number | null>(null);
   const hasRecordedRef = useRef(false);
+  // Tracks which "last 3 / 2 / 1" second we've already beeped for so the
+  // effect fires once per threshold instead of every animation frame.
+  const lastBeepSecondRef = useRef<number | null>(null);
   const { toggle: toggleFullscreen } = useFullscreen();
   const [resetPending, setResetPending] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -281,6 +284,22 @@ function RunWorkoutContent({
     sessionStartedAtRef.current = null;
     hasRecordedRef.current = false;
   }
+
+  useEffect(() => {
+    if (session.state.status !== "running") {
+      lastBeepSecondRef.current = null;
+      return;
+    }
+    const remaining = session.state.timer.remainingMs;
+    // Beep on the last three whole seconds (3, 2, 1). `Math.ceil` keeps the
+    // beep firing on the right second even if the tick lands mid-frame.
+    if (remaining <= 0 || remaining > 3000) return;
+    const second = Math.ceil(remaining / 1000);
+    if (second < 1 || second > 3) return;
+    if (lastBeepSecondRef.current === second) return;
+    lastBeepSecondRef.current = second;
+    audio.playCountdownBeep();
+  }, [session.state.timer.remainingMs, session.state.status, audio]);
 
   async function handleCopyCode() {
     await navigator.clipboard.writeText(codeDraft);

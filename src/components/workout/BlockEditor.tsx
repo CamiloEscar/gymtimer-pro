@@ -47,26 +47,6 @@ interface BlockEditorProps {
   overrides?: UserExerciseOverride[];
 }
 
-function secondsToTimeValue(seconds: number): string {
-  const safe = Math.max(0, Math.floor(seconds));
-  const h = Math.floor(safe / 3600);
-  const m = Math.floor((safe % 3600) / 60);
-  const s = safe % 60;
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
-}
-
-function timeValueToSeconds(value: string): number | null {
-  if (!value) return null;
-  const parts = value.split(":");
-  if (parts.length < 2 || parts.length > 3) return null;
-  const nums = parts.map(Number);
-  if (nums.some((n) => Number.isNaN(n))) return null;
-  const [h, m = 0, s = 0] = parts.length === 2 ? [nums[0], nums[1]] : nums;
-  if (m >= 60 || s >= 60) return null;
-  return h * 3600 + m * 60 + s;
-}
-
 interface TimeInputProps {
   ariaLabel: string;
   seconds: number;
@@ -74,19 +54,38 @@ interface TimeInputProps {
 }
 
 function TimeInput({ ariaLabel, seconds, onChangeSeconds }: TimeInputProps) {
+  const total = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(total / 60);
+  const secs = total % 60;
+
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-      <Input
-        aria-label={ariaLabel}
-        type="time"
-        step={1}
-        value={secondsToTimeValue(seconds)}
-        onChange={(e) => {
-          const parsed = timeValueToSeconds(e.target.value);
-          if (parsed !== null) onChangeSeconds(parsed);
-        }}
-        className="flex-1 min-w-0"
-      />
+    <div
+      role="group"
+      aria-label={ariaLabel}
+      className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2"
+    >
+      <div className="flex items-center gap-1">
+        <Input
+          aria-label={`${ariaLabel} minutos`}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={minutes}
+          onChange={(e) => onChangeSeconds(Number(e.target.value || 0) * 60 + secs)}
+          className="w-16 text-center"
+        />
+        <span className="text-phosphor-dim text-sm">:</span>
+        <Input
+          aria-label={`${ariaLabel} segundos`}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={59}
+          value={secs}
+          onChange={(e) => onChangeSeconds(minutes * 60 + Number(e.target.value || 0))}
+          className="w-16 text-center"
+        />
+      </div>
       {seconds > 0 && (
         <span className="text-xs text-phosphor-dim font-tactical whitespace-nowrap">
           = {formatTimeInput(seconds)}

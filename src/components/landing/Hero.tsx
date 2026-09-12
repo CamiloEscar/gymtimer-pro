@@ -22,6 +22,7 @@ export function Hero() {
           src="/videos/ketbell.mp4"
           alt="Demo del timer"
           className="h-full opacity-40"
+          hidePlayButton
         />
         <div
           className="absolute inset-0"
@@ -95,6 +96,7 @@ export function Hero() {
             src="/videos/ketbell.mp4"
             alt="Demo del timer"
             className="h-full"
+            hidePlayButton
           />
         </div>
         <div

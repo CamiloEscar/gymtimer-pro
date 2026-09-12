@@ -289,9 +289,9 @@ describe("RunWorkoutPage edit-save with display", () => {
       editButton.click();
     });
 
-    const durationInput = screen.getByLabelText("Duración");
+    
     await act(async () => {
-      fireEvent.change(durationInput, { target: { value: "00:05:00" } });
+      fireEvent.change(screen.getByLabelText("Duración minutos"), { target: { value: "5" } });
     });
 
     const saveButton = screen.getByRole("button", { name: "Guardar" });
@@ -321,9 +321,9 @@ describe("RunWorkoutPage edit-save with display", () => {
       editButton.click();
     });
 
-    const durationInput = screen.getByLabelText("Duración");
+    
     await act(async () => {
-      fireEvent.change(durationInput, { target: { value: "00:05:00" } });
+      fireEvent.change(screen.getByLabelText("Duración minutos"), { target: { value: "5" } });
     });
 
     const saveButton = screen.getByRole("button", { name: "Guardar" });
@@ -351,9 +351,9 @@ describe("RunWorkoutPage edit-save with display", () => {
       editButton.click();
     });
 
-    const durationInput = screen.getByLabelText("Duración");
+    
     await act(async () => {
-      fireEvent.change(durationInput, { target: { value: "00:05:00" } });
+      fireEvent.change(screen.getByLabelText("Duración minutos"), { target: { value: "5" } });
     });
 
     await act(async () => {
@@ -449,3 +449,4 @@ describe("RunWorkoutPage display status indicator", () => {
     );
   });
 });
+

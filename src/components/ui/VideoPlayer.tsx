@@ -21,6 +21,7 @@ interface VideoPlayerProps {
   loop?: boolean;
   lazy?: boolean;
   rounded?: boolean;
+  hidePlayButton?: boolean;
 }
 
 export interface VideoPlayerHandle {
@@ -91,6 +92,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       loop = true,
       lazy = true,
       rounded = false,
+      hidePlayButton = false,
     },
     ref
   ) {
@@ -220,7 +222,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               onPause={() => setIsPlaying(false)}
               className="absolute inset-0 size-full object-cover"
             />
-            {!isPlaying && (
+            {!isPlaying && !hidePlayButton && (
               <button
                 type="button"
                 aria-label="Reproducir"

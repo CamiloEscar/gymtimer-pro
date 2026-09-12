@@ -10,8 +10,11 @@ const PHASE_LABELS: Record<WorkoutPhase, string> = {
 
 const PHASE_CLASSES: Record<WorkoutPhase, string> = {
   getReady: "text-phase-ready",
-  work: "text-brand-500",
-  rest: "text-danger-500",
+  // Red = effort (work); brand = recovery (rest). Inverted from a
+  // traffic-light reading where green means "go" — a box convention is
+  // closer to "intensity": work pushes, rest recovers.
+  work: "text-danger-500",
+  rest: "text-brand-500",
   wait: "text-phosphor-dim",
   finished: "text-phosphor",
 };

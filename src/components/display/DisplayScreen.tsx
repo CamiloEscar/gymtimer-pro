@@ -108,7 +108,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
               [ ESTACIÓN {state.currentExerciseIndex + 1} / {currentBlock.exercises.length} ]
             </p>
             {state.currentPhase === "rest" && (
-              <p className="font-tactical text-sm md:text-base uppercase tracking-widest text-danger-500">
+              <p className="font-tactical text-sm md:text-base uppercase tracking-widest text-brand-500">
                 DESCANSO ENTRE RONDAS
               </p>
             )}
@@ -131,7 +131,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
         )}
         {currentBlock && currentBlock.type === "rest" ? (
           <div className="flex flex-col items-center gap-2 border-t border-surface-800 pt-6 w-full max-w-md">
-            <p className="font-industrial text-4xl md:text-6xl lg:text-7xl uppercase tracking-tight leading-none text-danger-500 text-center">
+            <p className="font-industrial text-4xl md:text-6xl lg:text-7xl uppercase tracking-tight leading-none text-brand-500 text-center">
               DESCANSO
             </p>
             <p className="font-tactical text-sm md:text-base uppercase tracking-widest text-phosphor-muted text-center">

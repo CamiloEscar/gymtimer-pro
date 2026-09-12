@@ -34,6 +34,18 @@ body {
   background-color: var(--color-surface-950);
 }
 
+html {
+  /* Header anchors (#modos, #como-funciona) and the "back to top" jumps
+     shouldn't snap — a soft scroll feels intentional on a marketing page. */
+  scroll-behavior: smooth;
+}
+
+/* Offset anchor jumps by the height of the fixed header so the section
+   title doesn't end up tucked under it. */
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
 @keyframes fadeDown {
   from {
     opacity: 0;

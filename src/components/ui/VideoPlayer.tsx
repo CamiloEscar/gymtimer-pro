@@ -99,6 +99,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
     const [inView, setInView] = useState(!lazy);
     const [error, setError] = useState(false);
+    // Track playback so the manual play button hides itself once the
+    // video is actually running. Without this, the button sits over the
+    // already-playing video and looks like a stuck affordance.
+    const [isPlaying, setIsPlaying] = useState(false);
     const reducedMotion = usePrefersReducedMotion();
     const youTubeId = getYouTubeId(src);
 
@@ -212,18 +216,22 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               poster={thumbnailSrc}
               aria-label={alt}
               onError={() => setError(true)}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
               className="absolute inset-0 size-full object-cover"
             />
-            <button
-              type="button"
-              aria-label="Reproducir"
-              onClick={() => {
-                videoRef.current?.play().catch(() => {});
-              }}
-              className="absolute bottom-3 right-3 size-11 rounded-full bg-brand-500/90 text-black flex items-center justify-center hover:bg-brand-500 transition-colors"
-            >
-              <Icon name="play" className="size-5" />
-            </button>
+            {!isPlaying && (
+              <button
+                type="button"
+                aria-label="Reproducir"
+                onClick={() => {
+                  videoRef.current?.play().catch(() => {});
+                }}
+                className="absolute bottom-3 right-3 size-11 rounded-full bg-brand-500/90 text-black flex items-center justify-center hover:bg-brand-500 transition-colors"
+              >
+                <Icon name="play" className="size-5" />
+              </button>
+            )}
           </>
         )}
       </div>

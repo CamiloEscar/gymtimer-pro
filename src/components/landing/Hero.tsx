@@ -78,7 +78,7 @@ export function Hero() {
       </div>
 
       <div
-        className="relative bg-surface-900 lg:border-l lg:border-surface-800/50 aspect-[4/5] max-h-[50vh] lg:aspect-auto lg:max-h-none lg:h-full anim-fade-in-slow overflow-hidden"
+        className="relative bg-surface-900 lg:border-l lg:border-surface-800/50 aspect-[4/5] max-h-[50vh] lg:aspect-auto lg:max-h-none lg:h-full anim-fade-in-slow overflow-hidden hidden lg:block"
         style={{ animationDelay: "400ms" }}
       >
         <div

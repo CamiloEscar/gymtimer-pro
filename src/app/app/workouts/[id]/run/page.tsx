@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import type { Workout, UserExerciseOverride } from "@/types";
+import type { Workout, UserExerciseOverride, ConnectionStatus } from "@/types";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
 import { DisplaySettingsRepository } from "@/lib/storage/DisplaySettingsRepository";
@@ -152,11 +152,13 @@ function RunWorkoutContent({
   }, [fixedFromProfile]);
   const session = useWorkoutSession(workout, audio);
   const channelRef = useRef<SessionChannel | null>(null);
+  const [displayStatus, setDisplayStatus] = useState<ConnectionStatus>("waiting");
   const sessionStartedAtRef = useRef<number | null>(null);
   const hasRecordedRef = useRef(false);
   const { toggle: toggleFullscreen } = useFullscreen();
   const [resetPending, setResetPending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
   const [codeDraft, setCodeDraft] = useState(code);
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState<Workout | null>(null);
@@ -197,7 +199,11 @@ function RunWorkoutContent({
     saveActiveCode(workout.id, code);
     const channel = new SessionChannel(code, "trainer");
     channelRef.current = channel;
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional: seed local state from the channel's current connection status, same pattern as the code-state mirror effect above */
+    setDisplayStatus(channel.getConnectionStatus());
+    const unsubscribeStatus = channel.onConnectionStatusChange(setDisplayStatus);
     return () => {
+      unsubscribeStatus();
       channel.destroy();
       channelRef.current = null;
     };
@@ -280,6 +286,29 @@ function RunWorkoutContent({
     await navigator.clipboard.writeText(codeDraft);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleShareDisplay() {
+    // Use the Web Share API on mobile so the trainer can AirDrop/WhatsApp/etc.
+    // the URL straight to the TV. Fall back to clipboard on desktop / older
+    // browsers so the CTA still does something useful.
+    const url = `${window.location.origin}/display/${code}`;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({ title: workout.name, url });
+        return;
+      } catch {
+        // User cancelled or share API not actually wired — fall through.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    } catch {
+      // Last-ditch: do nothing. The status dot already tells the trainer
+      // the display state, and the open-in-new-tab link still works.
+    }
   }
 
   const currentBlock = workout.blocks[session.state.currentBlockIndex];
@@ -369,6 +398,32 @@ function RunWorkoutContent({
           >
             <Icon name="display" className="size-4" />
           </Link>
+        </div>
+        <div className="flex items-center justify-between gap-2 px-1">
+          <p
+            className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-phosphor-muted"
+            aria-live="polite"
+          >
+            <span
+              aria-hidden
+              className={`inline-block size-1.5 rounded-full ${
+                displayStatus === "connected" ? "bg-brand-500" : "bg-phosphor-muted"
+              }`}
+            />
+            {displayStatus === "connected"
+              ? "Display conectado"
+              : displayStatus === "waiting"
+                ? "Esperando display…"
+                : "Display desconectado"}
+          </p>
+          <button
+            type="button"
+            onClick={handleShareDisplay}
+            className="text-[10px] uppercase tracking-widest text-phosphor-muted hover:text-brand-500 active:scale-95 transition-colors cursor-pointer"
+            aria-label={shared ? "Link del display copiado" : "Compartir link del display"}
+          >
+            {shared ? "¡Copiado!" : "Compartir link"}
+          </button>
         </div>
       </div>
       <Modal

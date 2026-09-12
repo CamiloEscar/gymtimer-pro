@@ -20,6 +20,7 @@ vi.mock("@/lib/session/SessionChannel", () => ({
       sendState: vi.fn(),
       destroy: vi.fn(),
       getConnectionStatus: () => mockDisplayStatus,
+      onConnectionStatusChange: () => () => {},
     };
   }),
 }));
@@ -307,7 +308,7 @@ describe("RunWorkoutPage edit-save with display", () => {
     // change into LocalWorkoutRepository via the save effect).
     const stored = new LocalWorkoutRepository().get("w1");
     expect(stored.ok).toBe(true);
-    if (stored.ok) expect(stored.value.blocks[0].durationSeconds).toBe(300);
+    if (stored.ok && stored.value) expect(stored.value.blocks[0].durationSeconds).toBe(300);
   });
 
   it("prompts for confirmation when display is connected and timing changes", async () => {
@@ -337,7 +338,7 @@ describe("RunWorkoutPage edit-save with display", () => {
     // Until the user confirms, the original duration is still on disk.
     const stored = new LocalWorkoutRepository().get("w1");
     expect(stored.ok).toBe(true);
-    if (stored.ok) expect(stored.value.blocks[0].durationSeconds).toBe(600);
+    if (stored.ok && stored.value) expect(stored.value.blocks[0].durationSeconds).toBe(600);
   });
 
   it("applies timing changes when the user confirms the display reset", async () => {
@@ -365,7 +366,7 @@ describe("RunWorkoutPage edit-save with display", () => {
 
     const stored = new LocalWorkoutRepository().get("w1");
     expect(stored.ok).toBe(true);
-    if (stored.ok) expect(stored.value.blocks[0].durationSeconds).toBe(300);
+    if (stored.ok && stored.value) expect(stored.value.blocks[0].durationSeconds).toBe(300);
     expect(
       screen.queryByText(/¿Aplicar cambios y reiniciar el display\?/),
     ).not.toBeInTheDocument();
@@ -398,9 +399,53 @@ describe("RunWorkoutPage edit-save with display", () => {
 
     const stored = new LocalWorkoutRepository().get("w1");
     expect(stored.ok).toBe(true);
-    if (stored.ok) {
+    if (stored.ok && stored.value) {
       expect(stored.value.name).toBe("Murph Renombrado");
       expect(stored.value.blocks[0].durationSeconds).toBe(600);
     }
+  });
+});
+
+describe("RunWorkoutPage display status indicator", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockSearchParams = new URLSearchParams();
+    vi.mocked(SessionChannel).mockClear();
+  });
+
+  it("shows 'Esperando display…' while no display has joined", async () => {
+    mockDisplayStatus = "waiting";
+    seedWorkout();
+    render(<RunWorkoutPage />);
+    expect(await screen.findByText(/Esperando display/)).toBeInTheDocument();
+  });
+
+  it("shows 'Display conectado' when the TV is connected", async () => {
+    mockDisplayStatus = "connected";
+    seedWorkout();
+    render(<RunWorkoutPage />);
+    expect(await screen.findByText(/Display conectado/)).toBeInTheDocument();
+  });
+
+  it("falls back to clipboard when navigator.share is unavailable", async () => {
+    mockDisplayStatus = "disconnected";
+    seedWorkout();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(<RunWorkoutPage />);
+
+    const shareButton = await screen.findByRole("button", {
+      name: /Compartir link del display/,
+    });
+    await act(async () => {
+      shareButton.click();
+    });
+
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringMatching(/\/display\/NEWCOD$/),
+    );
   });
 });

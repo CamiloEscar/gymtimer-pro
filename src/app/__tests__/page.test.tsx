@@ -19,7 +19,7 @@ describe("LandingPage", () => {
     render(<LandingPage />);
 
     const h1 = screen.getByRole("heading", { level: 1 });
-    expect(h1.textContent).toMatch(/ENTRENÁ/);
+    expect(h1.textContent).toMatch(/TIMER/);
     expect(screen.getByRole("heading", { name: "Cómo funciona" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Modos de entrenamiento" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /un display que aguanta el ritmo/i })).toBeInTheDocument();

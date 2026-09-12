@@ -32,10 +32,10 @@ export function Hero() {
         />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center text-center sm:items-start sm:text-left sm:justify-start px-6 md:px-10 lg:px-16 pt-24 md:pt-28 lg:pt-28 pb-10 lg:pb-16">
-        <div className="flex flex-col gap-8 max-w-[600px]">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center gap-10 sm:gap-8 sm:items-start sm:text-left sm:justify-start flex-1 px-6 md:px-10 lg:px-16 sm:pt-28 lg:pt-28 sm:pb-16">
+        <div className="flex flex-col gap-10 sm:gap-8 max-w-[600px]">
           <h1
-            className="flex flex-col gap-1 text-phosphor font-display-condensed font-normal uppercase tracking-[-0.01em] leading-[0.85] text-[clamp(2.5rem,12vw,4.5rem)] md:text-[clamp(3.5rem,8vw,6rem)] lg:text-[clamp(4rem,10vw,9rem)]"
+            className="flex flex-col gap-1 text-phosphor font-display-condensed font-normal uppercase tracking-[-0.01em] leading-[0.85] text-[clamp(3.25rem,16vw,4.5rem)] md:text-[clamp(3.5rem,8vw,6rem)] lg:text-[clamp(4rem,10vw,9rem)]"
           >
             {HEADLINE.map((line, i) => (
               <span

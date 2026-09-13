@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ExerciseOverridesSettings } from "../ExerciseOverridesSettings";
@@ -8,9 +8,10 @@ describe("ExerciseOverridesSettings", () => {
     window.localStorage.clear();
   });
 
-  it("renders the overrides section heading", () => {
+  it("renders the overrides behind an 'Avanzado' details closed by default", () => {
     render(<ExerciseOverridesSettings />);
-    expect(screen.getByRole("heading", { name: "Overrides de ejercicios" })).toBeInTheDocument();
+    expect(screen.getByText(/Avanzado · Overrides de ejercicios/)).toBeInTheDocument();
+    expect(document.querySelector("details")).not.toHaveAttribute("open");
   });
 
   it("shows the empty state 'No hay overrides todavía.'", () => {
@@ -21,17 +22,42 @@ describe("ExerciseOverridesSettings", () => {
   it("persists an override: select the first exercise, type a video URL, click Guardar override, and the override appears in the 'Overrides aplicados' list", async () => {
     const user = userEvent.setup();
     render(<ExerciseOverridesSettings />);
+    await user.click(screen.getByText(/Avanzado · Overrides de ejercicios/));
 
     const exerciseSelect = screen.getByLabelText("Ejercicio") as HTMLSelectElement;
     const firstExerciseValue = (exerciseSelect.options[1] as HTMLOptionElement).value;
     await user.selectOptions(exerciseSelect, firstExerciseValue);
 
     const videoUrl = "https://example.com/demo-video.mp4";
-    await user.type(screen.getByLabelText("URL de video"), videoUrl);
+    const videoField = screen.getByLabelText("URL de video");
+    await user.clear(videoField);
+    await user.type(videoField, videoUrl);
     await user.click(screen.getByRole("button", { name: "Guardar override" }));
 
-    const videoField = screen.getByText(new RegExp(videoUrl));
-    expect(videoField).toBeInTheDocument();
-    expect(videoField.closest("div")?.textContent).toContain("Sentadilla");
+    const appliedVideoField = screen.getByText(new RegExp(videoUrl));
+    expect(appliedVideoField).toBeInTheDocument();
+    expect(appliedVideoField.closest("div")?.textContent).toContain("Sentadilla");
+  });
+
+  it("shows an inline URL error instead of a window alert, and clears it on edit", async () => {
+    const user = userEvent.setup();
+    const alertSpy = vi.spyOn(window, "alert");
+    render(<ExerciseOverridesSettings />);
+    await user.click(screen.getByText(/Avanzado · Overrides de ejercicios/));
+
+    const exerciseSelect = screen.getByLabelText("Ejercicio") as HTMLSelectElement;
+    await user.selectOptions(exerciseSelect, (exerciseSelect.options[1] as HTMLOptionElement).value);
+
+    const videoField = screen.getByLabelText("URL de video");
+    await user.clear(videoField);
+    await user.type(videoField, "not-a-url");
+    await user.click(screen.getByRole("button", { name: "Guardar override" }));
+
+    expect(alertSpy).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(/http\(s\):\/\/ o con \//);
+    expect(screen.getByText("No hay overrides todavía.")).toBeInTheDocument();
+
+    await user.type(videoField, "/");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

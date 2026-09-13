@@ -53,6 +53,7 @@ export function ExerciseOverridesSettings() {
   const [catalogKind, setCatalogKind] = useState<CatalogKind>("gym");
   const [edit, setEdit] = useState<EditState>(EMPTY_EDIT);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
   const repo = new UserExerciseOverrideRepository();
   const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
     "gymtimer.exerciseOverrides",
@@ -75,8 +76,14 @@ export function ExerciseOverridesSettings() {
     allEffective.set(exercise.id, exercise);
   }
 
+  function editField(patch: Partial<EditState>) {
+    setUrlError(null);
+    setEdit({ ...edit, ...patch });
+  }
+
   function handleSelectExercise(exerciseId: string) {
     const entry = effectiveCatalog.find((exercise) => exercise.id === exerciseId);
+    setUrlError(null);
     setEdit({
       exerciseId,
       name: entry?.name ?? "",
@@ -89,6 +96,7 @@ export function ExerciseOverridesSettings() {
   function handleCatalogChange(kind: CatalogKind) {
     setCatalogKind(kind);
     setEdit(EMPTY_EDIT);
+    setUrlError(null);
   }
 
   function handleSaveOverride() {
@@ -96,9 +104,10 @@ export function ExerciseOverridesSettings() {
     // Block save when URLs don't parse — surface the problem here, not on
     // the TV at runtime.
     if (!isValidMediaUrl(edit.videoUrl.trim()) || !isValidMediaUrl(edit.thumbnailUrl.trim())) {
-      window.alert("Las URLs tienen que empezar con http(s):// o con /");
+      setUrlError("Las URLs tienen que empezar con http(s):// o con /");
       return;
     }
+    setUrlError(null);
     const override: UserExerciseOverride = { exerciseId: edit.exerciseId };
     const name = edit.name.trim();
     const videoUrl = edit.videoUrl.trim();
@@ -119,133 +128,151 @@ export function ExerciseOverridesSettings() {
   }
 
   return (
-    <Card className="space-y-4">
-      <h2 className="font-tactical text-xs uppercase tracking-widest text-brand-500">
-        Overrides de ejercicios
-      </h2>
-      <p className="text-sm text-phosphor-dim">
-        Personalizá nombre, descripción, video y miniatura de cualquier ejercicio del catálogo.
-        Lo que cargues acá reemplaza los valores por defecto en tus rutinas y en el display.
-      </p>
+    <Card className="p-4 space-y-4">
+      <details>
+        <summary className="cursor-pointer select-none list-none font-tactical text-xs uppercase tracking-widest text-brand-500 [&::-webkit-details-marker]:hidden">
+          Avanzado · Overrides de ejercicios
+        </summary>
 
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            size="md"
-            variant={catalogKind === "gym" ? "primary" : "secondary"}
-            aria-pressed={catalogKind === "gym"}
-            onClick={() => handleCatalogChange("gym")}
+        <div className="mt-4 space-y-4">
+          <p className="text-sm text-phosphor-dim">
+            Personalizá nombre, descripción, video y miniatura de cualquier ejercicio del
+            catálogo. Lo que cargues acá reemplaza los valores por defecto en tus rutinas y en el
+            display.
+          </p>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="md"
+              variant={catalogKind === "gym" ? "primary" : "secondary"}
+              aria-pressed={catalogKind === "gym"}
+              onClick={() => handleCatalogChange("gym")}
+            >
+              Gimnasio
+            </Button>
+            <Button
+              type="button"
+              size="md"
+              variant={catalogKind === "crossfit" ? "primary" : "secondary"}
+              aria-pressed={catalogKind === "crossfit"}
+              onClick={() => handleCatalogChange("crossfit")}
+            >
+              CrossFit
+            </Button>
+          </div>
+
+          <Select
+            aria-label="Ejercicio"
+            value={edit.exerciseId}
+            onChange={(e) => handleSelectExercise(e.target.value)}
           >
-            Gimnasio
-          </Button>
-          <Button
-            type="button"
-            size="md"
-            variant={catalogKind === "crossfit" ? "primary" : "secondary"}
-            aria-pressed={catalogKind === "crossfit"}
-            onClick={() => handleCatalogChange("crossfit")}
-          >
-            CrossFit
-          </Button>
-        </div>
+            <option value="">Elegí un ejercicio</option>
+            {Object.entries(grouped).map(([category, exercises]) => (
+              <optgroup key={category} label={category}>
+                {exercises.map((exercise) => (
+                  <option key={exercise.id} value={exercise.id}>
+                    {exercise.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
 
-        <Select
-          aria-label="Ejercicio"
-          value={edit.exerciseId}
-          onChange={(e) => handleSelectExercise(e.target.value)}
-        >
-          <option value="">Elegí un ejercicio</option>
-          {Object.entries(grouped).map(([category, exercises]) => (
-            <optgroup key={category} label={category}>
-              {exercises.map((exercise) => (
-                <option key={exercise.id} value={exercise.id}>
-                  {exercise.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </Select>
+          <Input
+            aria-label="Nombre (opcional)"
+            type="text"
+            value={edit.name}
+            onChange={(e) => editField({ name: e.target.value })}
+            placeholder="Nombre (opcional)"
+          />
+          <Input
+            aria-label="URL de video"
+            type="text"
+            value={edit.videoUrl}
+            onChange={(e) => editField({ videoUrl: e.target.value })}
+            placeholder="URL de video"
+          />
+          <Input
+            aria-label="URL de miniatura"
+            type="text"
+            value={edit.thumbnailUrl}
+            onChange={(e) => editField({ thumbnailUrl: e.target.value })}
+            placeholder="URL de miniatura"
+          />
+          <textarea
+            aria-label="Descripción"
+            value={edit.description}
+            onChange={(e) => editField({ description: e.target.value })}
+            placeholder="Descripción"
+            className="border border-surface-800 bg-surface-900 text-white rounded p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
 
-        <Input
-          aria-label="Nombre (opcional)"
-          type="text"
-          value={edit.name}
-          onChange={(e) => setEdit({ ...edit, name: e.target.value })}
-          placeholder="Nombre (opcional)"
-        />
-        <Input
-          aria-label="URL de video"
-          type="text"
-          value={edit.videoUrl}
-          onChange={(e) => setEdit({ ...edit, videoUrl: e.target.value })}
-          placeholder="URL de video"
-        />
-        <Input
-          aria-label="URL de miniatura"
-          type="text"
-          value={edit.thumbnailUrl}
-          onChange={(e) => setEdit({ ...edit, thumbnailUrl: e.target.value })}
-          placeholder="URL de miniatura"
-        />
-        <textarea
-          aria-label="Descripción"
-          value={edit.description}
-          onChange={(e) => setEdit({ ...edit, description: e.target.value })}
-          placeholder="Descripción"
-          className="border border-surface-800 bg-surface-900 text-white rounded p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-
-        <Button type="button" size="md" onClick={handleSaveOverride} disabled={!edit.exerciseId}>
-          Guardar override
-        </Button>
-
-        <div className="border-t border-surface-800 pt-3 space-y-2">
-          <h3 className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
-            Overrides aplicados
-          </h3>
-          {overrides.length === 0 ? (
-            <p className="text-sm text-phosphor-dim">No hay overrides todavía.</p>
-          ) : (
-            <ul className="space-y-2">
-              {overrides.map((override) => {
-                const name = allEffective.get(override.exerciseId)?.name ?? override.exerciseId;
-                const fields = [
-                  override.name && `Nombre: ${override.name}`,
-                  override.videoUrl && `Video: ${override.videoUrl}`,
-                  override.thumbnailUrl && `Miniatura: ${override.thumbnailUrl}`,
-                  override.description && `Descripción: ${override.description}`,
-                ].filter(Boolean);
-                return (
-                  <li
-                    key={override.exerciseId}
-                    className="flex items-start justify-between gap-3 rounded-lg bg-surface-950 border border-surface-800 p-3"
-                  >
-                    <div className="space-y-0.5 min-w-0">
-                      <p className="text-sm text-phosphor font-medium">{name}</p>
-                      {fields.length > 0 && (
-                        <ul className="space-y-0.5">
-                          {fields.map((field) => (
-                            <li key={field} className="text-xs text-phosphor-muted truncate">
-                              {field}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      aria-label={`Quitar ${name}`}
-                      onClick={() => setPendingRemove(override.exerciseId)}
-                    >
-                      Quitar
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
+          {urlError && (
+            <p role="alert" className="text-danger-500 text-sm">
+              {urlError}
+            </p>
           )}
+
+          <Button
+            type="button"
+            size="md"
+            onClick={handleSaveOverride}
+            disabled={!edit.exerciseId}
+          >
+            Guardar override
+          </Button>
+
+          <div className="border-t border-surface-800 pt-3 space-y-2">
+            <h3 className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+              Overrides aplicados
+            </h3>
+            {overrides.length === 0 ? (
+              <p className="text-sm text-phosphor-dim">No hay overrides todavía.</p>
+            ) : (
+              <ul className="space-y-2">
+                {overrides.map((override) => {
+                  const name = allEffective.get(override.exerciseId)?.name ?? override.exerciseId;
+                  const fields = [
+                    override.name && `Nombre: ${override.name}`,
+                    override.videoUrl && `Video: ${override.videoUrl}`,
+                    override.thumbnailUrl && `Miniatura: ${override.thumbnailUrl}`,
+                    override.description && `Descripción: ${override.description}`,
+                  ].filter(Boolean);
+                  return (
+                    <li
+                      key={override.exerciseId}
+                      className="flex items-start justify-between gap-3 rounded-lg bg-surface-950 border border-surface-800 p-3"
+                    >
+                      <div className="space-y-0.5 min-w-0">
+                        <p className="text-sm text-phosphor font-medium">{name}</p>
+                        {fields.length > 0 && (
+                          <ul className="space-y-0.5">
+                            {fields.map((field) => (
+                              <li key={field} className="text-xs text-phosphor-muted truncate">
+                                {field}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        aria-label={`Quitar ${name}`}
+                        onClick={() => setPendingRemove(override.exerciseId)}
+                      >
+                        Quitar
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
+      </details>
+
       <Modal
         open={pendingRemove !== null}
         onClose={() => setPendingRemove(null)}

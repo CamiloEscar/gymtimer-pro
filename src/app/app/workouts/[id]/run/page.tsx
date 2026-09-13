@@ -72,6 +72,21 @@ function saveActiveCode(workoutId: string, code: string) {
   localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({ workoutId, code }));
 }
 
+// Reads the start-time field persisted in the per-workout session snapshot,
+// or null when absent/unreadable. Needed to recover sessionStartedAt across a
+// resume re-mount (FAB "Entrenamiento activo"): the engine hydrates mid-run
+// but the in-memory ref is null because handleStart never ran on this mount.
+function readStoredSessionStartMs(key: string): number | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const { sessionStartedAtMs } = JSON.parse(raw);
+    return typeof sessionStartedAtMs === "number" ? sessionStartedAtMs : null;
+  } catch {
+    return null;
+  }
+}
+
 // True iff `draft` changes any field that affects session timing relative
 // to `current`. Comparing only the timing fields (not name/exercises/etc.)
 // means cosmetic edits don't force a display reset — the engine rebuilds
@@ -163,9 +178,18 @@ function RunWorkoutContent({
     if (session.state.status === "finished") {
       window.localStorage.removeItem(key);
     } else {
+      // Carry the session's start time so a resume re-mount can recover it
+      // (see the re-seed effect below). Prefer the snapshot's own value while
+      // mid-run: on a fresh mount the in-memory ref is still null at the
+      // first persist tick and writing null would destroy the original start
+      // before the re-seed effect ever reads it.
+      const sessionStartedAtMs =
+        session.state.status === "ready"
+          ? sessionStartedAtRef.current
+          : (readStoredSessionStartMs(key) ?? sessionStartedAtRef.current);
       window.localStorage.setItem(
         key,
-        JSON.stringify({ state: session.state, savedAt: Date.now() })
+        JSON.stringify({ state: session.state, savedAt: Date.now(), sessionStartedAtMs })
       );
     }
   }, [session.state, workout.id]);
@@ -247,6 +271,21 @@ function RunWorkoutContent({
   useEffect(() => {
     sessionStartedAtRef.current = null;
     hasRecordedRef.current = false;
+  }, [workout.id]);
+
+  // A snapshot hydrated with a running/paused engine never passed through
+  // handleStart, so the ref above is null on a resume re-mount (FAB
+  // "Entrenamiento activo"); recover the original start from the snapshot so
+  // the finish effect still records history with the real duration. Runs
+  // AFTER the reset effect above so a workout switch clears stale refs first
+  // — and only re-seeds when the current state is actually mid-run, so a
+  // fresh ready workout never inherits a previous session's start time.
+  useEffect(() => {
+    const startedAt = readStoredSessionStartMs(`gymtimer.sessionState.${workout.id}`);
+    if (startedAt !== null && session.state.status !== "ready") {
+      sessionStartedAtRef.current = startedAt;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on mount and workout switch only, not on every status change
   }, [workout.id]);
 
   useEffect(() => {

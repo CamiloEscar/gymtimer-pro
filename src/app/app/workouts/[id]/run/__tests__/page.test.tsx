@@ -452,6 +452,9 @@ describe("RunWorkoutPage session resume (Plan A)", () => {
       const parsed = JSON.parse(raw ?? "");
       expect(parsed.state.status).toBe("running");
       expect(typeof parsed.savedAt).toBe("number");
+      // The start time must land in the snapshot too, or a later re-mount
+      // can't recover it for history recording (see the resume tests below).
+      expect(typeof parsed.sessionStartedAtMs).toBe("number");
     } finally {
       vi.useRealTimers();
     }
@@ -494,6 +497,76 @@ describe("RunWorkoutPage session resume (Plan A)", () => {
     // instead of start (fresh pages show a full 10:00 + INICIAR).
     expect(await screen.findByText("10:00")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^reanudar$/i })).toBeInTheDocument();
+  });
+
+  it("records history anchored to the original start after resuming a snapshot with sessionStartedAtMs", async () => {
+    const workout = seedShortWorkout();
+    // The session "began" a minute before the snapshot was taken — the resume
+    // re-mount must recover this exact value, not re-anchor at the mount time.
+    const startedAtMs = Date.now() - 60_000;
+    const engine = new WorkoutEngine(workout);
+    engine.start();
+    engine.pause();
+    window.localStorage.setItem(
+      "gymtimer.sessionState.w1",
+      JSON.stringify({ state: engine.getState(), savedAt: Date.now(), sessionStartedAtMs: startedAtMs })
+    );
+    engine.destroy();
+
+    render(<RunWorkoutPage />);
+    const resumeButton = await screen.findByRole("button", { name: /^reanudar$/i });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(resumeButton);
+      // Resumed mid-3s getReady → 3s countdown + 1s countdown block → finished.
+      act(() => {
+        vi.advanceTimersByTime(4_500);
+      });
+
+      const afterFinish = new WorkoutHistoryRepository().list();
+      expect(afterFinish.ok).toBe(true);
+      if (!afterFinish.ok) return;
+      expect(afterFinish.value).toHaveLength(1);
+      const [entry] = afterFinish.value;
+      expect(entry.durationMs).toBeGreaterThan(50_000);
+      expect(entry.durationMs).toBeLessThan(70_000);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not record history when a legacy snapshot has no sessionStartedAtMs", async () => {
+    const workout = seedShortWorkout();
+    // Legacy shape: { state, savedAt } with no start-time field. Without a
+    // reference point the duration is unknowable, so the finished session
+    // must stay out of history rather than recording a bogus duration.
+    const engine = new WorkoutEngine(workout);
+    engine.start();
+    engine.pause();
+    window.localStorage.setItem(
+      "gymtimer.sessionState.w1",
+      JSON.stringify({ state: engine.getState(), savedAt: Date.now() })
+    );
+    engine.destroy();
+
+    render(<RunWorkoutPage />);
+    const resumeButton = await screen.findByRole("button", { name: /^reanudar$/i });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(resumeButton);
+      act(() => {
+        vi.advanceTimersByTime(4_500);
+      });
+
+      const afterFinish = new WorkoutHistoryRepository().list();
+      expect(afterFinish.ok).toBe(true);
+      if (!afterFinish.ok) return;
+      expect(afterFinish.value).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

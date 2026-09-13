@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { CatalogExercise } from "@/lib/workout/exerciseCatalog";
 import { EXERCISE_CATALOG, getEffectiveCatalog } from "@/lib/workout/exerciseCatalog";
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
+import { WEIGHTLIFTING_CATALOG } from "@/lib/workout/exerciseCatalogWeightlifting";
 import type { UserExerciseOverride } from "@/types";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
@@ -14,15 +15,27 @@ import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { Modal } from "@/components/ui/Modal";
 
-type Origin = "gym" | "crossfit" | "both";
-type LibraryExercise = CatalogExercise & { origin: Origin };
-type OriginFilter = "all" | "gym" | "crossfit";
+type OriginTag = "gym" | "crossfit" | "weightlifting";
+type LibraryExercise = CatalogExercise & { tags: Set<OriginTag> };
+type OriginFilter = "all" | OriginTag;
+
+function tagsFor(name: string): Set<OriginTag> {
+  const key = name.trim().toLowerCase();
+  const tags = new Set<OriginTag>();
+  if (GYM_NAMES.has(key)) tags.add("gym");
+  if (CROSSFIT_NAMES.has(key)) tags.add("crossfit");
+  if (WEIGHTLIFTING_NAMES.has(key)) tags.add("weightlifting");
+  return tags;
+}
 
 const CROSSFIT_NAMES = new Set(
   CROSSFIT_CATALOG.map((e) => e.name.trim().toLowerCase()),
 );
 const GYM_NAMES = new Set(
   EXERCISE_CATALOG.map((e) => e.name.trim().toLowerCase()),
+);
+const WEIGHTLIFTING_NAMES = new Set(
+  WEIGHTLIFTING_CATALOG.map((e) => e.name.trim().toLowerCase()),
 );
 
 function ThumbnailPreview({ src }: { src?: string }) {
@@ -122,27 +135,28 @@ export function ExerciseLibrary() {
     [],
   );
 
-  const exercises: LibraryExercise[] = [
-    ...getEffectiveCatalog(EXERCISE_CATALOG, overrides).map((ex) => ({
-      ...ex,
-      origin: (CROSSFIT_NAMES.has(ex.name.trim().toLowerCase())
-        ? "both"
-        : "gym") as Origin,
-    })),
-    ...getEffectiveCatalog(CROSSFIT_CATALOG, overrides).map((ex) => ({
-      ...ex,
-      origin: (GYM_NAMES.has(ex.name.trim().toLowerCase())
-        ? "both"
-        : "crossfit") as Origin,
-    })),
-  ];
+  const exercisesById = new Map<string, LibraryExercise>();
+  function merge(ex: CatalogExercise) {
+    const tags = tagsFor(ex.name);
+    const existing = exercisesById.get(ex.id);
+    if (existing) {
+      const merged = new Set(existing.tags);
+      tags.forEach((tag) => merged.add(tag));
+      exercisesById.set(ex.id, { ...existing, tags: merged });
+    } else {
+      exercisesById.set(ex.id, { ...ex, tags });
+    }
+  }
+  for (const ex of getEffectiveCatalog(EXERCISE_CATALOG, overrides)) merge(ex);
+  for (const ex of getEffectiveCatalog(CROSSFIT_CATALOG, overrides)) merge(ex);
+  for (const ex of getEffectiveCatalog(WEIGHTLIFTING_CATALOG, overrides)) merge(ex);
+  const exercises: LibraryExercise[] = [...exercisesById.values()];
 
   const normalized = query.trim().toLowerCase();
   const filtered = exercises
     .filter((ex) => {
-      if (originFilter === "gym") return ex.origin === "gym" || ex.origin === "both";
-      if (originFilter === "crossfit") return ex.origin === "crossfit" || ex.origin === "both";
-      return true;
+      if (originFilter === "all") return true;
+      return ex.tags.has(originFilter);
     })
     .filter((ex) =>
       normalized ? ex.name.toLowerCase().includes(normalized) : true,
@@ -152,6 +166,7 @@ export function ExerciseLibrary() {
     { value: "all", label: "Todos" },
     { value: "gym", label: "Gimnasio" },
     { value: "crossfit", label: "CrossFit" },
+    { value: "weightlifting", label: "Weightlifting" },
   ];
 
   return (

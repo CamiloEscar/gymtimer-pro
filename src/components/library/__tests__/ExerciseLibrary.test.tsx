@@ -3,10 +3,16 @@ import { render, screen, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ExerciseLibrary } from "../ExerciseLibrary";
 
-function sentadillaCard() {
+function cardLinks() {
+  // Cards live under /app/exercises/<id>; the AppHeader / MobileTabBar
+  // links point to /app/exercises (no id) so they don't match this regex.
   return screen
     .getAllByRole("link")
-    .find((l) => l.getAttribute("href") === "/app/exercises/leg-01");
+    .filter((l) => /^\/app\/exercises\/(?!$)/.test(l.getAttribute("href") ?? ""));
+}
+
+function sentadillaCard() {
+  return cardLinks().find((l) => l.getAttribute("href") === "/app/exercises/leg-01");
 }
 
 describe("ExerciseLibrary", () => {
@@ -16,20 +22,24 @@ describe("ExerciseLibrary", () => {
 
   it("renders every seeded exercise as a link", async () => {
     render(<ExerciseLibrary />);
-    const links = await screen.findAllByRole("link");
-    expect(links).toHaveLength(95);
+    const links = await cardLinks();
+    expect(links).toHaveLength(103);
     const sentadilla = links.find((l) => l.getAttribute("href") === "/app/exercises/leg-01");
     expect(sentadilla?.textContent).toContain("Sentadilla");
     const backSquat = links.find((l) => l.getAttribute("href") === "/app/exercises/cf-wl-01");
     expect(backSquat?.textContent).toContain("Back Squat");
+    const bench = links.find((l) => l.getAttribute("href") === "/app/exercises/wl-03");
+    expect(bench?.textContent).toContain("Bench Press");
   });
 
   it("filters by name", async () => {
     const user = userEvent.setup();
     render(<ExerciseLibrary />);
     await user.type(screen.getByLabelText("Buscar ejercicio"), "sentadilla");
-    expect(screen.getAllByRole("link", { name: /Sentadilla/ })).toHaveLength(3);
-    expect(screen.queryByRole("link", { name: /Back Squat/ })).not.toBeInTheDocument();
+    expect(cardLinks().filter((l) => /Sentadilla/.test(l.textContent || ""))).toHaveLength(3);
+    expect(
+      cardLinks().find((l) => /Back Squat/.test(l.textContent || ""))
+    ).toBeUndefined();
   });
 
   it("shows the override name when an exercise is renamed", async () => {
@@ -50,45 +60,70 @@ describe("ExerciseLibrary", () => {
     expect(screen.getByText("Sin resultados.")).toBeInTheDocument();
   });
 
-  it("shows Todos by default and renders the 95 cards", async () => {
+  it("shows Todos by default and renders the 103 cards", async () => {
     render(<ExerciseLibrary />);
     const allButton = screen.getByRole("button", { name: "Todos" });
     expect(allButton).toHaveAttribute("aria-pressed", "true");
-    expect(await screen.findAllByRole("link")).toHaveLength(95);
+    expect(await cardLinks()).toHaveLength(103);
   });
 
-  it("filters to gym + both when Gimnasio is selected", async () => {
+  it("filters to gym catalog when Gimnasio is selected", async () => {
     const user = userEvent.setup();
     render(<ExerciseLibrary />);
     await user.click(screen.getByRole("button", { name: "Gimnasio" }));
     expect(screen.getByRole("button", { name: "Gimnasio" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("link")).toHaveLength(52);
-    expect(screen.getAllByRole("link", { name: /Sentadilla/ }).length).toBeGreaterThan(0);
+    // 50 gym entries + 2 cf entries (Kettlebell Swing, Box Jump) that share
+    // a name with the gym catalog get the gym tag too.
+    expect(cardLinks()).toHaveLength(52);
+    expect(cardLinks().filter((l) => /Sentadilla/.test(l.textContent || "")).length).toBeGreaterThan(0);
     expect(
-      screen.queryByRole("link", { name: /Back Squat/ })
-    ).not.toBeInTheDocument();
+      cardLinks().find((l) => /Back Squat/.test(l.textContent || ""))
+    ).toBeUndefined();
   });
 
-  it("filters to crossfit + both when CrossFit is selected", async () => {
+  it("filters to weightlifting when Weightlifting is selected", async () => {
+    const user = userEvent.setup();
+    render(<ExerciseLibrary />);
+    await user.click(screen.getByRole("button", { name: "Weightlifting" }));
+    expect(screen.getByRole("button", { name: "Weightlifting" })).toHaveAttribute("aria-pressed", "true");
+    // 8 wl entries + 3 cf entries (Back Squat, Front Squat, Power Clean)
+    // that share a name with the weightlifting catalog.
+    expect(cardLinks()).toHaveLength(11);
+    expect(
+      cardLinks().find((l) => /Bench Press/.test(l.textContent || ""))
+    ).toBeDefined();
+    expect(
+      cardLinks().find((l) => /Sentadilla/.test(l.textContent || ""))
+    ).toBeUndefined();
+  });
+
+  it("filters to crossfit catalog when CrossFit is selected", async () => {
     const user = userEvent.setup();
     render(<ExerciseLibrary />);
     await user.click(screen.getByRole("button", { name: "CrossFit" }));
     expect(screen.getByRole("button", { name: "CrossFit" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("link")).toHaveLength(47);
-    expect(screen.getByRole("link", { name: /Back Squat/ })).toBeInTheDocument();
+    // 45 cf entries + 2 gym entries (Kettlebell Swing, Box Jump) + 3 wl
+    // entries (Back/Front Squat, Power Clean) that share a name with cf.
+    expect(cardLinks()).toHaveLength(50);
     expect(
-      screen.queryByRole("link", { name: /Sentadilla/ })
-    ).not.toBeInTheDocument();
+      cardLinks().find((l) => /Back Squat/.test(l.textContent || ""))
+    ).toBeDefined();
+    expect(
+      cardLinks().find((l) => /Sentadilla/.test(l.textContent || ""))
+    ).toBeUndefined();
   });
 
   it("combines search with the origin filter", async () => {
     const user = userEvent.setup();
     render(<ExerciseLibrary />);
     await user.type(screen.getByLabelText("Buscar ejercicio"), "press");
+    // Gym catalog has Press banca, Press banca inclinado, Press con mancuernas,
+    // Press militar, Press Arnold.
     await user.click(screen.getByRole("button", { name: "Gimnasio" }));
-    expect(screen.getAllByRole("link")).toHaveLength(5);
+    expect(cardLinks()).toHaveLength(5);
+    // CrossFit has no literal "press" lift — Push Press counts (1 match).
     await user.click(screen.getByRole("button", { name: "CrossFit" }));
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(cardLinks()).toHaveLength(1);
   });
 
   it("shows Sin resultados when a search matches nothing under any filter", async () => {
@@ -104,10 +139,10 @@ describe("ExerciseLibrary", () => {
     const user = userEvent.setup();
     render(<ExerciseLibrary />);
     await user.click(screen.getByRole("button", { name: "Gimnasio" }));
-    expect(screen.getAllByRole("link")).toHaveLength(52);
+    expect(cardLinks()).toHaveLength(52);
     expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
     await user.type(screen.getByLabelText("Buscar ejercicio"), "sentadilla");
-    expect(screen.getAllByRole("link", { name: /Sentadilla/ })).toHaveLength(3);
+    expect(cardLinks().filter((l) => /Sentadilla/.test(l.textContent || ""))).toHaveLength(3);
     expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
   });
 

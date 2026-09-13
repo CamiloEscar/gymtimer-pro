@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { EXERCISE_CATALOG, getEffectiveCatalog } from "@/lib/workout/exerciseCatalog";
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
+import { WEIGHTLIFTING_CATALOG } from "@/lib/workout/exerciseCatalogWeightlifting";
 import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
 import { BLOCK_TYPES, BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
 import { formatTimeInput } from "@/lib/workout/formatTimeInput";
@@ -21,7 +22,13 @@ import { ExerciseEditor } from "./ExerciseEditor";
 const INTERVAL_HINT =
   'Sin "cada cuánto", el bloque corre con work + descanso como largo de ronda y termina. Configurá "cada cuánto" para que suene la campana al inicio de cada intervalo.';
 
-type CatalogKind = "gym" | "crossfit";
+type CatalogKind = "gym" | "crossfit" | "weightlifting";
+
+const CATALOGS = {
+  gym: EXERCISE_CATALOG,
+  crossfit: CROSSFIT_CATALOG,
+  weightlifting: WEIGHTLIFTING_CATALOG,
+} as const;
 
 interface BlockEditorProps {
   block: WorkoutBlock;
@@ -89,7 +96,7 @@ export function BlockEditor({
   overrides,
 }: BlockEditorProps) {
   const [catalogKind, setCatalogKind] = useState<CatalogKind>("gym");
-  const catalog = catalogKind === "gym" ? EXERCISE_CATALOG : CROSSFIT_CATALOG;
+  const catalog = CATALOGS[catalogKind];
   const effectiveCatalog = getEffectiveCatalog(catalog, overrides ?? []);
   const profile = useGymProfile();
   const typeInfo = BLOCK_TYPE_INFO[block.type];
@@ -313,7 +320,7 @@ export function BlockEditor({
 
       {requiresExercises && (
         <>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               type="button"
               size="md"
@@ -331,6 +338,15 @@ export function BlockEditor({
               onClick={() => setCatalogKind("crossfit")}
             >
               CrossFit
+            </Button>
+            <Button
+              type="button"
+              size="md"
+              variant={catalogKind === "weightlifting" ? "primary" : "secondary"}
+              aria-pressed={catalogKind === "weightlifting"}
+              onClick={() => setCatalogKind("weightlifting")}
+            >
+              Weightlifting
             </Button>
           </div>
 

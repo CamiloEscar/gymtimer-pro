@@ -3,6 +3,7 @@ import type { SessionVideoInfo } from "@/types/session";
 import type { CatalogExercise } from "./exerciseCatalog";
 import { EXERCISE_CATALOG, getEffectiveCatalog } from "./exerciseCatalog";
 import { CROSSFIT_CATALOG } from "./exerciseCatalogCrossfit";
+import { WEIGHTLIFTING_CATALOG } from "./exerciseCatalogWeightlifting";
 
 export function resolveExerciseVideos(
   workout: Workout,
@@ -12,6 +13,7 @@ export function resolveExerciseVideos(
   const all = [
     ...getEffectiveCatalog(EXERCISE_CATALOG, overrides),
     ...getEffectiveCatalog(CROSSFIT_CATALOG, overrides),
+    ...getEffectiveCatalog(WEIGHTLIFTING_CATALOG, overrides),
   ];
   for (const entry of all) {
     if (!byName.has(entry.name)) byName.set(entry.name, entry);

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
+import { Modal } from "@/components/ui/Modal";
 
 type Origin = "gym" | "crossfit" | "both";
 type LibraryExercise = CatalogExercise & { origin: Origin };
@@ -68,7 +69,13 @@ function ThumbnailPreview({ src }: { src?: string }) {
   );
 }
 
-function ExerciseCard({ exercise }: { exercise: LibraryExercise }) {
+function ExerciseCard({
+  exercise,
+  onPreview,
+}: {
+  exercise: LibraryExercise;
+  onPreview: () => void;
+}) {
   return (
     <Link
       href={`/app/exercises/${exercise.id}`}
@@ -77,22 +84,19 @@ function ExerciseCard({ exercise }: { exercise: LibraryExercise }) {
       <Card className="p-4 h-full transition-colors hover:border-brand-500/60">
         <div className="relative -mx-4 -mt-4 mb-3 aspect-video overflow-hidden rounded-t-2xl bg-surface-900">
           <ThumbnailPreview src={exercise.videoUrl} />
-          <span
-            aria-hidden
-            className="absolute inset-0 flex items-center justify-center md:hidden"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPreview();
+            }}
+            aria-label={`Reproducir preview de ${exercise.name}`}
+            className="absolute inset-0 flex items-center justify-center opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100"
           >
             <span className="flex size-9 items-center justify-center rounded-full bg-black/55 text-phosphor backdrop-blur-sm">
               <Icon name="play" className="size-4" />
             </span>
-          </span>
-          <span
-            aria-hidden
-            className="absolute inset-0 hidden items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 md:flex"
-          >
-            <span className="flex size-9 items-center justify-center rounded-full bg-black/55 text-phosphor backdrop-blur-sm">
-              <Icon name="play" className="size-4" />
-            </span>
-          </span>
+          </button>
         </div>
         <p className="text-base font-semibold leading-snug text-phosphor">
           {exercise.name}
@@ -108,6 +112,7 @@ function ExerciseCard({ exercise }: { exercise: LibraryExercise }) {
 export function ExerciseLibrary() {
   const [query, setQuery] = useState("");
   const [originFilter, setOriginFilter] = useState<OriginFilter>("all");
+  const [preview, setPreview] = useState<CatalogExercise | null>(null);
   const overrides = useLocalStorageSnapshot<UserExerciseOverride[]>(
     "gymtimer.exerciseOverrides",
     () => {
@@ -178,9 +183,30 @@ export function ExerciseLibrary() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 px-4 pb-4">
           {filtered.map((exercise) => (
-            <ExerciseCard key={exercise.id} exercise={exercise} />
+            <ExerciseCard
+              key={exercise.id}
+              exercise={exercise}
+              onPreview={() => setPreview(exercise)}
+            />
           ))}
         </div>
+      )}
+      {preview && (
+        <Modal open onClose={() => setPreview(null)} title={preview.name}>
+          {preview.videoUrl ? (
+            <video
+              src={preview.videoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className="aspect-video w-full rounded-lg bg-surface-950 object-cover"
+            />
+          ) : (
+            <p className="text-phosphor-dim">Este ejercicio no tiene video.</p>
+          )}
+        </Modal>
       )}
     </div>
   );

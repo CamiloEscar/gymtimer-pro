@@ -25,7 +25,7 @@ describe("AppHeader", () => {
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/app");
     expect(screen.getByRole("link", { name: "Rutinas" })).toHaveAttribute("href", "/app/workouts");
     expect(screen.getByRole("link", { name: "Ejercicios" })).toHaveAttribute("href", "/app/exercises");
-    expect(screen.getByRole("link", { name: "Configuración" })).toHaveAttribute("href", "/app/settings");
+    expect(screen.getByRole("link", { name: "Ajustes" })).toHaveAttribute("href", "/app/settings");
     expect(screen.getByRole("link", { name: "Pantalla" })).toHaveAttribute("href", "/display");
   });
 

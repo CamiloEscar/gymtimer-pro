@@ -9,7 +9,7 @@ const SECTION_LINKS = [
   { href: "/app", label: "Dashboard" },
   { href: "/app/workouts", label: "Rutinas" },
   { href: "/app/exercises", label: "Ejercicios" },
-  { href: "/app/settings", label: "Configuración" },
+  { href: "/app/settings", label: "Ajustes" },
   { href: "/display", label: "Pantalla" },
 ];
 

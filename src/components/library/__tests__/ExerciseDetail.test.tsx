@@ -44,7 +44,7 @@ describe("ExerciseDetail", () => {
   it("quick start saves a workout and navigates to the editor", async () => {
     const user = userEvent.setup();
     render(<ExerciseDetail exercise={EXERCISE} />);
-    await user.click(screen.getByRole("button", { name: /Arrancar con este ejercicio/ }));
+    await user.click(screen.getByRole("button", { name: /Crear rutina con este ejercicio/ }));
     expect(pushMock).toHaveBeenCalledWith(expect.stringMatching(/^\/app\/workouts\/[^/]+$/));
     const raw = window.localStorage.getItem("gymtimer.workouts");
     const saved = JSON.parse(raw ?? "[]");

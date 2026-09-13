@@ -54,10 +54,15 @@ export function ExerciseDetail({ exercise }: ExerciseDetailProps) {
           rounded
         />
       )}
-      <Button size="md" onClick={handleQuickStart}>
-        <Icon name="play" />
-        Arrancar con este ejercicio
-      </Button>
+      <div className="space-y-1">
+        <Button size="md" onClick={handleQuickStart}>
+          <Icon name="play" />
+          Crear rutina con este ejercicio
+        </Button>
+        <p className="text-xs text-phosphor-dim">
+          Te llevamos al editor para que la configures antes de correr.
+        </p>
+      </div>
     </div>
   );
 }

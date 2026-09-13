@@ -49,7 +49,7 @@ export function ExerciseLibrary() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 px-4 pb-4">
           {filtered.map((exercise) => (
             <Link key={exercise.id} href={`/app/exercises/${exercise.id}`}>
-              <Card>
+              <Card className="p-4">
                 <p className="text-phosphor font-semibold text-sm">{exercise.name}</p>
                 <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
                   {exercise.category}

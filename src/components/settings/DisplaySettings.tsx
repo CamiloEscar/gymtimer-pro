@@ -18,7 +18,7 @@ export function DisplaySettings() {
   );
 
   return (
-    <Card className="space-y-4">
+    <Card className="p-4 space-y-4">
       <h2 className="font-tactical text-xs uppercase tracking-widest text-brand-500">Pantalla</h2>
 
       <p className="text-phosphor">Mostrar videos de ejercicios en el display (TV)</p>

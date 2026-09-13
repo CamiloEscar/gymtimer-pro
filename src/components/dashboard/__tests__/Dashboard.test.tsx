@@ -19,9 +19,13 @@ describe("Dashboard", () => {
     window.localStorage.clear();
   });
 
-  it("shows the time-aware greeting header", () => {
+  it("shows the gym header", () => {
     render(<Dashboard />);
-    expect(screen.getByText(/¿Qué entrenamos hoy\?/i)).toBeInTheDocument();
+    expect(screen.getByText("GymTimer Pro")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /nueva rutina/i })).toHaveAttribute(
+      "href",
+      "/app/workouts/new"
+    );
   });
 
   it("shows stats derived from recorded history", () => {
@@ -32,7 +36,7 @@ describe("Dashboard", () => {
       durationMs: 600_000,
     });
     render(<Dashboard />);
-    expect(screen.getByText("1")).toBeInTheDocument(); // sessionsThisWeek
+    expect(screen.getByText("1", { selector: "p" })).toBeInTheDocument(); // sessionsThisWeek
   });
 
   it("filters recent workouts by the search input", () => {
@@ -47,10 +51,17 @@ describe("Dashboard", () => {
     expect(screen.queryByText("Fran")).not.toBeInTheDocument();
   });
 
-  it("shows quick action links", () => {
+  it("links to new routine and the gym display when a link code is set", () => {
+    new GymProfileRepository().save({ name: "Box", linkCode: "XYZ" });
     render(<Dashboard />);
-    expect(screen.getByRole("link", { name: /nueva rutina/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /abrir display/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /nueva rutina/i })).toHaveAttribute(
+      "href",
+      "/app/workouts/new"
+    );
+    expect(screen.getByRole("link", { name: /abrir display/i })).toHaveAttribute(
+      "href",
+      "/display/XYZ"
+    );
   });
 
   it("asks for confirmation before deleting a recent workout", () => {
@@ -92,7 +103,7 @@ describe("Dashboard", () => {
     vi.useFakeTimers();
     vi.setSystemTime(date);
     render(<Dashboard />);
-    const wodCard = screen.getByText(/Entrenamiento del día/).closest("div")!.parentElement!;
+    const wodCard = screen.getByText(/Rutina del día/).closest("div")!.parentElement!;
     expect(wodCard).toHaveTextContent("Domingo WOD");
     expect(wodCard).not.toHaveTextContent("Lunes WOD");
     vi.useRealTimers();

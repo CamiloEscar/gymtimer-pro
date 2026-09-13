@@ -125,7 +125,7 @@ export function BlockEditor({
   const blockEstimatedSeconds = estimateWorkoutDurationSeconds({ blocks: [block] });
 
   return (
-    <Card className={`space-y-3 ${hasErrors ? "!border-danger-500" : ""}`}>
+    <Card className={`space-y-3 p-4 ${hasErrors ? "!border-danger-500" : ""}`}>
       <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
         BLOQUE {index} · {BLOCK_TYPE_INFO[block.type].label.toUpperCase()}
       </p>
@@ -165,7 +165,7 @@ export function BlockEditor({
         >
           {BLOCK_TYPES.map((type) => (
             <option key={type} value={type}>
-              {BLOCK_TYPE_INFO[type].label}
+              {BLOCK_TYPE_INFO[type].label} {BLOCK_TYPE_INFO[type].selectHint}
             </option>
           ))}
         </Select>

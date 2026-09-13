@@ -20,15 +20,15 @@ interface WorkoutOfTheDayProps {
 
 const SOURCE_LABEL: Record<NonNullable<WorkoutOfTheDayProps["source"]>, string> = {
   weeklyPlan: "del plan semanal",
-  pinned: "fijado manualmente",
+  pinned: "destacada manualmente",
   latest: "último creado",
 };
 
 export function WorkoutOfTheDay({ workout, source }: WorkoutOfTheDayProps) {
   if (!workout) {
     return (
-      <Card className="space-y-3">
-        <p className="text-phosphor-dim">Todavía no hay entrenamiento del día — creá uno.</p>
+      <Card className="space-y-3 p-4">
+        <p className="text-phosphor-dim">Todavía no hay rutina del día — creá una.</p>
         <Link href="/app/workouts/new">
           <Button size="md">+ Crear entrenamiento</Button>
         </Link>
@@ -40,7 +40,7 @@ export function WorkoutOfTheDay({ workout, source }: WorkoutOfTheDayProps) {
   const estimatedSeconds = estimateWorkoutDurationSeconds(workout);
 
   return (
-    <Card className="relative overflow-hidden border-brand-500/40">
+    <Card className="relative overflow-hidden border-brand-500/40 p-4">
       <div
         className="pointer-events-none absolute inset-0 opacity-70"
         aria-hidden
@@ -52,12 +52,12 @@ export function WorkoutOfTheDay({ workout, source }: WorkoutOfTheDayProps) {
       <div className="relative space-y-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="font-tactical text-xs uppercase tracking-widest text-brand-500">
-            ▸ Entrenamiento del día
+            ▸ Rutina del día
           </span>
           {source && (
             <span
               data-testid="wod-source"
-              className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted border border-surface-800 rounded-full px-2 py-0.5"
+              className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted border border-surface-800 rounded-full px-2 py-0.5"
             >
               {SOURCE_LABEL[source]}
             </span>
@@ -83,7 +83,7 @@ export function WorkoutOfTheDay({ workout, source }: WorkoutOfTheDayProps) {
           <Link href={`/app/workouts/${workout.id}/run`}>
             <Button size="lg" className="w-full sm:w-auto">
               <Icon name="play" />
-              Iniciar entrenamiento
+              Iniciar
             </Button>
           </Link>
         </div>

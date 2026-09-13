@@ -6,7 +6,7 @@ import type { Workout } from "@/types";
 describe("WorkoutOfTheDay", () => {
   it("shows a create-workout prompt when there is none", () => {
     render(<WorkoutOfTheDay workout={null} />);
-    expect(screen.getByText(/todavía no hay entrenamiento/i)).toBeInTheDocument();
+    expect(screen.getByText(/todavía no hay rutina/i)).toBeInTheDocument();
   });
 
   it("shows the block count and estimated duration for the workout of the day", () => {

@@ -20,7 +20,7 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
 
   if (!hasHistory) {
     return (
-      <Card className="flex items-center gap-3">
+      <Card className="flex items-center gap-3 p-4">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 text-brand-500">
           <Icon name="flame" />
         </span>
@@ -44,11 +44,11 @@ export function StatsRow({ stats, totalRoutines }: StatsRowProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {items.map((item) => (
-        <Card key={item.label} className="text-center space-y-1 py-5">
+        <Card key={item.label} className="text-center space-y-1 px-4 py-5">
           <p className="font-industrial text-3xl leading-none text-phosphor tabular-nums">
             {item.value}
           </p>
-          <p className="font-tactical text-[10px] text-phosphor-dim uppercase tracking-widest">
+          <p className="font-tactical text-xs text-phosphor-dim uppercase tracking-widest">
             {item.label}
           </p>
         </Card>

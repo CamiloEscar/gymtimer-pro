@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { StatsRow } from "./StatsRow";
-import { QuickActions } from "./QuickActions";
 import { WorkoutOfTheDay } from "./WorkoutOfTheDay";
+import { DisplayOnboardingBanner } from "./DisplayOnboardingBanner";
 import { RecentWorkouts } from "./RecentWorkouts";
 
 function greeting(hour: number): string {
@@ -101,7 +101,7 @@ export function Dashboard() {
     : workouts.filter((w) => w.id !== workoutOfTheDay?.id);
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6">
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
       <header className="relative overflow-hidden rounded-2xl border border-surface-800 bg-surface-900 p-6">
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
@@ -111,52 +111,54 @@ export function Dashboard() {
               "radial-gradient(circle at 85% 15%, oklch(0.7 0.19 150 / 0.18), transparent 55%), radial-gradient(circle at 10% 90%, oklch(0.82 0.16 90 / 0.08), transparent 60%)",
           }}
         />
-        <div className="relative space-y-2">
-          <div className="flex items-center gap-2">
-            {gymProfile?.logoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element -- dashboard logo comes from user-configured URL, no optimization guarantees */
-              <img
-                src={gymProfile.logoUrl}
-                alt=""
-                className="h-7 w-7 rounded-md border border-surface-800 bg-surface-950 object-contain"
-              />
-            ) : (
-              <Icon name="dumbbell" className="size-5 text-brand-500" />
-            )}
-            <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
-              {gymProfile?.name?.trim() ? gymProfile.name : "GymTimer Pro"}
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <div className="flex items-center gap-2">
+              {gymProfile?.logoUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element -- dashboard logo comes from user-configured URL, no optimization guarantees */
+                <img
+                  src={gymProfile.logoUrl}
+                  alt=""
+                  className="h-7 w-7 rounded-md border border-surface-800 bg-surface-950 object-contain"
+                />
+              ) : (
+                <Icon name="dumbbell" className="size-5 text-brand-500" />
+              )}
+              <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
+                {gymProfile?.name?.trim() ? gymProfile.name : "GymTimer Pro"}
+              </p>
+            </div>
+            <h1 className="font-industrial text-3xl md:text-4xl leading-none text-phosphor">
+              {greetingText ?? " "}
+            </h1>
+            <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+              {dateText ?? " "}
             </p>
+            {gymProfile?.linkCode && (
+              <Link
+                href={`/display/${gymProfile.linkCode}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-surface-800 bg-surface-950/60 px-3 py-1.5 hover:border-brand-500 transition-colors"
+                aria-label="Abrir display del gimnasio"
+              >
+                <Icon name="display" className="size-3.5 text-brand-500" />
+                <span className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                  Link del gym
+                </span>
+                <span className="font-industrial text-sm uppercase tracking-widest text-phosphor">
+                  {gymProfile.linkCode}
+                </span>
+              </Link>
+            )}
           </div>
-          <h1 className="font-industrial text-3xl md:text-4xl leading-none text-phosphor">
-            {greetingText ?? " "}
-          </h1>
-          <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
-            {dateText ?? " "}
-          </p>
-          {gymProfile?.linkCode && (
-            <Link
-              href={`/display/${gymProfile.linkCode}`}
-              className="inline-flex items-center gap-2 rounded-lg border border-surface-800 bg-surface-950/60 px-3 py-1.5 hover:border-brand-500 transition-colors"
-              aria-label="Abrir display del gimnasio"
-            >
-              <Icon name="display" className="size-3.5 text-brand-500" />
-              <span className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted">
-                Link del gym
-              </span>
-              <span className="font-industrial text-sm uppercase tracking-widest text-phosphor">
-                {gymProfile.linkCode}
-              </span>
-            </Link>
-          )}
-          <p className="text-sm text-phosphor-dim pt-1">
-            ¿Qué entrenamos hoy?
-          </p>
+          <Link href="/app/workouts/new" className="sm:shrink-0">
+            <Button size="lg" className="w-full sm:w-auto">
+              + Nueva rutina
+            </Button>
+          </Link>
         </div>
       </header>
 
       <StatsRow stats={historyStats} totalRoutines={workouts.length} />
-
-      <QuickActions />
 
       <Input
         placeholder="Buscar entrenamiento..."
@@ -165,10 +167,24 @@ export function Dashboard() {
         aria-label="Buscar entrenamiento"
       />
 
-      {!isSearching && <WorkoutOfTheDay workout={workoutOfTheDay} source={wodSource} />}
+      {!isSearching &&
+        (workouts.length === 0 ? (
+          workoutOfTheDay ? (
+            <div className="grid gap-4 items-start lg:grid-cols-[2fr_280px]">
+              <WorkoutOfTheDay workout={workoutOfTheDay} source={wodSource} />
+              <div className="order-first lg:order-last">
+                <DisplayOnboardingBanner />
+              </div>
+            </div>
+          ) : (
+            <DisplayOnboardingBanner />
+          )
+        ) : (
+          workoutOfTheDay && <WorkoutOfTheDay workout={workoutOfTheDay} source={wodSource} />
+        ))}
 
       {filtered.length === 0 && !isSearching && (
-        <Card className="relative overflow-hidden text-center space-y-3 border-dashed">
+        <Card className="relative overflow-hidden text-center p-4 space-y-3 border-dashed">
           <div
             className="pointer-events-none absolute inset-0 opacity-40"
             aria-hidden

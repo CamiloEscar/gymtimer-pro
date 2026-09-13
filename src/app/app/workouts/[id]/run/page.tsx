@@ -420,15 +420,17 @@ function RunWorkoutContent({
               }}
               aria-label="Editar código de pantalla"
               placeholder="CÓDIGO"
-              className="w-full pr-10 font-mono uppercase disabled:opacity-60"
+              className="w-full pr-12 md:pr-32 font-mono uppercase disabled:opacity-60"
             />
             <button
               type="button"
               onClick={handleCopyCode}
               aria-label={copied ? "Código copiado" : "Copiar código"}
-              className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center size-10 rounded-md text-phosphor-dim hover:text-brand-500 active:scale-95 transition-colors cursor-pointer"
+              title={copied ? "Código copiado" : "Copiar código"}
+              className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center gap-1.5 min-h-11 min-w-11 rounded-md text-phosphor-dim hover:text-brand-500 active:scale-95 transition-colors cursor-pointer"
             >
               <Icon name={copied ? "check" : "copy"} className="size-4" />
+              <span className="hidden md:inline">{copied ? "¡Copiado!" : "Copiar"}</span>
             </button>
           </div>
           <Link

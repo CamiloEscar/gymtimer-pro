@@ -4,6 +4,7 @@ import RunWorkoutPage from "../page";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { SessionChannel } from "@/lib/session/SessionChannel";
+import { WorkoutEngine } from "@/lib/workout/WorkoutEngine";
 import type { Workout } from "@/types";
 
 let mockSearchParams = new URLSearchParams();
@@ -403,6 +404,96 @@ describe("RunWorkoutPage edit-save with display", () => {
       expect(stored.value.name).toBe("Murph Renombrado");
       expect(stored.value.blocks[0].durationSeconds).toBe(600);
     }
+  });
+});
+
+describe("RunWorkoutPage session resume (Plan A)", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockSearchParams = new URLSearchParams();
+    mockDisplayStatus = "disconnected";
+    vi.mocked(SessionChannel).mockClear();
+    // handleStart calls audio.unlock(), which constructs a real AudioContext.
+    // jsdom has none, so stub a minimal fake (same shape as the history
+    // recording describe above).
+    vi.stubGlobal(
+      "AudioContext",
+      vi.fn(function () {
+        const oscillator = { type: "sine", frequency: { value: 0 }, connect: vi.fn(), start: vi.fn(), stop: vi.fn() };
+        const gain = { gain: { value: 1, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn() }, connect: vi.fn() };
+        return {
+          createOscillator: vi.fn(() => oscillator),
+          createGain: vi.fn(() => gain),
+          destination: {},
+          currentTime: 0,
+          resume: vi.fn().mockResolvedValue(undefined),
+          state: "suspended",
+        };
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("persists the session snapshot to localStorage as state changes", async () => {
+    seedWorkout();
+    render(<RunWorkoutPage />);
+    const startButton = await screen.findByRole("button", { name: /^iniciar$/i });
+
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        startButton.click();
+      });
+      const raw = window.localStorage.getItem("gymtimer.sessionState.w1");
+      expect(raw).not.toBeNull();
+      const parsed = JSON.parse(raw ?? "");
+      expect(parsed.state.status).toBe("running");
+      expect(typeof parsed.savedAt).toBe("number");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("removes the snapshot once the workout finishes", async () => {
+    seedShortWorkout();
+    render(<RunWorkoutPage />);
+    const startButton = await screen.findByRole("button", { name: /^iniciar$/i });
+
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        startButton.click();
+      });
+      // Past the 3s getReady countdown + 1s countdown block → finished.
+      act(() => {
+        vi.advanceTimersByTime(4_500);
+      });
+      expect(window.localStorage.getItem("gymtimer.sessionState.w1")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("re-hydrates a saved snapshot on mount", async () => {
+    const workout = seedWorkout();
+    const engine = new WorkoutEngine(workout);
+    engine.start();
+    engine.skipGetReadyForTest();
+    engine.pause();
+    window.localStorage.setItem(
+      "gymtimer.sessionState.w1",
+      JSON.stringify({ state: engine.getState(), savedAt: Date.now() })
+    );
+    engine.destroy();
+
+    render(<RunWorkoutPage />);
+    // Paused mid-600s AMRAP → remaining time restored, controls show resume
+    // instead of start (fresh pages show a full 10:00 + INICIAR).
+    expect(await screen.findByText("10:00")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^reanudar$/i })).toBeInTheDocument();
   });
 });
 

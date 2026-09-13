@@ -152,6 +152,23 @@ function RunWorkoutContent({
     setCode((current) => (current === fixedFromProfile ? current : fixedFromProfile));
   }, [fixedFromProfile]);
   const session = useWorkoutSession(workout, audio);
+  // Plan A: persist the session state per workout so navigating away and back
+  // (e.g. via the ActiveRunFloater) resumes the live session instead of
+  // rebuilding the engine from scratch. Written on every state change —
+  // ~10Hz while running — but the payload is a few KB of JSON and the
+  // freshness of `savedAt` is what makes TimerEngine's drift correction
+  // accurate. A finished run deletes its snapshot: nothing to resume.
+  useEffect(() => {
+    const key = `gymtimer.sessionState.${workout.id}`;
+    if (session.state.status === "finished") {
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(
+        key,
+        JSON.stringify({ state: session.state, savedAt: Date.now() })
+      );
+    }
+  }, [session.state, workout.id]);
   const channelRef = useRef<SessionChannel | null>(null);
   const [displayStatus, setDisplayStatus] = useState<ConnectionStatus>("waiting");
   const sessionStartedAtRef = useRef<number | null>(null);

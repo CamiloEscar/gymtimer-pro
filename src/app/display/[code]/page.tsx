@@ -29,16 +29,33 @@ export default function DisplayCodePage() {
   // separate cleanup effect) so React Strict Mode's dev-only double-invoke
   // of effects always pairs a channel's creation with its own destroy call,
   // instead of destroying a memoized channel that a later effect still holds.
+  // The mirror engine's getState() doesn't carry the trainer-side fields
+  // (code, showVideoOnDisplay, videoByExerciseId) — they live only in the
+  // remote broadcast. Hold onto the latest remote in a ref so the mirror's
+  // subscriber can fold them into the React state, otherwise DisplayScreen
+  // never sees e.g. the "Video oculto" affordance.
+  const remoteRef = useRef<SessionState | null>(null);
+
   useEffect(() => {
     const channel = new SessionChannel(code, "display");
     channelRef.current = channel;
     let unsubscribeMirror: (() => void) | null = null;
     const unsubscribeState = channel.onState((remote) => {
       const receivedAt = Date.now();
+      remoteRef.current = remote;
       if (!mirrorRef.current) {
         const mirror = new WorkoutEngine(remote.workout);
         mirrorRef.current = mirror;
-        unsubscribeMirror = mirror.subscribe(setState);
+        unsubscribeMirror = mirror.subscribe(() => {
+          const mirrorState = mirror.getState();
+          if (!remoteRef.current) return;
+          setState({
+            ...mirrorState,
+            code: remoteRef.current.code,
+            showVideoOnDisplay: remoteRef.current.showVideoOnDisplay,
+            videoByExerciseId: remoteRef.current.videoByExerciseId,
+          });
+        });
       }
       mirrorRef.current.hydrate(remote, receivedAt);
     });
@@ -49,6 +66,7 @@ export default function DisplayCodePage() {
       unsubscribeMirror?.();
       mirrorRef.current?.destroy();
       mirrorRef.current = null;
+      remoteRef.current = null;
       channel.destroy();
       channelRef.current = null;
     };

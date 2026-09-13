@@ -367,6 +367,36 @@ describe("DisplayScreen workout video", () => {
     expect(screen.getByTestId("display-video-placeholder")).toBeInTheDocument();
   });
 
+  it("shows the 'Video oculto' affordance when the trainer turned video display off", () => {
+    const state = buildState({
+      currentPhase: "work",
+      videoByExerciseId: {},
+      showVideoOnDisplay: false,
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.queryByTestId("display-video")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("display-video-placeholder")).not.toBeInTheDocument();
+    expect(screen.getByTestId("display-video-disabled")).toBeInTheDocument();
+    expect(screen.getByText("Video oculto")).toBeInTheDocument();
+  });
+
+  it("prefers VideoPlayer over the 'Video oculto' affordance when a video exists", () => {
+    const state = buildState({
+      currentPhase: "work",
+      videoByExerciseId: { "ex-1": { videoUrl: "/v.mp4" } },
+      showVideoOnDisplay: false,
+    });
+    render(
+      <DisplayScreen state={state} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.getByTestId("display-video")).toHaveTextContent("Thruster");
+    expect(screen.queryByTestId("display-video-disabled")).not.toBeInTheDocument();
+  });
+
   it("keeps the video mounted but pauses it during the rest phase", () => {
     const state = buildState({
       currentPhase: "rest",

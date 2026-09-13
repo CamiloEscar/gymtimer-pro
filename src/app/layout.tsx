@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Archivo_Black, JetBrains_Mono, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 
@@ -32,6 +32,26 @@ const bebasNeue = Bebas_Neue({
 export const metadata: Metadata = {
   title: "GymTimer Pro",
   description: "Temporizador de entrenamientos para gimnasio, sin backend.",
+  applicationName: "GymTimer",
+  appleWebApp: {
+    capable: true,
+    title: "GymTimer Pro",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/images/display.png", sizes: "any", type: "image/png" },
+    ],
+    apple: [
+      { url: "/images/display.png", sizes: "any", type: "image/png" },
+    ],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

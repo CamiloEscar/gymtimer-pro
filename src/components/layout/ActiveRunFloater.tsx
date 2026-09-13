@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { Icon } from "@/components/ui/Icon";
 
@@ -9,7 +10,8 @@ interface ActiveSession {
   code: string;
 }
 
-export function ActiveDisplayFloater() {
+export function ActiveRunFloater() {
+  const pathname = usePathname();
   const active = useLocalStorageSnapshot<ActiveSession | null>(
     "gymtimer.activeSession",
     () => {
@@ -23,18 +25,19 @@ export function ActiveDisplayFloater() {
     null
   );
 
-  if (!active?.code) return null;
+  if (!active?.workoutId) return null;
+  if (pathname === `/app/workouts/${active.workoutId}/run`) return null;
 
   return (
     <Link
-      href={`/display/${active.code}`}
-      aria-label="Volver a la pantalla del display"
-      title="Volver a la pantalla del display"
+      href={`/app/workouts/${active.workoutId}/run`}
+      aria-label="Entrenamiento activo"
+      title="Entrenamiento activo"
       className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full border border-brand-500/40 bg-surface-900/95 px-4 py-3 text-brand-500 shadow-xl shadow-black/40 backdrop-blur transition-colors hover:bg-surface-800 md:bottom-6"
     >
-      <Icon name="display" className="size-5" />
+      <Icon name="play" className="size-5" />
       <span className="hidden sm:inline text-xs font-tactical uppercase tracking-widest">
-        Display
+        Entrenamiento activo
       </span>
     </Link>
   );

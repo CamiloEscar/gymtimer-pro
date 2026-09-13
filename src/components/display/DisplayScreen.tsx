@@ -174,7 +174,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
                     <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
                       Video oculto
                     </p>
-                    <p className="font-sans text-[10px] text-phosphor-muted leading-snug">
+                    <p className="font-sans text-xs text-phosphor-muted leading-snug">
                       Activá &ldquo;Mostrar video&rdquo; en Ajustes del entrenador
                     </p>
                   </div>

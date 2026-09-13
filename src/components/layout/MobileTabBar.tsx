@@ -27,7 +27,7 @@ export function MobileTabBar() {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-tactical uppercase tracking-wider ${
+                className={`flex flex-col items-center gap-0.5 py-2.5 text-xs font-tactical uppercase tracking-wider ${
                   active ? "text-brand-500" : "text-phosphor-dim hover:text-phosphor"
                 }`}
               >

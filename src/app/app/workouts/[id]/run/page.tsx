@@ -591,6 +591,9 @@ function RunWorkoutContent({
         onSubtractTime={() => session.subtractTime(stepMs)}
         stepSeconds={stepSeconds}
       />
+      <p className="hidden md:block mt-3 text-center font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+        ESPACIO PAUSAR · ← → RONDAS · R REINICIAR · F PANTALLA COMPLETA
+      </p>
       <Modal
         open={resetPending}
         onClose={() => setResetPending(false)}

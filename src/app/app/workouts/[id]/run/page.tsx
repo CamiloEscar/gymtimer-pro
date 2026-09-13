@@ -25,6 +25,7 @@ import { TimerProgressBar } from "@/components/timer/TimerProgressBar";
 import { PhaseIndicator } from "@/components/timer/PhaseIndicator";
 import { RoundIndicator } from "@/components/timer/RoundIndicator";
 import { TimerControls } from "@/components/timer/TimerControls";
+import { ExerciseBanner } from "@/components/timer/ExerciseBanner";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -363,6 +364,13 @@ function RunWorkoutContent({
           {workout.name || "(sin nombre)"}
         </h1>
       </div>
+      <ExerciseBanner
+        block={currentBlock}
+        currentRound={session.state.currentRound}
+        currentExerciseIndex={session.state.currentExerciseIndex}
+        status={session.state.status}
+        phase={session.state.currentPhase}
+      />
       <div className="w-full max-w-2xl space-y-2">
         <div className="flex items-center gap-2">
           <Select

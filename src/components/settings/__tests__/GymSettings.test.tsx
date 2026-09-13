@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GymSettings } from "../GymSettings";
 
@@ -14,7 +14,6 @@ describe("GymSettings", () => {
     expect(screen.getByLabelText("Nombre del gimnasio")).toHaveValue("");
     expect(screen.getByLabelText("Logo URL del gimnasio")).toHaveValue("");
     expect(screen.getByLabelText("Código de enlace fijo del gimnasio")).toHaveValue("");
-    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
   });
 
   it("hydrates from a stored profile including linkCode", () => {
@@ -30,44 +29,55 @@ describe("GymSettings", () => {
     expect(screen.getByLabelText("Código de enlace fijo del gimnasio")).toHaveValue("BOXSUR");
   });
 
-  it("saves the profile (including linkCode) to localStorage when Guardar is clicked", async () => {
+  it("saves the field on blur and reports 'Cambios guardados'", async () => {
     const user = userEvent.setup();
     render(<GymSettings />);
 
     await user.type(screen.getByLabelText("Nombre del gimnasio"), "CrossFit Norte");
-    await user.type(screen.getByLabelText("Logo URL del gimnasio"), "/logos/cf.png");
-    // Input is capped at 6 chars (the Pusher code alphabet slots), so use
-    // a 6-char linkCode here.
-    await user.type(
-      screen.getByLabelText("Código de enlace fijo del gimnasio"),
-      "cfnort"
-    );
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.tab();
 
-    expect(window.localStorage.getItem("gymtimer.gymProfile")).toBe(
-      JSON.stringify({
-        name: "CrossFit Norte",
-        logoUrl: "/logos/cf.png",
-        linkCode: "CFNORT",
-      })
-    );
+    expect(window.localStorage.getItem("gymtimer.gymProfile")).toContain("CrossFit Norte");
+    expect(screen.getByRole("status")).toHaveTextContent("Cambios guardados");
   });
 
-  it("discards the draft when Descartar is clicked", async () => {
+  it("carries wodWorkoutId and weeklyPlan forward when saving an unrelated edit", async () => {
     const user = userEvent.setup();
     window.localStorage.setItem(
       "gymtimer.gymProfile",
-      JSON.stringify({ name: "Original", linkCode: "ORIG" })
+      JSON.stringify({ name: "Box del Sur", wodWorkoutId: "w9", weeklyPlan: { mon: "w1" } })
     );
     render(<GymSettings />);
 
     const nameInput = screen.getByLabelText("Nombre del gimnasio");
     await user.clear(nameInput);
-    await user.type(nameInput, "Nuevo nombre");
-    expect(nameInput).toHaveValue("Nuevo nombre");
+    await user.type(nameInput, "Box Renovado");
+    await user.tab();
 
-    await user.click(screen.getByRole("button", { name: "Descartar" }));
-    expect(nameInput).toHaveValue("Original");
-    expect(screen.getByLabelText("Código de enlace fijo del gimnasio")).toHaveValue("ORIG");
+    expect(JSON.parse(window.localStorage.getItem("gymtimer.gymProfile") ?? "{}")).toEqual(
+      expect.objectContaining({
+        name: "Box Renovado",
+        wodWorkoutId: "w9",
+        weeklyPlan: { mon: "w1" },
+      })
+    );
+  });
+
+  it("hides the 'Cambios guardados' status after 2 seconds", () => {
+    vi.useFakeTimers();
+    try {
+      render(<GymSettings />);
+      const nameInput = screen.getByLabelText("Nombre del gimnasio");
+      fireEvent.change(nameInput, { target: { value: "Box" } });
+      fireEvent.blur(nameInput);
+
+      expect(screen.getByRole("status")).toHaveTextContent("Cambios guardados");
+
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

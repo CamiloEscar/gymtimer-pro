@@ -16,7 +16,7 @@ const SECTION_LINKS = [
 function inferBackHref(pathname: string): string | null {
   if (pathname === "/app/workouts/new") return "/app/workouts";
   const runMatch = pathname.match(/^\/app\/workouts\/([^/]+)\/run$/);
-  if (runMatch) return `/app/workouts/${runMatch[1]}`;
+  if (runMatch) return "/app/workouts";
   const editMatch = pathname.match(/^\/app\/workouts\/([^/]+)$/);
   if (editMatch) return "/app/workouts";
   const exerciseMatch = pathname.match(/^\/app\/exercises\/([^/]+)$/);

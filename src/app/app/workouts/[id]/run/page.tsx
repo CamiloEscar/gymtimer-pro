@@ -355,12 +355,12 @@ function RunWorkoutContent({
   const stepSeconds = stepMs / 1000;
 
   return (
-    <div className="bg-surface-950 flex flex-col items-center sm:min-h-dvh sm:justify-center gap-3 sm:gap-6 p-3 sm:p-4">
-      <div className="w-full max-w-2xl text-center space-y-1">
+    <div className="bg-surface-950 flex flex-col items-center sm:min-h-dvh sm:justify-center gap-2 sm:gap-3 p-2 sm:p-2">
+      <div className="w-full max-w-2xl text-center space-y-0.5">
         <p className="font-tactical text-[10px] uppercase tracking-widest text-phosphor-muted">
           EN VIVO
         </p>
-        <h1 className="font-industrial text-xl md:text-3xl uppercase tracking-tight text-phosphor leading-none">
+        <h1 className="font-industrial text-xl md:text-2xl uppercase tracking-tight text-phosphor leading-none">
           {workout.name || "(sin nombre)"}
         </h1>
       </div>
@@ -371,7 +371,7 @@ function RunWorkoutContent({
         status={session.state.status}
         phase={session.state.currentPhase}
       />
-      <div className="w-full max-w-2xl space-y-2">
+      <div className="w-full max-w-2xl space-y-1.5">
         <div className="flex items-center gap-2">
           <Select
             aria-label="Cambiar de rutina en vivo"
@@ -482,7 +482,7 @@ function RunWorkoutContent({
         title="Editar rutina"
       >
         {draft && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Input
               aria-label="Nombre del entrenamiento"
               value={draft.name}

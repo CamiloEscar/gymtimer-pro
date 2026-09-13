@@ -29,7 +29,7 @@ export function TimerDisplay({ remainingMs, elapsedMs, mode, phase }: TimerDispl
   if (phase === "getReady") return null;
   const value = mode === "countdown" ? remainingMs : elapsedMs;
   return (
-    <p className="font-industrial tabular-nums text-phosphor text-center leading-none tracking-tight text-[clamp(4rem,17vw,14rem)]">
+    <p className="font-industrial tabular-nums text-phosphor text-center leading-none tracking-tight text-[clamp(4rem,15vw,12rem)]">
       {formatTime(value)}
     </p>
   );

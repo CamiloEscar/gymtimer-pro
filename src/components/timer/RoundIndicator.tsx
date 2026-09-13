@@ -3,7 +3,7 @@ export function RoundIndicator({ round, totalRounds }: { round: number; totalRou
   const isLast = round === totalRounds;
   return (
     <p
-      className={`font-tactical text-2xl md:text-4xl uppercase tracking-widest text-center ${
+      className={`font-tactical text-2xl md:text-2xl uppercase tracking-widest text-center ${
         isLast ? "text-brand-500" : "text-phosphor-dim"
       }`}
     >

@@ -55,11 +55,11 @@ describe("AppHeader", () => {
     expect(back).toHaveAttribute("href", "/app/workouts");
   });
 
-  it("renders the back button on /app/workouts/w1/run pointing to /app/workouts/w1", () => {
+  it("renders the back button on /app/workouts/w1/run pointing to /app/workouts", () => {
     mockPathname("/app/workouts/w1/run");
     render(<AppHeader />);
     const back = screen.getByRole("link", { name: "Atrás" });
-    expect(back).toHaveAttribute("href", "/app/workouts/w1");
+    expect(back).toHaveAttribute("href", "/app/workouts");
   });
 
   it("renders the back button on /app/exercises/leg-01 pointing to /app/exercises", () => {

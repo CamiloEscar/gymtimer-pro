@@ -30,17 +30,17 @@ export function TimerControls({
 }: TimerControlsProps) {
   const safeStep = Math.max(1, Math.round(stepSeconds));
   return (
-    <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-md mx-auto">
+    <div className="grid grid-cols-2 gap-2 w-full max-w-md mx-auto">
       {status === "ready" || status === "finished" ? (
-        <Button size="md" className="col-span-2 sm:text-lg sm:py-4" onClick={onStart}>
+        <Button size="md" className="col-span-2 sm:py-4" onClick={onStart}>
           INICIAR
         </Button>
       ) : status === "running" ? (
-        <Button size="md" className="col-span-2 sm:text-lg sm:py-4" onClick={onPause}>
+        <Button size="md" className="col-span-2 sm:py-4" onClick={onPause}>
           PAUSAR
         </Button>
       ) : (
-        <Button size="md" className="col-span-2 sm:text-lg sm:py-4" onClick={onResume}>
+        <Button size="md" className="col-span-2 sm:py-4" onClick={onResume}>
           REANUDAR
         </Button>
       )}

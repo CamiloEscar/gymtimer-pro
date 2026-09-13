@@ -38,10 +38,10 @@ export function ExerciseBanner({
 
   return (
     <div className="w-full max-w-2xl text-center space-y-0.5">
-      <p className="font-tactical text-sm md:text-base uppercase tracking-widest text-brand-500">
+      <p className="font-tactical text-xs md:text-base uppercase tracking-widest text-brand-500">
         <span aria-hidden>▸</span>
         {isPreview && <> Vas a empezar:</>}
-        <span className="ml-1 font-industrial text-lg md:text-xl tracking-tight text-phosphor">
+        <span className="ml-1 font-industrial text-base md:text-xl tracking-tight text-phosphor">
           {currentLine}
         </span>
       </p>

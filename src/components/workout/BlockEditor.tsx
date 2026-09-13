@@ -10,25 +10,10 @@ import { Icon } from "@/components/ui/Icon";
 import { EXERCISE_CATALOG, getEffectiveCatalog } from "@/lib/workout/exerciseCatalog";
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
 import { estimateWorkoutDurationSeconds, formatEstimateMinutes } from "@/lib/workout/estimateWorkoutDurationSeconds";
-import { BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
+import { BLOCK_TYPES, BLOCK_TYPE_INFO } from "@/lib/workout/blockTypeInfo";
 import { formatTimeInput } from "@/lib/workout/formatTimeInput";
 import { useGymProfile } from "@/hooks/useGymProfile";
 import { ExerciseEditor } from "./ExerciseEditor";
-
-const BLOCK_TYPES: BlockType[] = [
-  "interval",
-  "tabata",
-  "amrap",
-  "emom",
-  "otm",
-  "forTime",
-  "basic",
-  "rm",
-  "fightGoneBad",
-  "countdown",
-  "countup",
-  "rest",
-];
 
 // Hoisted out of JSX so the embedded "" characters don't trip the
 // react/no-unescaped-entities rule (it only fires on text directly inside

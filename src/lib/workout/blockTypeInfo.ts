@@ -1,5 +1,20 @@
 import type { BlockType } from "@/types";
 
+export const BLOCK_TYPES: BlockType[] = [
+  "interval",
+  "tabata",
+  "amrap",
+  "emom",
+  "otm",
+  "forTime",
+  "basic",
+  "rm",
+  "fightGoneBad",
+  "countdown",
+  "countup",
+  "rest",
+];
+
 export const BLOCK_TYPE_INFO: Record<
   BlockType,
   {

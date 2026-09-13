@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { ExerciseEditor } from "../ExerciseEditor";
 
 const CATALOG = [
@@ -26,7 +25,7 @@ describe("ExerciseEditor", () => {
     expect(optionValues).toEqual(["Back Squat", "Pull-up"]);
   });
 
-  it("renders compact by default with a + Detalles expander", () => {
+  it("shows all four fields by default in a 2-column grid", () => {
     render(
       <ExerciseEditor
         exercise={EXERCISE}
@@ -38,30 +37,10 @@ describe("ExerciseEditor", () => {
 
     expect(screen.getByLabelText("Ejercicio")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Quitar ejercicio" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /\+ Detalles/i })).toBeInTheDocument();
-    expect(screen.queryByLabelText("Reps")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Series")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Peso (kg)")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Notas")).not.toBeInTheDocument();
-  });
-
-  it("clicking + Detalles reveals reps/sets/weight/notes fields", async () => {
-    const user = userEvent.setup();
-    render(
-      <ExerciseEditor
-        exercise={EXERCISE}
-        catalog={CATALOG}
-        onChange={vi.fn()}
-        onRemove={vi.fn()}
-      />
-    );
-
-    await user.click(screen.getByRole("button", { name: /\+ Detalles/i }));
-
     expect(screen.getByLabelText("Reps")).toBeInTheDocument();
     expect(screen.getByLabelText("Series")).toBeInTheDocument();
     expect(screen.getByLabelText("Peso (kg)")).toBeInTheDocument();
     expect(screen.getByLabelText("Notas")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Ocultar detalles/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /\+ Detalles/i })).not.toBeInTheDocument();
   });
 });

@@ -66,4 +66,35 @@ describe("WorkoutBuilder header and summary", () => {
     // validWorkout(): 1 block (amrap, 600s), 1 exercise
     expect(screen.getByText(/1 bloque · 1 ejercicio · ~10m totales/)).toBeInTheDocument();
   });
+
+  it("shows the dead exercise collapsible removed", () => {
+    render(<WorkoutBuilder initialWorkout={validWorkout()} />);
+    expect(screen.queryByText(/Ver \d+ ejercicio/)).not.toBeInTheDocument();
+  });
+});
+
+describe("WorkoutBuilder sticky save bar", () => {
+  beforeEach(() => {
+    pushMock.mockClear();
+    window.localStorage.clear();
+  });
+
+  it("tracks dirty state and discards unsaved changes", () => {
+    render(<WorkoutBuilder initialWorkout={validWorkout()} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Sin cambios por guardar");
+    expect(screen.getByRole("button", { name: "Descartar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Nombre del entrenamiento"), {
+      target: { value: "Otro nombre" },
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("● Cambios sin guardar");
+    expect(screen.getByRole("button", { name: "Descartar" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Descartar" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Sin cambios por guardar");
+    expect(screen.getByLabelText("Nombre del entrenamiento")).toHaveValue("Murph");
+  });
 });

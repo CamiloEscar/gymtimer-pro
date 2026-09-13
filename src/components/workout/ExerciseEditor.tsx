@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { Exercise } from "@/types";
 import type { CatalogExercise } from "@/lib/workout/exerciseCatalog";
 import { groupCatalogByCategory } from "@/lib/workout/exerciseCatalog";
@@ -18,7 +17,6 @@ interface ExerciseEditorProps {
 
 export function ExerciseEditor({ exercise, catalog, onChange, onRemove }: ExerciseEditorProps) {
   const catalogByCategory = groupCatalogByCategory(catalog);
-  const [showDetails, setShowDetails] = useState(false);
 
   return (
       <div className="space-y-2 border-t border-surface-800 pt-2 first:border-t-0 first:pt-0">
@@ -50,63 +48,41 @@ export function ExerciseEditor({ exercise, catalog, onChange, onRemove }: Exerci
         </Button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowDetails((prev) => !prev)}
-        className="text-xs text-phosphor-dim hover:text-phosphor font-tactical uppercase tracking-widest"
-        aria-expanded={showDetails}
-        aria-controls={`exercise-details-${exercise.id}`}
-      >
-        {showDetails ? (
-          <>
-            <Icon name="chevron-down" className="size-3" />
-            Ocultar detalles
-          </>
-        ) : (
-          "+ Detalles"
-        )}
-      </button>
-
-      {showDetails && (
-        <div
-          id={`exercise-details-${exercise.id}`}
-          className="grid grid-cols-2 gap-2"
-        >
-          <Input
-            aria-label="Reps"
-            type="number"
-            value={exercise.reps ?? ""}
-            onChange={(e) =>
-              onChange({ ...exercise, reps: e.target.value ? Number(e.target.value) : undefined })
-            }
-            placeholder="Reps"
-          />
-          <Input
-            aria-label="Series"
-            type="number"
-            value={exercise.sets ?? ""}
-            onChange={(e) =>
-              onChange({ ...exercise, sets: e.target.value ? Number(e.target.value) : undefined })
-            }
-            placeholder="Series"
-          />
-          <Input
-            aria-label="Peso (kg)"
-            type="number"
-            value={exercise.weightKg ?? ""}
-            onChange={(e) =>
-              onChange({ ...exercise, weightKg: e.target.value ? Number(e.target.value) : undefined })
-            }
-            placeholder="Peso (kg)"
-          />
-          <Input
-            aria-label="Notas"
-            value={exercise.notes ?? ""}
-            onChange={(e) => onChange({ ...exercise, notes: e.target.value || undefined })}
-            placeholder="Notas"
-          />
-        </div>
-      )}
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          aria-label="Reps"
+          type="number"
+          value={exercise.reps ?? ""}
+          onChange={(e) =>
+            onChange({ ...exercise, reps: e.target.value ? Number(e.target.value) : undefined })
+          }
+          placeholder="Reps"
+        />
+        <Input
+          aria-label="Series"
+          type="number"
+          value={exercise.sets ?? ""}
+          onChange={(e) =>
+            onChange({ ...exercise, sets: e.target.value ? Number(e.target.value) : undefined })
+          }
+          placeholder="Series"
+        />
+        <Input
+          aria-label="Peso (kg)"
+          type="number"
+          value={exercise.weightKg ?? ""}
+          onChange={(e) =>
+            onChange({ ...exercise, weightKg: e.target.value ? Number(e.target.value) : undefined })
+          }
+          placeholder="Peso (kg)"
+        />
+        <Input
+          aria-label="Notas"
+          value={exercise.notes ?? ""}
+          onChange={(e) => onChange({ ...exercise, notes: e.target.value || undefined })}
+          placeholder="Notas"
+        />
+      </div>
     </div>
   );
 }

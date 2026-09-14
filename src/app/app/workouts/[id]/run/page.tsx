@@ -205,6 +205,7 @@ function RunWorkoutContent({
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
   const [codeDraft, setCodeDraft] = useState(code);
+  const [miniSupported, setMiniSupported] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState<Workout | null>(null);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
@@ -258,6 +259,39 @@ function RunWorkoutContent({
   useEffect(() => {
     saveActiveCode(workout.id, code);
   }, [workout.id, code]);
+
+  // Document Picture-in-Picture (always-on-top floating window) is a
+  // Chromium-only API today; iOS Safari / Firefox / Safari expose no
+  // equivalent, so the "mini display" affordance only surfaces where it can
+  // actually work. Guarded by feature detection, not UA sniffing.
+  useEffect(() => {
+    if (typeof window !== "undefined" && "documentPictureInPicture" in window) {
+      setMiniSupported(true);
+    }
+  }, []);
+
+  async function handleOpenMini() {
+    // Minimal local shape: the DocumentPictureInPicture types are not in
+    // lib.dom yet, and we only need requestWindow() + the returned window.
+    const docPip = (window as unknown as {
+      documentPictureInPicture?: {
+        requestWindow: (options: { width: number; height: number }) => Promise<Window>;
+      };
+    }).documentPictureInPicture;
+    if (!docPip || !code.trim()) return;
+    const pip = await docPip.requestWindow({ width: 480, height: 320 });
+    // The mini window embeds the real /display mirror (own Pusher channel),
+    // so it stays live and self-correcting without duplicating timer logic.
+    const iframe = pip.document.createElement("iframe");
+    iframe.src = `/display/${code}`;
+    iframe.style.width = "100%";
+    iframe.style.height = "100%";
+    iframe.style.border = "0";
+    iframe.style.display = "block";
+    pip.document.body.style.margin = "0";
+    pip.document.body.style.overflow = "hidden";
+    pip.document.body.appendChild(iframe);
+  }
 
   useEffect(() => {
     new LocalWorkoutRepository().save(workout);
@@ -553,6 +587,16 @@ function RunWorkoutContent({
           >
             {shared ? "¡Copiado!" : "Compartir link"}
           </button>
+          {miniSupported && (
+            <button
+              type="button"
+              onClick={handleOpenMini}
+              className="text-[10px] uppercase tracking-widest text-phosphor-muted hover:text-brand-500 active:scale-95 transition-colors cursor-pointer"
+              aria-label="Abrir mini ventana del display"
+            >
+              Mini pantalla
+            </button>
+          )}
         </div>
       </div>
       <Modal

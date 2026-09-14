@@ -475,34 +475,46 @@ function RunWorkoutContent({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Input
-              value={codeDraft}
-              disabled={isLive}
-              onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
-              onBlur={() => {
-                if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.currentTarget.blur();
-                }
-              }}
-              aria-label="Editar código de pantalla"
-              placeholder="CÓDIGO"
-              className="w-full pr-12 md:pr-32 font-mono uppercase disabled:opacity-60"
-            />
-            <button
-              type="button"
-              onClick={handleCopyCode}
-              aria-label={copied ? "Código copiado" : "Copiar código"}
-              title={copied ? "Código copiado" : "Copiar código"}
-              className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center gap-1.5 min-h-11 min-w-11 rounded-md text-phosphor-dim hover:text-brand-500 active:scale-95 transition-colors cursor-pointer"
-            >
-              <Icon name={copied ? "check" : "copy"} className="size-4" />
-              <span className="hidden md:inline">{copied ? "¡Copiado!" : "Copiar"}</span>
-            </button>
-          </div>
+          <details
+            open={displayStatus !== "connected"}
+            className="group flex-1"
+            data-testid="pairing-zone"
+          >
+            <summary className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-phosphor-muted hover:text-brand-500 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <Icon name="chevron-down" className="size-3 transition-transform group-open:rotate-180" />
+              Código de pantalla
+            </summary>
+            <div className="mt-2 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  value={codeDraft}
+                  disabled={isLive}
+                  onChange={(e) => setCodeDraft(e.target.value.toUpperCase())}
+                  onBlur={() => {
+                    if (codeDraft.trim()) setCode(codeDraft.trim().toUpperCase());
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  aria-label="Editar código de pantalla"
+                  placeholder="CÓDIGO"
+                  className="w-full pr-12 md:pr-32 font-mono uppercase disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  aria-label={copied ? "Código copiado" : "Copiar código"}
+                  title={copied ? "Código copiado" : "Copiar código"}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center gap-1.5 min-h-11 min-w-11 rounded-md text-phosphor-dim hover:text-brand-500 active:scale-95 transition-colors cursor-pointer"
+                >
+                  <Icon name={copied ? "check" : "copy"} className="size-4" />
+                  <span className="hidden md:inline">{copied ? "¡Copiado!" : "Copiar"}</span>
+                </button>
+              </div>
+            </div>
+          </details>
           <Link
             href={`/display/${code}`}
             className="inline-flex items-center justify-center gap-1.5 size-11 shrink-0 rounded-lg border border-surface-700 text-phosphor hover:text-brand-500 hover:border-brand-500 active:scale-95 transition-colors"

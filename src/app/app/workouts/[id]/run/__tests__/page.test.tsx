@@ -614,3 +614,48 @@ describe("RunWorkoutPage display status indicator", () => {
   });
 });
 
+describe("RunWorkoutPage pairing zone collapse", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    mockSearchParams = new URLSearchParams();
+    vi.mocked(SessionChannel).mockClear();
+  });
+
+  it("opens pairing zone by default when no display is connected", async () => {
+    mockDisplayStatus = "waiting";
+    seedWorkout();
+    render(<RunWorkoutPage />);
+    const details = await screen.findByTestId("pairing-zone");
+    expect(details).toHaveAttribute("open");
+  });
+
+  it("collapses pairing zone by default when display is connected", async () => {
+    mockDisplayStatus = "connected";
+    seedWorkout();
+    render(<RunWorkoutPage />);
+    const details = await screen.findByTestId("pairing-zone");
+    expect(details).not.toHaveAttribute("open");
+  });
+
+  it("clicking summary toggles the pairing zone", async () => {
+    mockDisplayStatus = "connected";
+    seedWorkout();
+    render(<RunWorkoutPage />);
+    const details = await screen.findByTestId("pairing-zone");
+    expect(details).not.toHaveAttribute("open");
+    const summary = details.querySelector("summary")!;
+    await act(async () => {
+      summary.click();
+    });
+    expect(details).toHaveAttribute("open");
+  });
+
+  it("keeps the display status indicator visible when pairing zone is collapsed", async () => {
+    mockDisplayStatus = "connected";
+    seedWorkout();
+    render(<RunWorkoutPage />);
+    expect(await screen.findByText(/Display conectado/)).toBeInTheDocument();
+    expect(screen.getByTestId("pairing-zone")).not.toHaveAttribute("open");
+  });
+});
+

@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { WorkoutHistoryEntry } from "@/types";
+import type { Workout, WorkoutHistoryEntry } from "@/types";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
+import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import { formatLastRun } from "@/lib/history/runStats";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
@@ -28,14 +29,32 @@ export function HistoryList() {
     },
     []
   );
+  const workouts = useLocalStorageSnapshot<Workout[]>(
+    "gymtimer.workouts",
+    () => {
+      const result = new LocalWorkoutRepository().list();
+      return result.ok ? result.value : [];
+    },
+    []
+  );
 
-  const uniqueWorkouts = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const e of entries) map.set(e.workoutId, e.workoutName);
-    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  }, [entries]);
+  const filterOptions = useMemo(() => {
+    // Only surface workouts that still exist in the active list — a deleted
+    // workout leaves orphan history entries, which stay visible under "Todas"
+    // but can't be filtered to a dead workout.
+    const activeNames = new Map(workouts.map((w) => [w.id, w.name] as const));
+    const counts = new Map<string, number>();
+    for (const e of entries) {
+      if (activeNames.has(e.workoutId)) {
+        counts.set(e.workoutId, (counts.get(e.workoutId) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts, ([id, count]) => ({
+      id,
+      name: activeNames.get(id)!,
+      count,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [entries, workouts]);
 
   const [filterId, setFilterId] = useState<string>("");
 
@@ -73,14 +92,11 @@ export function HistoryList() {
             className="flex-1"
           >
             <option value="">Todas ({entries.length})</option>
-            {uniqueWorkouts.map((w) => {
-              const count = entries.filter((e) => e.workoutId === w.id).length;
-              return (
-                <option key={w.id} value={w.id}>
-                  {w.name} ({count})
-                </option>
-              );
-            })}
+            {filterOptions.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name} ({w.count})
+              </option>
+            ))}
           </Select>
         </label>
       </div>

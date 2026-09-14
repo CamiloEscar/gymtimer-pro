@@ -3,10 +3,24 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HistoryList } from "../HistoryList";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
+import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
+import type { Workout } from "@/types";
 
 const NOW = new Date("2026-09-13T12:00:00.000Z");
 const ONE_HOUR_AGO = new Date(NOW.getTime() - 60 * 60 * 1000).toISOString();
 const TWO_DAYS_AGO = new Date(NOW.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+
+function seedWorkout(id: string, name: string): Workout {
+  const workout: Workout = {
+    id,
+    name,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    favorite: false,
+    blocks: [],
+  };
+  new LocalWorkoutRepository().save(workout);
+  return workout;
+}
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -22,6 +36,8 @@ describe("HistoryList empty state", () => {
 
 describe("HistoryList with entries", () => {
   beforeEach(() => {
+    seedWorkout("w1", "Murph");
+    seedWorkout("w2", "Fran");
     new WorkoutHistoryRepository().record({
       workoutId: "w1",
       workoutName: "Murph",
@@ -78,6 +94,7 @@ describe("HistoryList with entries", () => {
   });
 
   it("formats short durations as seconds only", () => {
+    seedWorkout("w3", "Sprint");
     new WorkoutHistoryRepository().record({
       workoutId: "w3",
       workoutName: "Sprint",
@@ -89,6 +106,7 @@ describe("HistoryList with entries", () => {
   });
 
   it("formats multi-hour durations as hours and minutes", () => {
+    seedWorkout("w4", "Endurance");
     new WorkoutHistoryRepository().record({
       workoutId: "w4",
       workoutName: "Endurance",
@@ -97,5 +115,29 @@ describe("HistoryList with entries", () => {
     });
     render(<HistoryList />);
     expect(screen.getByText("2h 15m")).toBeInTheDocument();
+  });
+
+  it("hides orphan workouts (deleted) from the filter but keeps their entries visible", async () => {
+    seedWorkout("w5", "Deleteme");
+    new WorkoutHistoryRepository().record({
+      workoutId: "w5",
+      workoutName: "Deleteme",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 10 * 60 * 1000,
+    });
+    new LocalWorkoutRepository().delete("w5");
+
+    render(<HistoryList />);
+    const select = screen.getByRole("combobox", { name: /filtrar historial por rutina/i });
+    const options = Array.from((select as HTMLSelectElement).options).map((o) => o.text);
+    expect(options).toHaveLength(3);
+    expect(options[0]).toMatch(/todas \(3\)/i);
+    expect(options.some((o) => o?.includes("Deleteme"))).toBe(false);
+    expect(options.some((o) => o?.includes("Murph"))).toBe(true);
+    expect(options.some((o) => o?.includes("Fran"))).toBe(true);
+
+    const items = screen.getAllByRole("listitem");
+    expect(items).toHaveLength(3);
+    expect(screen.getByText("Deleteme")).toBeInTheDocument();
   });
 });

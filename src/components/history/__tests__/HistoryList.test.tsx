@@ -218,3 +218,108 @@ describe("HistoryList per-workout stats", () => {
     expect(statsCard).toHaveTextContent(/promedio/i);
   });
 });
+
+describe("HistoryList delete entry", () => {
+  beforeEach(() => {
+    seedWorkout("w1", "Murph");
+  });
+
+  it("shows a trash button per entry with accessible label", () => {
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 30 * 60 * 1000,
+    });
+    render(<HistoryList />);
+    expect(
+      screen.getByRole("button", { name: /borrar corrida de murph/i })
+    ).toBeInTheDocument();
+  });
+
+  it("opens a confirm modal on click and removes on confirm", async () => {
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 30 * 60 * 1000,
+    });
+    const user = userEvent.setup();
+    render(<HistoryList />);
+
+    expect(screen.queryByRole("dialog", { name: /borrar esta corrida/i })).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /borrar corrida de murph/i })
+    );
+    expect(
+      screen.getByRole("dialog", { name: /borrar esta corrida/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/sin historial todavía/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Borrar" }));
+
+    expect(
+      JSON.parse(window.localStorage.getItem("gymtimer.history")!)
+    ).toHaveLength(0);
+    expect(screen.queryByRole("dialog", { name: /borrar esta corrida/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/sin historial todavía/i)).toBeInTheDocument();
+  });
+
+  it("does not remove when the modal is cancelled", async () => {
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 30 * 60 * 1000,
+    });
+    const user = userEvent.setup();
+    render(<HistoryList />);
+    await user.click(
+      screen.getByRole("button", { name: /borrar corrida de murph/i })
+    );
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(JSON.parse(window.localStorage.getItem("gymtimer.history")!)).toHaveLength(1);
+    expect(screen.queryByText(/sin historial todavía/i)).not.toBeInTheDocument();
+  });
+
+  it("removing one entry updates per-workout stats", async () => {
+    seedWorkout("w2", "Fran");
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: new Date(NOW.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      durationMs: 30 * 60 * 1000,
+    });
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 28 * 60 * 1000,
+    });
+    new WorkoutHistoryRepository().record({
+      workoutId: "w2",
+      workoutName: "Fran",
+      completedAt: TWO_DAYS_AGO,
+      durationMs: 5 * 60 * 1000,
+    });
+
+    const user = userEvent.setup();
+    render(<HistoryList />);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /filtrar historial por rutina/i }),
+      "w1"
+    );
+    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(screen.getAllByText("Murph").length).toBeGreaterThanOrEqual(2);
+
+    await user.click(
+      screen.getAllByRole("button", { name: /borrar corrida de murph/i })[0]
+    );
+    await user.click(screen.getByRole("button", { name: "Borrar" }));
+
+    expect(
+      JSON.parse(window.localStorage.getItem("gymtimer.history")!)
+    ).toHaveLength(2);
+    expect(screen.getByText("1")).toBeInTheDocument();
+  });
+});

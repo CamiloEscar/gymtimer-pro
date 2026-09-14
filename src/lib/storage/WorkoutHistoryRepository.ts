@@ -38,4 +38,16 @@ export class WorkoutHistoryRepository {
       return err("write_failed", "No se pudo guardar el historial en el almacenamiento local");
     }
   }
+
+  remove(id: string): Result<void, StorageError> {
+    const listResult = this.list();
+    if (!listResult.ok) return listResult;
+    const next = listResult.value.filter((e) => e.id !== id);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return ok(undefined);
+    } catch {
+      return err("write_failed", "No se pudo guardar el historial en el almacenamiento local");
+    }
+  }
 }

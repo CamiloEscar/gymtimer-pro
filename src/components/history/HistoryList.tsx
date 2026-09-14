@@ -2,14 +2,20 @@
 
 import { useMemo, useState } from "react";
 import type { Workout, WorkoutHistoryEntry } from "@/types";
-import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
+import {
+  useLocalStorageSnapshot,
+  notifyLocalStorageChange,
+} from "@/hooks/useLocalStorageSnapshot";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import {
   computeWorkoutRunStats,
   formatLastRun,
 } from "@/lib/history/runStats";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Icon } from "@/components/ui/Icon";
+import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 
 function formatDuration(ms: number): string {
@@ -60,6 +66,14 @@ export function HistoryList() {
   }, [entries, workouts]);
 
   const [filterId, setFilterId] = useState<string>("");
+  const [pendingRemove, setPendingRemove] = useState<WorkoutHistoryEntry | null>(null);
+
+  function confirmRemove() {
+    if (!pendingRemove) return;
+    new WorkoutHistoryRepository().remove(pendingRemove.id);
+    notifyLocalStorageChange();
+    setPendingRemove(null);
+  }
 
   const filtered = filterId
     ? entries.filter((e) => e.workoutId === filterId)
@@ -155,6 +169,15 @@ export function HistoryList() {
                   </p>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={() => setPendingRemove(entry)}
+                aria-label={`Borrar corrida de ${entry.workoutName}`}
+                title="Borrar"
+                className="shrink-0 inline-flex items-center justify-center size-11 rounded-md text-phosphor-dim hover:text-danger-500 active:scale-95 transition-colors cursor-pointer"
+              >
+                <Icon name="trash" className="size-4" />
+              </button>
             </Card>
           </li>
         ))}
@@ -165,6 +188,28 @@ export function HistoryList() {
           No hay corridas de esa rutina todavía.
         </p>
       )}
+
+      <Modal
+        open={pendingRemove !== null}
+        onClose={() => setPendingRemove(null)}
+        title="¿Borrar esta corrida?"
+      >
+        <p className="text-phosphor-dim mb-4">
+          {pendingRemove && (
+            <>
+              Vas a borrar la corrida de <strong className="text-phosphor">{pendingRemove.workoutName}</strong> del {new Date(pendingRemove.completedAt).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. No se puede deshacer.
+            </>
+          )}
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setPendingRemove(null)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={confirmRemove}>
+            Borrar
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

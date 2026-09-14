@@ -16,6 +16,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StatsRow } from "./StatsRow";
 import { WorkoutOfTheDay } from "./WorkoutOfTheDay";
 import { DisplayOnboardingBanner } from "./DisplayOnboardingBanner";
+import { FirstRunChecklist } from "./FirstRunChecklist";
 import { RecentWorkouts } from "./RecentWorkouts";
 
 function greeting(hour: number): string {
@@ -157,6 +158,8 @@ export function Dashboard() {
           </Link>
         </div>
       </header>
+
+      <FirstRunChecklist />
 
       <StatsRow stats={historyStats} totalRoutines={workouts.length} />
 

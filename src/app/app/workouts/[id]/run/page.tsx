@@ -294,6 +294,11 @@ function RunWorkoutContent({
     channelRef.current?.sendState({
       ...session.state,
       code,
+      // Captured when the trainer actually published this state. The display
+      // mirror uses it as the hydrate anchor so the sender→receiver network +
+      // processing lag is folded in instead of rewinding the timer each
+      // broadcast (visible "jumping back" on slow/mobile connections).
+      capturedAt: Date.now(),
       // Always carry the toggle so the TV can render an explicit
       // "video oculto" affordance instead of falling silently to the gym
       // logo when the trainer turned it off.

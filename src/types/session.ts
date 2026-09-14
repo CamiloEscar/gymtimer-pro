@@ -31,6 +31,12 @@ export interface SessionState {
   // explicitly so the TV can render an "video oculto" affordance instead
   // of falling silently to the gym logo when the trainer turned it off.
   showVideoOnDisplay?: boolean;
+  // Wall-clock instant (sender's Date.now()) when this snapshot was
+  // captured. The display mirror folds the sender→receiver network +
+  // processing lag into the timer so a running countdown never visibly
+  // rewinds under slow/mobile connections. Absent in older snapshots;
+  // receivers fall back to their own receive timestamp.
+  capturedAt?: number;
   timer: TimerState;
 }
 

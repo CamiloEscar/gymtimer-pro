@@ -96,11 +96,11 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
         )}
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] items-center gap-6 min-h-0 overflow-hidden">
-        <div className="flex flex-col items-center justify-center gap-6 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-4 lg:gap-6 min-h-0 overflow-hidden">
+        <div className="flex flex-col items-center justify-center gap-4 lg:gap-6 min-h-0">
           <PhaseIndicator
             phase={state.currentPhase}
-            {...(state.currentPhase === "getReady"
+            {...(state.currentPhase === "getReady" && state.status !== "ready"
               ? { remainingMs: state.timer.remainingMs }
               : {})}
           />
@@ -108,6 +108,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
           remainingMs={state.timer.remainingMs}
           elapsedMs={state.timer.elapsedMs}
           mode={state.timer.mode}
+          status={state.status}
         />
         {currentBlock && currentBlock.type === "fightGoneBad" && state.currentPhase !== "finished" && (
           <div className="flex flex-col items-center gap-1 text-center">
@@ -153,7 +154,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
         )}
         </div>
         {currentBlock && currentBlock.type !== "rest" && (
-          <aside className="w-[420px] max-w-[32vw] flex flex-col gap-4 mr-32" data-testid="display-side-panel">
+          <aside className="w-full max-w-md lg:w-[420px] lg:max-w-[32vw] flex flex-col gap-4 lg:mr-32" data-testid="display-side-panel">
             {state.currentPhase !== "finished" && (
               <>
                 {hasWorkoutVideo ? (

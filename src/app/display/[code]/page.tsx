@@ -57,7 +57,11 @@ export default function DisplayCodePage() {
           });
         });
       }
-      mirrorRef.current.hydrate(remote, receivedAt);
+      // Anchor on the sender's capture instant when the trainer stamps it
+      // (see SessionState.capturedAt); using our own receive time makes
+      // staleMs zero and rewinds the timer by the network+processing lag
+      // on every broadcast — a slow/mobile display visibly counts backwards.
+      mirrorRef.current.hydrate(remote, remote.capturedAt ?? receivedAt);
     });
     const unsubscribeStatus = channel.onConnectionStatusChange(setConnectionStatus);
     return () => {

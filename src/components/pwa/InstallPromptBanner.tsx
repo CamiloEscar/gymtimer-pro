@@ -14,12 +14,13 @@ function isStandalone(): boolean {
   );
 }
 
-function isIosSafari(): boolean {
+// Any iOS device gets the manual install instructions: iOS never fires
+// beforeinstallprompt (not even in Chrome/Firefox/Edge, which are all
+// WebKit-wrapped on iPhone), so the only path is "Agregar a pantalla de
+// inicio" via the share sheet.
+function isIosDevice(): boolean {
   if (typeof window === "undefined") return false;
-  const ua = window.navigator.userAgent;
-  if (!/iPad|iPhone|iPod/.test(ua)) return false;
-  if (/CriOS|FxiOS|EdgiOS|OPTiOS|OPiOS|DuckDuckGo|GSA/.test(ua)) return false;
-  return true;
+  return /iPad|iPhone|iPod/.test(window.navigator.userAgent);
 }
 
 export function InstallPromptBanner() {
@@ -27,13 +28,13 @@ export function InstallPromptBanner() {
   const [dismissed, setDismissed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [standalone, setStandalone] = useState(false);
-  const [iosSafari, setIosSafari] = useState(false);
+  const [ios, setIos] = useState(false);
 
   useEffect(() => {
     Promise.resolve().then(() => {
       setHydrated(true);
       setStandalone(isStandalone());
-      setIosSafari(isIosSafari());
+      setIos(isIosDevice());
       setDismissed(
         () => window.localStorage.getItem(DISMISS_KEY) === "1"
       );
@@ -55,7 +56,7 @@ export function InstallPromptBanner() {
   if (installed || dismissed || standalone) return null;
 
   const showChromeVariant = Boolean(promptEvent);
-  const showIosVariant = !showChromeVariant && iosSafari;
+  const showIosVariant = !showChromeVariant && ios;
 
   if (!showChromeVariant && !showIosVariant) return null;
 
@@ -75,7 +76,7 @@ export function InstallPromptBanner() {
               GymTimer Pro
             </p>
             <p className="text-sm text-phosphor leading-snug mt-0.5">
-              Tocá el botón <strong className="font-semibold">Compartir</strong> en Safari y elegí <strong className="font-semibold">Agregar a pantalla de inicio</strong> para instalar la app.
+              Tocá <strong className="font-semibold">Compartir</strong> y elegí <strong className="font-semibold">Agregar a pantalla de inicio</strong> para instalar la app y usarla a pantalla completa.
             </p>
           </div>
           <button

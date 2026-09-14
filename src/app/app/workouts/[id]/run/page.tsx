@@ -614,7 +614,7 @@ function RunWorkoutContent({
       </Modal>
       <PhaseIndicator
         phase={session.state.currentPhase}
-        {...(session.state.currentPhase === "getReady"
+        {...(session.state.currentPhase === "getReady" && session.state.status !== "ready"
           ? { remainingMs: session.state.timer.remainingMs }
           : {})}
       />
@@ -622,6 +622,7 @@ function RunWorkoutContent({
         remainingMs={session.state.timer.remainingMs}
         elapsedMs={session.state.timer.elapsedMs}
         mode={session.state.timer.mode}
+        status={session.state.status}
         phase={session.state.currentPhase}
       />
       <TimerProgressBar

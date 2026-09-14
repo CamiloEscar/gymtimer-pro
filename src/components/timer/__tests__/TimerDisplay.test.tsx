@@ -17,9 +17,28 @@ describe("TimerDisplay", () => {
     expect(container.textContent).toBe("01:02");
   });
 
-  it("renders nothing during getReady to avoid stacking with PhaseIndicator", () => {
+  it("renders the full duration at ready (no 3-2-1 preroll has started)", () => {
     const { container } = render(
-      <TimerDisplay remainingMs={3_000} elapsedMs={0} mode="countdown" phase="getReady" />,
+      <TimerDisplay
+        remainingMs={300_000}
+        elapsedMs={0}
+        mode="countdown"
+        status="ready"
+        phase="getReady"
+      />,
+    );
+    expect(container.textContent).toBe("05:00");
+  });
+
+  it("renders nothing during a live getReady countdown to avoid stacking with PhaseIndicator", () => {
+    const { container } = render(
+      <TimerDisplay
+        remainingMs={3_000}
+        elapsedMs={0}
+        mode="countdown"
+        status="running"
+        phase="getReady"
+      />,
     );
     expect(container.textContent).toBe("");
   });

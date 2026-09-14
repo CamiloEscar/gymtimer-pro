@@ -1,13 +1,16 @@
-import type { WorkoutPhase } from "@/types";
+import type { SessionStatus, WorkoutPhase } from "@/types";
 
 interface TimerDisplayProps {
   remainingMs: number;
   elapsedMs: number;
   mode: "countdown" | "countup";
-  // When the engine is in getReady, PhaseIndicator already paints the
-  // giant 3-2-1 countdown; rendering TimerDisplay here too stacks two
-  // huge numbers on top of each other. Hiding the timer during the
-  // preroll keeps a single visual anchor.
+  // Lets the component tell a prepared-but-not-started session apart from a
+  // live 3-2-1 preroll: at ready there's no preroll yet, so the full block
+  // duration should render for a sanity check (05:00, not a raw 300).
+  status?: SessionStatus;
+  // During the live getReady countdown PhaseIndicator paints the giant
+  // 3-2-1; rendering TimerDisplay too stacks two huge numbers. Optional so
+  // callers that only know the phase (tests, etc.) keep working.
   phase?: WorkoutPhase;
 }
 
@@ -25,8 +28,8 @@ function formatTime(ms: number): string {
   return `${sign}${pad(minutes)}:${pad(seconds)}`;
 }
 
-export function TimerDisplay({ remainingMs, elapsedMs, mode, phase }: TimerDisplayProps) {
-  if (phase === "getReady") return null;
+export function TimerDisplay({ remainingMs, elapsedMs, mode, status, phase }: TimerDisplayProps) {
+  if (phase === "getReady" && (status === "running" || status === "paused")) return null;
   const value = mode === "countdown" ? remainingMs : elapsedMs;
   return (
     <p className="font-industrial tabular-nums text-phosphor text-center leading-none tracking-tight text-[clamp(4rem,15vw,12rem)]">

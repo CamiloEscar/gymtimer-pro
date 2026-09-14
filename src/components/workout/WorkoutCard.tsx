@@ -74,6 +74,7 @@ export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCar
             className="min-h-11 min-w-11"
           >
             <Icon name="calendar" />
+            <span className="hidden md:inline">{isWod ? "Quitar" : "Destacar"}</span>
           </Button>
           <Button
             variant="ghost"
@@ -84,6 +85,7 @@ export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCar
             className="min-h-11 min-w-11"
           >
             <Icon name="copy" />
+            <span className="hidden md:inline">Duplicar</span>
           </Button>
           <Button
             variant="ghost"
@@ -94,6 +96,7 @@ export function WorkoutCard({ workout, code, onDuplicate, onDelete }: WorkoutCar
             className="min-h-11 min-w-11"
           >
             <Icon name="trash" />
+            <span className="hidden md:inline">Eliminar</span>
           </Button>
         </div>
       </div>

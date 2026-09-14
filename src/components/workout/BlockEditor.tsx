@@ -63,6 +63,11 @@ function TimeInput({ ariaLabel, seconds, onChangeSeconds }: TimeInputProps) {
           inputMode="numeric"
           min={0}
           value={minutes}
+          // iOS numpads place the cursor at the START of a prefilled "0",
+          // so typing a digit appends BEFORE it (5 renders "50"). Selecting
+          // everything on focus makes the first keystroke replace the old
+          // value instead of prepending to it.
+          onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => onChangeSeconds(Number(e.target.value || 0) * 60 + secs)}
           className="w-16 text-center"
         />
@@ -74,6 +79,7 @@ function TimeInput({ ariaLabel, seconds, onChangeSeconds }: TimeInputProps) {
           min={0}
           max={59}
           value={secs}
+          onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => onChangeSeconds(minutes * 60 + Number(e.target.value || 0))}
           className="w-16 text-center"
         />

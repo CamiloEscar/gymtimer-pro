@@ -141,3 +141,80 @@ describe("HistoryList with entries", () => {
     expect(screen.getByText("Deleteme")).toBeInTheDocument();
   });
 });
+
+describe("HistoryList per-workout stats", () => {
+  it("does not show the stats card when no filter is active", () => {
+    seedWorkout("w1", "Murph");
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 32 * 60 * 1000,
+    });
+    render(<HistoryList />);
+    expect(screen.queryByText(/corridas/i)).not.toBeInTheDocument();
+  });
+
+  it("shows total runs, average, fastest and last when filter is active", async () => {
+    seedWorkout("w1", "Murph");
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: new Date(NOW.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      durationMs: 30 * 60 * 1000,
+    });
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: new Date(NOW.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      durationMs: 28 * 60 * 1000,
+    });
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 32 * 60 * 1000,
+    });
+    const user = userEvent.setup();
+    render(<HistoryList />);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /filtrar historial por rutina/i }),
+      "w1"
+    );
+    expect(screen.getByText(/corridas/i)).toBeInTheDocument();
+    expect(screen.getByText(/promedio/i)).toBeInTheDocument();
+    expect(screen.getByText(/más rápida/i)).toBeInTheDocument();
+    expect(screen.getByText(/última/i)).toBeInTheDocument();
+    // The 3 entries sum to 90m → avg 30m; fastest is 28m. Both values appear
+    // in the stats card and may also appear in the entry list, so scope the
+    // query to the stats card to disambiguate.
+    const statsCard = screen.getByText(/corridas/i).closest("div")!.parentElement!;
+    expect(statsCard).toHaveTextContent("30m 0s");
+    expect(statsCard).toHaveTextContent("28m 0s");
+  });
+
+  it("uses the fastest (min) when entries have varied durations", async () => {
+    seedWorkout("w1", "Sprint");
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Sprint",
+      completedAt: new Date(NOW.getTime() - 60 * 60 * 1000).toISOString(),
+      durationMs: 12 * 60 * 1000,
+    });
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Sprint",
+      completedAt: new Date(NOW.getTime() - 30 * 60 * 1000).toISOString(),
+      durationMs: 5 * 60 * 1000,
+    });
+    const user = userEvent.setup();
+    render(<HistoryList />);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /filtrar historial por rutina/i }),
+      "w1"
+    );
+    const statsCard = screen.getByText(/más rápida/i).closest("div")!.parentElement!;
+    expect(statsCard).toHaveTextContent("5m 0s");
+    expect(statsCard).toHaveTextContent(/promedio/i);
+  });
+});

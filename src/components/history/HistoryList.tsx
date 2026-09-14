@@ -5,7 +5,10 @@ import type { Workout, WorkoutHistoryEntry } from "@/types";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
-import { formatLastRun } from "@/lib/history/runStats";
+import {
+  computeWorkoutRunStats,
+  formatLastRun,
+} from "@/lib/history/runStats";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 
@@ -67,6 +70,11 @@ export function HistoryList() {
     [filtered]
   );
 
+  const filteredStats = useMemo(
+    () => (filterId ? computeWorkoutRunStats(filtered) : null),
+    [filterId, filtered]
+  );
+
   if (entries.length === 0) {
     return (
       <Card className="text-center p-4 space-y-2 border-dashed">
@@ -100,6 +108,21 @@ export function HistoryList() {
           </Select>
         </label>
       </div>
+
+      {filteredStats && sorted.length > 0 && (
+        <Card className="p-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <Stat label="Corridas" value={String(filteredStats.totalRuns)} />
+          <Stat label="Promedio" value={formatDuration(filteredStats.averageDurationMs)} />
+          <Stat
+            label="Más rápida"
+            value={formatDuration(filteredStats.fastestDurationMs)}
+          />
+          <Stat
+            label="Última"
+            value={formatLastRun(filteredStats.lastRunAt)}
+          />
+        </Card>
+      )}
 
       <ul className="space-y-2">
         {sorted.map((entry) => (
@@ -142,6 +165,19 @@ export function HistoryList() {
           No hay corridas de esa rutina todavía.
         </p>
       )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="font-industrial text-2xl tabular-nums text-phosphor leading-none">
+        {value}
+      </p>
+      <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim">
+        {label}
+      </p>
     </div>
   );
 }

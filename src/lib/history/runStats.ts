@@ -26,6 +26,53 @@ export function aggregateRunStats(entries: WorkoutHistoryEntry[]): Map<string, R
   return result;
 }
 
+/**
+ * Aggregates a slice of history entries (typically filtered to one workout)
+ * into the stats shown on the History page when a filter is active. Returns
+ * `totalReps: null` when no entry has a rep tally — different from `0`,
+ * which means "ran with reps but didn't tap +1" never happened.
+ */
+export interface WorkoutRunStats {
+  totalRuns: number;
+  averageDurationMs: number;
+  fastestDurationMs: number;
+  lastRunAt: string | null;
+  totalReps: number | null;
+}
+
+export function computeWorkoutRunStats(
+  entries: WorkoutHistoryEntry[]
+): WorkoutRunStats {
+  if (entries.length === 0) {
+    return {
+      totalRuns: 0,
+      averageDurationMs: 0,
+      fastestDurationMs: 0,
+      lastRunAt: null,
+      totalReps: null,
+    };
+  }
+  let totalReps: number | null = null;
+  let totalDuration = 0;
+  let fastest = entries[0].durationMs;
+  let lastRunAt = entries[0].completedAt;
+  for (const e of entries) {
+    totalDuration += e.durationMs;
+    if (e.durationMs < fastest) fastest = e.durationMs;
+    if (e.completedAt > lastRunAt) lastRunAt = e.completedAt;
+    if (e.reps !== undefined) {
+      totalReps = (totalReps ?? 0) + e.reps;
+    }
+  }
+  return {
+    totalRuns: entries.length,
+    averageDurationMs: Math.round(totalDuration / entries.length),
+    fastestDurationMs: fastest,
+    lastRunAt,
+    totalReps,
+  };
+}
+
 const RTF = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
 
 /**

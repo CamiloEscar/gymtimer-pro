@@ -517,7 +517,7 @@ function RunWorkoutContent({
           </details>
           <Link
             href={`/display/${code}`}
-            className="inline-flex items-center justify-center gap-1.5 size-11 shrink-0 rounded-lg border border-surface-700 text-phosphor hover:text-brand-500 hover:border-brand-500 active:scale-95 transition-colors"
+            className="hidden sm:inline-flex items-center justify-center gap-1.5 size-11 shrink-0 rounded-lg border border-surface-700 text-phosphor hover:text-brand-500 hover:border-brand-500 active:scale-95 transition-colors"
             aria-label="Abrir display del gimnasio en una pestaña nueva"
           >
             <Icon name="display" className="size-4" />

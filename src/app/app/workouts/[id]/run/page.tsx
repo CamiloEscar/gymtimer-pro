@@ -269,6 +269,7 @@ function RunWorkoutContent({
   // skip re-recording the new run. Engine itself rebuilds from the new
   // workout prop (see useWorkoutSession), so timer state already resets.
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/immutability -- refs are intentionally cross-effect: reset on workout switch, read inside the mirror effect without forcing it to re-fire */
     sessionStartedAtRef.current = null;
     hasRecordedRef.current = false;
   }, [workout.id]);
@@ -283,6 +284,7 @@ function RunWorkoutContent({
   useEffect(() => {
     const startedAt = readStoredSessionStartMs(`gymtimer.sessionState.${workout.id}`);
     if (startedAt !== null && session.state.status !== "ready") {
+      /* eslint-disable-next-line react-hooks/immutability -- see comment on the reset effect above: ref is shared with the mirror effect by design */
       sessionStartedAtRef.current = startedAt;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on mount and workout switch only, not on every status change
@@ -335,13 +337,17 @@ function RunWorkoutContent({
     audio.unlock();
     // The 3-2-1 countdown and "GO!" tone are emitted from inside the engine
     // (getReady phase + beginWorkBlock). Just kick off the session here.
-    if (sessionStartedAtRef.current === null) sessionStartedAtRef.current = Date.now();
+    if (sessionStartedAtRef.current === null) {
+      // eslint-disable-next-line react-hooks/immutability -- shared with mirror effect on purpose, see reset effect
+      sessionStartedAtRef.current = Date.now();
+    }
     session.start();
   }
 
   function confirmReset() {
     session.reset();
     setResetPending(false);
+    /* eslint-disable-next-line react-hooks/immutability -- shared with mirror effect on purpose, see reset effect */
     sessionStartedAtRef.current = null;
     hasRecordedRef.current = false;
   }

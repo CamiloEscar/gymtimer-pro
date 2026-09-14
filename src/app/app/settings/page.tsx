@@ -1,5 +1,6 @@
 import { AudioSettings } from "@/components/settings/AudioSettings";
 import { DisplaySettings } from "@/components/settings/DisplaySettings";
+import { ExerciseOverridesOnboardingBanner } from "@/components/settings/ExerciseOverridesOnboardingBanner";
 import { ExerciseOverridesSettings } from "@/components/settings/ExerciseOverridesSettings";
 import { GymProfileOnboardingBanner } from "@/components/settings/GymProfileOnboardingBanner";
 import { GymSettings } from "@/components/settings/GymSettings";
@@ -16,6 +17,7 @@ export default function SettingsPage() {
       <WeeklyPlanSettings />
       <DisplaySettings />
       <AudioSettings />
+      <ExerciseOverridesOnboardingBanner />
       <ExerciseOverridesSettings />
     </div>
   );

@@ -12,6 +12,39 @@ const BLOCK: WorkoutBlock = {
   exercises: [{ id: "ex-1", name: "Sentadilla" }],
 };
 
+describe("BlockEditor — time input variants (modos de colocar el tiempo)", () => {
+  it("defaults the Duración field to the slider bar for an amrap window", () => {
+    render(<BlockEditor block={BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    const slider = screen.getByRole("slider", { name: "Duración" }) as HTMLInputElement;
+    expect(slider.type).toBe("range");
+    expect(slider.value).toBe("600");
+  });
+
+  it("switches Duración to the wheel and selects a value by tapping a chip", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<BlockEditor block={BLOCK} index={1} onChange={onChange} onRemove={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Duración: Rueda" }));
+
+    const chip = screen.getByRole("button", { name: "0:30" });
+    expect(chip).toHaveAttribute("aria-pressed", "false");
+    await user.click(chip);
+
+    expect(onChange).toHaveBeenLastCalledWith({ ...BLOCK, durationSeconds: 30 });
+  });
+
+  it("switches Duración back to the numeric minute/second inputs", async () => {
+    const user = userEvent.setup();
+    render(<BlockEditor block={BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Duración: 123" }));
+
+    expect(screen.getByLabelText("Duración minutos")).toBeInTheDocument();
+    expect(screen.getByLabelText("Duración segundos")).toBeInTheDocument();
+  });
+});
+
 describe("BlockEditor catalog toggle", () => {
   it("defaults to the Gimnasio catalog", () => {
     render(<BlockEditor block={BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);

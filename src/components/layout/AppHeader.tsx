@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 const SECTION_LINKS = [
   { href: "/app", label: "Dashboard" },
   { href: "/app/workouts", label: "Rutinas" },
+  { href: "/app/history", label: "Historial" },
   { href: "/app/exercises", label: "Ejercicios" },
   { href: "/app/settings", label: "Ajustes" },
   { href: "/display", label: "Pantalla" },

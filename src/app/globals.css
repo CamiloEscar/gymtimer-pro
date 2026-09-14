@@ -14,7 +14,7 @@
   --color-surface-700: oklch(0.32 0 0); /* border lines on dark surfaces */
   --color-phosphor: oklch(0.95 0 0); /* primary text on Display/tactical screens */
   --color-phosphor-dim: oklch(0.72 0 0); /* secondary text on dark */
-  --color-phosphor-muted: oklch(0.55 0 0); /* tertiary text / labels */
+  --color-phosphor-muted: oklch(0.60 0 0); /* tertiary text / labels — ≥4.5:1 on surface-950 */
   --color-phase-ready: oklch(0.82 0.16 90); /* "preparate" amber-yellow */
   --color-round-1: oklch(0.18 0.05 150); /* brand-tinted neutral */
   --color-round-2: oklch(0.2 0.06 230); /* steel blue */

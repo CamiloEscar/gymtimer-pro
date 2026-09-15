@@ -21,6 +21,18 @@ describe("UserExerciseOverrideRepository", () => {
     if (result.ok) expect(result.value).toEqual([{ exerciseId: "leg-01", name: "Sentadilla profunda" }]);
   });
 
+  it("persists an optional metricKind override (T5.2 catalog default vs override)", () => {
+    const repo = new UserExerciseOverrideRepository();
+    repo.save({ exerciseId: "cf-mo-01", metricKind: "reps" });
+    const result = repo.list();
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toEqual([{ exerciseId: "cf-mo-01", metricKind: "reps" }]);
+    // Undefined metricKind is stripped, exactly like the other optional fields.
+    const stripped = repo.save({ exerciseId: "cf-mo-01", metricKind: undefined });
+    expect(stripped.ok).toBe(true);
+    if (stripped.ok) expect(stripped.value).toEqual({ exerciseId: "cf-mo-01" });
+  });
+
   it("upserts by exerciseId: saving the same exercise twice keeps one entry with the latest fields", () => {
     const repo = new UserExerciseOverrideRepository();
     repo.save({ exerciseId: "leg-01", name: "Sentadilla" });

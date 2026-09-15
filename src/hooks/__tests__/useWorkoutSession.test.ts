@@ -83,6 +83,25 @@ describe("useWorkoutSession", () => {
     expect(result.current.state.status).toBe("ready");
   });
 
+  it("hydrates a pre-change snapshot that is missing currentExerciseIndex/accumulatedReps (spec R6) without crashing", () => {
+    const engine = new WorkoutEngine(workout);
+    engine.start();
+    const raw = JSON.parse(JSON.stringify(engine.getState()));
+    // Simulate a `gymtimer.sessionState.{id}` payload captured before those
+    // session keys existed on the rm side.
+    delete raw.currentExerciseIndex;
+    delete raw.accumulatedReps;
+    window.localStorage.setItem(
+      `gymtimer.sessionState.${workout.id}`,
+      JSON.stringify({ state: raw, savedAt: Date.now() })
+    );
+    engine.destroy();
+
+    const { result } = renderHook(() => useWorkoutSession(workout));
+    expect(result.current.state.status).toBe("running");
+    expect(result.current.state.currentExerciseIndex).toBe(0);
+  });
+
   it("falls back to a fresh engine when the saved snapshot is corrupt", () => {
     window.localStorage.setItem(`gymtimer.sessionState.${workout.id}`, "{corrupt");
     const { result } = renderHook(() => useWorkoutSession(workout));

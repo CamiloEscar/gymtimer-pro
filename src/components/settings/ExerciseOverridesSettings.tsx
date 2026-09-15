@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { UserExerciseOverride } from "@/types";
+import type { MetricKind, UserExerciseOverride } from "@/types";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
 import { useLocalStorageSnapshot, notifyLocalStorageChange } from "@/hooks/useLocalStorageSnapshot";
 import {
@@ -25,7 +25,25 @@ interface EditState {
   videoUrl: string;
   thumbnailUrl: string;
   description: string;
+  metricKind: string;
 }
+
+const METRIC_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "Por defecto (catálogo)" },
+  { value: "reps", label: "Repeticiones" },
+  { value: "distanceMeters", label: "Distancia (m)" },
+  { value: "calories", label: "Calorías" },
+  { value: "timeSeconds", label: "Tiempo" },
+  { value: "max", label: "Máximo" },
+];
+
+const METRIC_LABEL: Record<string, string> = {
+  reps: "Repeticiones",
+  distanceMeters: "Distancia (m)",
+  calories: "Calorías",
+  timeSeconds: "Tiempo",
+  max: "Máximo",
+};
 
 const EMPTY_EDIT: EditState = {
   exerciseId: "",
@@ -33,6 +51,7 @@ const EMPTY_EDIT: EditState = {
   videoUrl: "",
   thumbnailUrl: "",
   description: "",
+  metricKind: "",
 };
 
 // Validate that the URL is either a relative path or a fully qualified
@@ -90,6 +109,7 @@ export function ExerciseOverridesSettings() {
       videoUrl: entry?.videoUrl ?? "",
       thumbnailUrl: entry?.thumbnailUrl ?? "",
       description: entry?.description ?? "",
+      metricKind: entry?.metricKind ?? "",
     });
   }
 
@@ -117,6 +137,10 @@ export function ExerciseOverridesSettings() {
     if (videoUrl) override.videoUrl = videoUrl;
     if (thumbnailUrl) override.thumbnailUrl = thumbnailUrl;
     if (description) override.description = description;
+    // A metricKind override wins over the catalog default everywhere the
+    // effective catalog is consumed (editor prefill + formatExerciseLine);
+    // empty = keep the catalog default.
+    if (edit.metricKind) override.metricKind = edit.metricKind as MetricKind;
     repo.save(override);
     notifyLocalStorageChange();
   }
@@ -136,7 +160,7 @@ export function ExerciseOverridesSettings() {
 
         <div className="mt-4 space-y-4">
           <p className="text-sm text-phosphor-dim">
-            Personalizá nombre, descripción, video y miniatura de cualquier ejercicio del
+            Personalizá nombre, métrica, descripción, video y miniatura de cualquier ejercicio del
             catálogo. Lo que cargues acá reemplaza los valores por defecto en tus rutinas y en el
             display.
           </p>
@@ -208,6 +232,18 @@ export function ExerciseOverridesSettings() {
             className="border border-surface-800 bg-surface-900 text-white rounded p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
 
+          <Select
+            aria-label="Métrica"
+            value={edit.metricKind}
+            onChange={(e) => editField({ metricKind: e.target.value })}
+          >
+            {METRIC_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+
           {urlError && (
             <p role="alert" className="text-danger-500 text-sm">
               {urlError}
@@ -235,6 +271,7 @@ export function ExerciseOverridesSettings() {
                   const name = allEffective.get(override.exerciseId)?.name ?? override.exerciseId;
                   const fields = [
                     override.name && `Nombre: ${override.name}`,
+                    override.metricKind && `Métrica: ${METRIC_LABEL[override.metricKind] ?? override.metricKind}`,
                     override.videoUrl && `Video: ${override.videoUrl}`,
                     override.thumbnailUrl && `Miniatura: ${override.thumbnailUrl}`,
                     override.description && `Descripción: ${override.description}`,

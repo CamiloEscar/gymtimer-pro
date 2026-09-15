@@ -39,6 +39,30 @@ describe("ExerciseOverridesSettings", () => {
     expect(appliedVideoField.closest("div")?.textContent).toContain("Sentadilla");
   });
 
+  it("persists a metricKind override on a CrossFit catalog exercise (catalog default shown, override wins)", async () => {
+    const user = userEvent.setup();
+    render(<ExerciseOverridesSettings />);
+    await user.click(screen.getByText(/Avanzado · Overrides de ejercicios/));
+    await user.click(screen.getByRole("button", { name: "CrossFit" }));
+
+    const exerciseSelect = screen.getByLabelText("Ejercicio") as HTMLSelectElement;
+    await user.selectOptions(exerciseSelect, "cf-mo-01"); // Row, catalog default = calories
+
+    const metricSelect = screen.getByLabelText("Métrica") as HTMLSelectElement;
+    // Catalog default prefills the editor (calories on Row).
+    expect(metricSelect.value).toBe("calories");
+    await user.selectOptions(metricSelect, "reps");
+
+    await user.click(screen.getByRole("button", { name: "Guardar override" }));
+
+    // Override wins: persisted JSON carries metricKind AND the applied list shows it.
+    const persisted = JSON.parse(window.localStorage.getItem("gymtimer.exerciseOverrides") ?? "[]");
+    expect(persisted).toEqual([
+      expect.objectContaining({ exerciseId: "cf-mo-01", metricKind: "reps" }),
+    ]);
+    expect(screen.getByText("Métrica: Repeticiones")).toBeInTheDocument();
+  });
+
   it("shows an inline URL error instead of a window alert, and clears it on edit", async () => {
     const user = userEvent.setup();
     const alertSpy = vi.spyOn(window, "alert");

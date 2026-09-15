@@ -45,4 +45,19 @@ describe("getEffectiveCatalog", () => {
     const result = getEffectiveCatalog([], [{ exerciseId: "leg-01", name: "X" }]);
     expect(result).toEqual([]);
   });
+
+  it("a metricKind override wins over the catalog default; absence keeps it (T5.2)", () => {
+    const withDefault: CatalogExercise[] = [
+      { id: "cf-mo-01", name: "Row", category: "Cardio", metricKind: "calories" },
+      { id: "cf-gy-13", name: "L-Sit", category: "Gymnastics", metricKind: "timeSeconds" },
+    ];
+    const result = getEffectiveCatalog(withDefault, [
+      { exerciseId: "cf-mo-01", metricKind: "reps" },
+    ]);
+    expect(result[0].metricKind).toBe("reps");
+    expect(result[1].metricKind).toBe("timeSeconds");
+    // An override with no metricKind never erases the catalog default.
+    const untouched = getEffectiveCatalog(withDefault, [{ exerciseId: "cf-mo-01", name: "Remo" }]);
+    expect(untouched[0].metricKind).toBe("calories");
+  });
 });

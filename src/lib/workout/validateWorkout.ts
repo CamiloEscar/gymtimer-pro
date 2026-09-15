@@ -57,6 +57,20 @@ function validateRepScheme(block: WorkoutBlock, errors: ValidationError[]): void
       message: "En una escalera ascendente el inicio debe ser menor o igual al mínimo",
       blockId: block.id,
     });
+    return;
+  }
+
+  // Spec R3: per-exercise reps on a ladder are FORBIDDEN. The ladder is the
+  // ONE shared cadencia for every station; a per-exercise `reps` would be dead
+  // data (formatExerciseLine already ignores it under a repScheme) and is a
+  // sign of authoring confusion, so it is rejected here at save time.
+  for (const exercise of block.exercises) {
+    if (exercise.reps !== undefined) {
+      errors.push({
+        message: `Con escalera las reps las define el bloque, no "${exercise.name}"`,
+        blockId: block.id,
+      });
+    }
   }
 }
 

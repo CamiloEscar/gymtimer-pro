@@ -113,6 +113,119 @@ describe("estimateWorkoutDurationSeconds — fightGoneBad", () => {
   });
 });
 
+describe("estimateWorkoutDurationSeconds — forTime station-sweep lane (T5.1)", () => {
+  it("sums the station windows once for a chipper (rounds 1, Murph: 5 * 60s)", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "forTime",
+        durationSeconds: 0,
+        rounds: 1,
+        stationSeconds: 60,
+        exercises: [
+          { id: "e1", name: "Run 1 mile" },
+          { id: "e2", name: "Pull-ups" },
+          { id: "e3", name: "Push-ups" },
+          { id: "e4", name: "Squats" },
+          { id: "e5", name: "Run 1 mile" },
+        ],
+      },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe(5 * 60);
+  });
+
+  it("adds the inter-round rests for a rounds-of-stations forTime", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "forTime",
+        durationSeconds: 0,
+        rounds: 3,
+        stationSeconds: 60,
+        roundRestSeconds: 60,
+        exercises: [
+          { id: "e1", name: "Thrusters" },
+          { id: "e2", name: "Pull-ups" },
+        ],
+      },
+    ]);
+    // 2 stations * 60s * 3 rounds = 360s + 2 rests * 60s = 480s
+    expect(estimateWorkoutDurationSeconds(w)).toBe(360 + 120);
+  });
+
+  it("lets the per-exercise window win over block.stationSeconds in the sum", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "forTime",
+        durationSeconds: 0,
+        rounds: 1,
+        stationSeconds: 60,
+        exercises: [
+          { id: "e1", name: "Run" },
+          { id: "e2", name: "L-Sit", timeSeconds: 30 },
+        ],
+      },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe(60 + 30);
+  });
+
+  it("leaves a rounds>1 forTime WITHOUT station windows on its durationSeconds", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "forTime",
+        durationSeconds: 120,
+        rounds: 3,
+        exercises: [
+          { id: "e1", name: "Thrusters" },
+          { id: "e2", name: "Pull-ups" },
+        ],
+      },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe(120);
+  });
+
+  it("PIN: a repScheme ladder adds ZERO wall-clock — a sweep-capable ladder forTime is estimated as the classic durationSeconds, never as a station sweep", () => {
+    const ladderBlock = {
+      id: "b1",
+      type: "forTime" as const,
+      durationSeconds: 300,
+      rounds: 3,
+      stationSeconds: 60,
+      roundRestSeconds: 60,
+      repScheme: { start: 21, step: -6, min: 9 },
+      exercises: [
+        { id: "e1", name: "Thrusters" },
+        { id: "e2", name: "Pull-ups" },
+      ],
+    };
+    // Without repScheme the same geometry IS a sweep: 2 stations * 60s * 3
+    // rounds + 2 rests * 60s = 480s.
+    const w = workout([ladderBlock]);
+    const withoutLadder = workout([{ ...ladderBlock, repScheme: undefined }]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe(300);
+    expect(estimateWorkoutDurationSeconds(withoutLadder)).toBe(480);
+  });
+
+  it("PIN: an amrap ladder stays on the fixed cap (no ladder inflation)", () => {
+    const w = workout([
+      {
+        id: "b1",
+        type: "amrap",
+        durationSeconds: 600,
+        rounds: 1,
+        repScheme: { start: 21, step: -3, min: 15 },
+        exercises: [
+          { id: "e1", name: "Thrusters" },
+          { id: "e2", name: "Pull-ups" },
+        ],
+      },
+    ]);
+    expect(estimateWorkoutDurationSeconds(w)).toBe(600);
+  });
+});
+
 describe("formatEstimateMinutes", () => {
   it("rounds seconds to the nearest whole minute with an 'm' suffix", () => {
     expect(formatEstimateMinutes(660)).toBe("11m");

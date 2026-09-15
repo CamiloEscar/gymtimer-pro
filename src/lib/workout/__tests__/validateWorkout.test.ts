@@ -200,7 +200,9 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
       type,
       durationSeconds: 600,
       rounds: 3,
-      exercises: [{ id: "e1", name: "Thrusters", reps: 21 }],
+      // No per-exercise `reps`: under a ladder the block owns the cadencia
+      // (spec R3 forbids per-exercise reps on a ladder).
+      exercises: [{ id: "e1", name: "Thrusters" }],
     };
   }
 
@@ -324,6 +326,28 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
       ],
     });
     expect(validateWorkout(workout)).toEqual([]);
+  });
+
+  it("rejects a per-exercise reps field on any station of a ladder block (spec R3)", () => {
+    const workout = baseWorkout({
+      blocks: [
+        {
+          ...ladderBlock("forTime"),
+          repScheme: { start: 21, step: -6, min: 9 },
+          exercises: [
+            { id: "e1", name: "Thrusters", reps: 21 },
+            { id: "e2", name: "Pull-ups" },
+          ],
+        },
+      ],
+    });
+    expect(validateWorkout(workout)).toContainEqual({
+      message: 'Con escalera las reps las define el bloque, no "Thrusters"',
+      blockId: "b1",
+    });
+    // The sibling station without reps does not produce the error.
+    const messages = validateWorkout(workout).map((error) => error.message);
+    expect(messages.filter((message) => message.includes("Con escalera"))).toHaveLength(1);
   });
 });
 

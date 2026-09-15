@@ -330,3 +330,108 @@ describe("BlockEditor — EMOM/OTM interval cap input + hint", () => {
     expect(screen.getByLabelText("Cada cuánto segundos")).toHaveValue(30);
   });
 });
+
+describe("BlockEditor — repScheme (Escalera)", () => {
+  const LADDER_BLOCK: WorkoutBlock = {
+    id: "block-ladder",
+    type: "amrap",
+    durationSeconds: 600,
+    repScheme: { start: 21, step: -6, min: 9 },
+    exercises: [{ id: "ex-1", name: "Thrusters" }],
+  };
+
+  it("renders the three steppers with current values and the live preview on a ladder-capable type", () => {
+    render(<BlockEditor block={LADDER_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.getByText("ESCALERA")).toBeInTheDocument();
+    expect(screen.getByLabelText("Inicio de la escalera")).toHaveValue(21);
+    expect(screen.getByLabelText("Paso de la escalera")).toHaveValue(-6);
+    expect(screen.getByLabelText("Mínimo de la escalera")).toHaveValue(9);
+    // First four rungs of {21, -6, 9} → 21 → 15 → 9 → 9.
+    expect(screen.getByText("21 → 15 → 9 → 9")).toBeInTheDocument();
+  });
+
+  it("shows the ESCALERA section on every allowed type", () => {
+    for (const type of ["amrap", "forTime", "emom", "otm"] as const) {
+      const { unmount } = render(
+        <BlockEditor
+          block={{ ...LADDER_BLOCK, id: `block-${type}`, type }}
+          index={1}
+          onChange={vi.fn()}
+          onRemove={vi.fn()}
+        />,
+      );
+      expect(screen.getByText("ESCALERA")).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("hides the ESCALERA section for non-ladder block types", () => {
+    const block: WorkoutBlock = {
+      id: "block-interval",
+      type: "interval",
+      durationSeconds: 0,
+      workSeconds: 30,
+      restSeconds: 10,
+      rounds: 4,
+      exercises: [{ id: "ex-1", name: "Row" }],
+    };
+    render(<BlockEditor block={block} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.queryByText("ESCALERA")).not.toBeInTheDocument();
+  });
+
+  it("persists stepper edits into the repScheme via onChange", async () => {
+    const user = userEvent.setup();
+    function Wrapper() {
+      const [block, setBlock] = useState<WorkoutBlock>({ ...LADDER_BLOCK, repScheme: undefined });
+      return <BlockEditor block={block} index={1} onChange={setBlock} onRemove={vi.fn()} />;
+    }
+    render(<Wrapper />);
+
+    await user.clear(screen.getByLabelText("Inicio de la escalera"));
+    await user.type(screen.getByLabelText("Inicio de la escalera"), "21");
+
+    // Stateful round-trip: the keystrokes landed in state and re-rendered
+    // the controlled input at 21.
+    expect(screen.getByLabelText("Inicio de la escalera")).toHaveValue(21);
+    expect(screen.getByLabelText("Paso de la escalera")).toHaveValue(0);
+    expect(screen.getByLabelText("Mínimo de la escalera")).toHaveValue(0);
+  });
+
+  it("clears repScheme when the block type changes to a non-ladder type", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<BlockEditor block={LADDER_BLOCK} index={1} onChange={onChange} onRemove={vi.fn()} />);
+
+    await user.selectOptions(screen.getByLabelText("Tipo de bloque"), "interval");
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      ...LADDER_BLOCK,
+      type: "interval",
+      repScheme: undefined,
+    });
+  });
+});
+
+describe("BlockEditor — forTime rounds", () => {
+  it("shows a Rondas input for forTime blocks and persists it", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const block: WorkoutBlock = {
+      id: "block-ft",
+      type: "forTime",
+      durationSeconds: 600,
+      exercises: [{ id: "ex-1", name: "Thrusters" }],
+    };
+    render(<BlockEditor block={block} index={1} onChange={onChange} onRemove={vi.fn()} />);
+
+    await user.clear(screen.getByLabelText("Rondas"));
+    await user.type(screen.getByLabelText("Rondas"), "3");
+
+    expect(onChange).toHaveBeenLastCalledWith({ ...block, rounds: 3 });
+  });
+
+  it("does not show a Rondas input for amrap blocks", () => {
+    render(<BlockEditor block={BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.queryByLabelText("Rondas")).not.toBeInTheDocument();
+  });
+});

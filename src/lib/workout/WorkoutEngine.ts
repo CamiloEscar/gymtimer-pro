@@ -87,15 +87,21 @@ export class WorkoutEngine {
       this.advanceFgbRound();
       return;
     }
+    // AMRAP ladder (design D2): ONE continuous cap carries every pass of the
+    // ladder, so the block's `rounds` (always 1 on amrap — the editor has no
+    // rounds field) must NOT terminate it; the fixed-time cap does. Hitting
+    // nextRound on a repScheme amrap just advances the displayed round.
+    // Without a repScheme, amrap keeps the historical behavior (rounds=1 ⇒
+    // nextRound ends the block).
+    const isLadderAmrap = block.type === "amrap" && block.repScheme !== undefined;
     const totalRounds = block.rounds ?? 1;
-    if (this.round >= totalRounds) {
+    if (!isLadderAmrap && this.round >= totalRounds) {
       this.finish();
       return;
     }
     this.round += 1;
     this.phase = "work";
-    this.replaceTimer("work");
-    if (this.status === "running") this.timer.start();
+    this.replaceTimerUnlessContinuous(block);
     this.notify();
   }
 
@@ -103,9 +109,24 @@ export class WorkoutEngine {
     if (this.round <= 1) return;
     this.round -= 1;
     this.phase = "work";
+    this.replaceTimerUnlessContinuous(this.currentBlock());
+    this.notify();
+  }
+
+  /**
+   * amrap and forTime run on ONE continuous clock (design D2): a manual
+   * round bump is display/audio-only and must NOT restart the running timer
+   * — the AMRAP cap keeps counting down and the forTime countup keeps
+   * counting. This fixes a real bug: nextRound() used to call
+   * replaceTimer("work") here, silently resetting/restarting the clock on a
+   * forTime (and rebuilding the amrap countdown from scratch). Emom/otm and
+   * the interval family keep the historical per-round timer rebuild on a
+   * judge skip.
+   */
+  private replaceTimerUnlessContinuous(block: WorkoutBlock): void {
+    if (block.type === "amrap" || block.type === "forTime") return;
     this.replaceTimer("work");
     if (this.status === "running") this.timer.start();
-    this.notify();
   }
 
   skipBlock(): void {

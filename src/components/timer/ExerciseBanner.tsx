@@ -32,14 +32,16 @@ export function ExerciseBanner({
 
   if (!visible || !current) return null;
 
-  const currentLine = formatExerciseLine(current);
-  const nextLine = next ? formatExerciseLine(next) : undefined;
+  const isLadder = block?.repScheme !== undefined;
+  const currentLine = formatExerciseLine(current, { block, round: currentRound });
+  const nextLine = next ? formatExerciseLine(next, { block, round: currentRound }) : undefined;
   const isPreview = status === "ready";
 
   return (
     <div className="w-full max-w-2xl text-center space-y-0.5">
       <p className="font-tactical text-xs md:text-base uppercase tracking-widest text-brand-500">
         <span aria-hidden>▸</span>
+        {isLadder && <span className="ml-1">RONDA {currentRound} ·</span>}
         {isPreview && <> Vas a empezar:</>}
         <span className="ml-1 font-industrial text-base md:text-xl tracking-tight text-phosphor">
           {currentLine}

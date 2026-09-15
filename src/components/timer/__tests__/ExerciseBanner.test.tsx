@@ -88,3 +88,54 @@ describe("ExerciseBanner", () => {
     expect(screen.getByText("Box jump")).toBeInTheDocument();
   });
 });
+
+describe("ExerciseBanner — repScheme ladder rounds", () => {
+  const running = {
+    currentRound: 1,
+    currentExerciseIndex: 0,
+    status: "running" as const,
+    phase: "work" as const,
+  };
+  const ladderBlock = (): WorkoutBlock => ({
+    id: "b1",
+    type: "amrap",
+    durationSeconds: 600,
+    rounds: 1,
+    repScheme: { start: 21, step: -6, min: 9 },
+    exercises: [
+      { id: "e1", name: "Thrusters" },
+      { id: "e2", name: "Pull-ups" },
+    ],
+  });
+
+  it('renders "RONDA 2 ·" with the round-scaled cadencia on a ladder block', () => {
+    render(<ExerciseBanner {...running} currentRound={2} block={ladderBlock()} />);
+    // Round 2 of {21, -6, 9} → 15 reps; the round-derived current exercise
+    // (index (2-1)%2) is Pull-ups.
+    expect(screen.getByText(/RONDA 2/)).toBeInTheDocument();
+    expect(screen.getByText(/Pull-ups · 15reps/)).toBeInTheDocument();
+  });
+
+  it("shows the first rung on round 1", () => {
+    render(<ExerciseBanner {...running} currentRound={1} block={ladderBlock()} />);
+    expect(screen.getByText(/RONDA 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Thrusters · 21reps/)).toBeInTheDocument();
+  });
+
+  it("does not render a RONDA prefix for blocks without a repScheme", () => {
+    render(
+      <ExerciseBanner
+        {...running}
+        currentRound={2}
+        block={{
+          id: "b1",
+          type: "amrap",
+          durationSeconds: 600,
+          exercises: [{ id: "e1", name: "Push-ups", reps: 20 }],
+        }}
+      />,
+    );
+    expect(screen.queryByText(/RONDA/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Push-ups · 20reps/)).toBeInTheDocument();
+  });
+});

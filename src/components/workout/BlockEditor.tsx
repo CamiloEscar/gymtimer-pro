@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { BlockType, UserExerciseOverride, WorkoutBlock } from "@/types";
+import type { BlockType, RepScheme, UserExerciseOverride, WorkoutBlock } from "@/types";
+import { ladderReps, isLadderType } from "@/lib/workout/repScheme";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
@@ -55,6 +56,7 @@ export function BlockEditor({
   const isBasic = block.type === "basic";
   const isRm = block.type === "rm";
   const isFgb = block.type === "fightGoneBad";
+  const isLadderBlock = isLadderType(block.type);
   const requiresExercises = typeInfo.requiresExercises;
   const noExercisesHint = typeInfo.noExercisesHint;
   const isIntervalCycling = block.type === "interval" || block.type === "tabata" || block.type === "emom" || block.type === "otm";
@@ -80,11 +82,18 @@ export function BlockEditor({
           value={block.type}
           onChange={(e) => {
             const type = e.target.value as BlockType;
+            const next: WorkoutBlock = { ...block, type };
+            if (!isLadderType(type)) {
+              // repScheme is only valid on amrap/forTime/emom/otm — never
+              // carry a stale ladder onto a type that can't honor it.
+              next.repScheme = undefined;
+            }
             if (type === "rest") {
               // Rest blocks are a single-shot duration; rounds don't apply.
               // Strip any stale value so the engine doesn't carry dead data
               // (older drafts or quick re-types might have left rounds set).
-              onChange({ ...block, type, rounds: undefined });
+              next.rounds = undefined;
+              onChange(next);
               return;
             }
             if (
@@ -94,8 +103,7 @@ export function BlockEditor({
               // Prefill work/rest from the gym profile defaults so a box that
               // always uses the same cadence doesn't retype it per block.
               onChange({
-                ...block,
-                type,
+                ...next,
                 ...(profile?.defaultWorkSeconds
                   ? { workSeconds: profile.defaultWorkSeconds }
                   : {}),
@@ -103,7 +111,7 @@ export function BlockEditor({
               });
               return;
             }
-            onChange({ ...block, type });
+            onChange(next);
           }}
           className="flex-1"
         >
@@ -266,6 +274,62 @@ export function BlockEditor({
         </div>
       )}
 
+      {block.type === "forTime" && (
+        <div className="space-y-1">
+          <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+            Rondas
+          </p>
+          <Input
+            aria-label="Rondas"
+            type="number"
+            value={block.rounds ?? ""}
+            onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
+            placeholder="1"
+          />
+        </div>
+      )}
+
+      {isLadderBlock && (
+        <div className="space-y-2">
+          <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+            ESCALERA
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                { key: "start", label: "Inicio", placeholder: "21" },
+                { key: "step", label: "Paso", placeholder: "-3" },
+                { key: "min", label: "Mínimo", placeholder: "9" },
+              ] as const
+            ).map((field) => (
+              <div key={field.key} className="space-y-1">
+                <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim">
+                  {field.label}
+                </p>
+                <Input
+                  aria-label={`${field.label} de la escalera`}
+                  type="number"
+                  value={block.repScheme?.[field.key] ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...block,
+                      repScheme: {
+                        start: block.repScheme?.start ?? 0,
+                        step: block.repScheme?.step ?? 0,
+                        min: block.repScheme?.min ?? 0,
+                        [field.key]: Number(e.target.value),
+                      },
+                    })
+                  }
+                  placeholder={field.placeholder}
+                />
+              </div>
+            ))}
+          </div>
+          {block.repScheme && <LadderPreview scheme={block.repScheme} />}
+        </div>
+      )}
+
       <p className="text-sm text-phosphor-dim font-tactical inline-flex items-center gap-2">
         <Icon name="clock" />
         <span>Tiempo total estimado: {formatEstimateMinutes(blockEstimatedSeconds)}</span>
@@ -349,4 +413,11 @@ export function BlockEditor({
       )}
     </Card>
   );
+}
+
+// Live rendering of the first four ladder rungs so the trainer sees the
+// cadence before saving — "21 → 15 → 9 → 9".
+function LadderPreview({ scheme }: { scheme: RepScheme }) {
+  const rungs = [1, 2, 3, 4].map((round) => ladderReps(scheme, round));
+  return <p className="text-sm text-phosphor tabular-nums">{rungs.join(" → ")}</p>;
 }

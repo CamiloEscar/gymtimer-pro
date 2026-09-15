@@ -898,6 +898,136 @@ describe("WorkoutEngine — audio cues for transitions", () => {
   });
 });
 
+describe("WorkoutEngine — repScheme ladder + continuous clock (Stage 2)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  const ladderAmrapWorkout: Workout = {
+    id: "w9",
+    name: "AMRAP ladder",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    favorite: false,
+    blocks: [
+      {
+        id: "b1",
+        type: "amrap",
+        durationSeconds: 10,
+        rounds: 1,
+        repScheme: { start: 21, step: -3, min: 15 },
+        exercises: [
+          { id: "e1", name: "Thrusters", reps: 10 },
+          { id: "e2", name: "Pull-ups", reps: 10 },
+        ],
+      },
+    ],
+  };
+
+  const roundsForTimeWorkout: Workout = {
+    id: "w10",
+    name: "Fran",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    favorite: false,
+    blocks: [
+      {
+        id: "b1",
+        type: "forTime",
+        durationSeconds: 120,
+        rounds: 3,
+        repScheme: { start: 21, step: -6, min: 9 },
+        exercises: [
+          { id: "e1", name: "Thrusters" },
+          { id: "e2", name: "Pull-ups" },
+        ],
+      },
+    ],
+  };
+
+  it("bumps the AMRAP round WITHOUT resetting the running countdown clock", () => {
+    const engine = new WorkoutEngine(ladderAmrapWorkout);
+    engine.start();
+    skipGetReady(engine);
+    // 3s into the 10s cap — the clock is alive and counting down.
+    vi.advanceTimersByTime(3_000);
+    expect(engine.getState().timer.remainingMs).toBe(7_000);
+
+    engine.nextRound();
+    const state = engine.getState();
+    expect(state.currentRound).toBe(2);
+    expect(state.status).toBe("running");
+    expect(state.currentPhase).toBe("work");
+    // The fixed-time contract: the countdown keeps counting from where it
+    // was — NOT restarted, NOT replaced.
+    expect(state.timer.remainingMs).toBe(7_000);
+  });
+
+  it("keeps bumping the ladder past rounds=1 — only the fixed AMRAP cap ends the block", () => {
+    const engine = new WorkoutEngine(ladderAmrapWorkout);
+    engine.start();
+    skipGetReady(engine);
+    engine.nextRound();
+    engine.nextRound();
+    engine.nextRound();
+    const state = engine.getState();
+    expect(state.currentRound).toBe(4);
+    expect(state.status).toBe("running");
+    // Ladder clamps at min (21 → 18 → 15 → 15); the block is NOT finished by
+    // the round bump, the cap handles termination.
+    expect(state.timer.remainingMs).toBe(10_000);
+  });
+
+  it("does NOT replace the timer when forTime rounds judge-advance", () => {
+    const engine = new WorkoutEngine(roundsForTimeWorkout);
+    engine.start();
+    skipGetReady(engine);
+    vi.advanceTimersByTime(5_000);
+    expect(engine.getState().timer.remainingMs).toBe(115_000);
+
+    engine.nextRound();
+    expect(engine.getState().currentRound).toBe(2);
+    expect(engine.getState().timer.remainingMs).toBe(115_000);
+
+    engine.nextRound();
+    expect(engine.getState().currentRound).toBe(3);
+    expect(engine.getState().timer.remainingMs).toBe(115_000);
+  });
+
+  it("finishes after the last forTime round is judged complete", () => {
+    const engine = new WorkoutEngine(roundsForTimeWorkout);
+    engine.start();
+    skipGetReady(engine);
+    engine.nextRound();
+    engine.nextRound();
+    engine.nextRound();
+    expect(engine.getState().status).toBe("finished");
+  });
+
+  it("previousRound decrements the round without touching the running clock", () => {
+    const engine = new WorkoutEngine(roundsForTimeWorkout);
+    engine.start();
+    skipGetReady(engine);
+    vi.advanceTimersByTime(5_000);
+    engine.nextRound();
+    expect(engine.getState().currentRound).toBe(2);
+
+    engine.previousRound();
+    const state = engine.getState();
+    expect(state.currentRound).toBe(1);
+    expect(state.timer.remainingMs).toBe(115_000);
+  });
+
+  it("an amrap WITHOUT a repScheme keeps the historical rounds=1 → finish behavior", () => {
+    const engine = new WorkoutEngine(amrapWorkout);
+    engine.start();
+    skipGetReady(engine);
+    engine.nextRound();
+    expect(engine.getState().status).toBe("finished");
+  });
+});
+
 describe("WorkoutEngine — voice announcements", () => {
   beforeEach(() => {
     vi.useFakeTimers();

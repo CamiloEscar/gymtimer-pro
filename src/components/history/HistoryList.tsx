@@ -80,7 +80,7 @@ export function HistoryList() {
     : entries;
 
   const sorted = useMemo(
-    () => [...filtered].sort((a, b) => b.completedAt.localeCompare(a.completedAt)),
+    () => [...filtered].sort((a, b) => String(b.completedAt).localeCompare(String(a.completedAt))),
     [filtered]
   );
 

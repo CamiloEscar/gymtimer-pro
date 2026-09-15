@@ -1,6 +1,6 @@
 import { TimerEngine } from "@/lib/timer/TimerEngine";
 import { AudioManager } from "@/lib/audio/AudioManager";
-import { isChipper, stationWindow } from "@/lib/workout/repScheme";
+import { isChipper, ladderReps, metricOf, stationWindow } from "@/lib/workout/repScheme";
 import type {
   Exercise,
   SessionState,
@@ -106,6 +106,7 @@ export class WorkoutEngine {
     }
     this.round += 1;
     this.phase = "work";
+    this.speakCadenceIfLadder(block);
     this.replaceTimerUnlessContinuous(block);
     this.notify();
   }
@@ -493,6 +494,7 @@ export class WorkoutEngine {
       this.round += 1;
       this.currentStationIndex = 0;
       this.audio?.speak(block.exercises[0].name);
+      this.speakCadenceIfLadder(block);
     }
     this.phase = "work";
     this.replaceStationTimer(block.exercises[this.currentStationIndex], block);
@@ -536,8 +538,44 @@ export class WorkoutEngine {
       this.audio?.playRoundChange();
       this.audio?.speak("TRABAJO");
     }
+    // A repScheme ladder re-announces its cadencia every round on top of the
+    // existing cue (design D7) — no-op for blocks without a repScheme.
+    this.speakCadenceIfLadder(this.currentBlock());
     this.replaceTimer("work");
     this.timer.start();
+  }
+
+  /**
+   * Audible cadencia cue for repScheme ladders (design D7 / spec R5): when a
+   * ladder block bumps to a new round, re-announce its ONE shared cadencia
+   * with a blip + speech, exactly once per round increment, only while
+   * running. The unit follows the CURRENT station's metric — the same
+   * (round−1) % count rotation the TV banner highlights (DisplayScreen), so
+   * what the trainer HEARS matches what the board SHOWS.
+   *
+   * Pure no-op everywhere that must stay untouched: FGB/chipper and the
+   * interval family can't carry a repScheme (validateWorkout + spec R8
+   * matrix), so their existing station/round cues are byte-identical.
+   */
+  private speakCadenceIfLadder(block: WorkoutBlock): void {
+    if (!block.repScheme || this.status !== "running" || block.exercises.length === 0) return;
+    const cadence = ladderReps(block.repScheme, this.round);
+    const station = block.exercises[(this.round - 1) % block.exercises.length];
+    const metric = metricOf(station);
+    const unit =
+      metric === "calories"
+        ? "CALORÍAS"
+        : metric === "distanceMeters"
+          ? "METROS"
+          : metric === "timeSeconds"
+            ? "SEGUNDOS"
+            : metric === "max"
+              ? "MÁXIMO"
+              : // Spoken form is the full Rioplatense label (the compact
+                // "REPS" is the on-screen banner form, DisplayScreen).
+                "REPETICIONES";
+    this.audio?.playRoundChange();
+    this.audio?.speak(`${cadence} ${unit}`);
   }
 
   private finish(): void {

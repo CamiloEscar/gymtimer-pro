@@ -1256,3 +1256,221 @@ describe("WorkoutEngine — voice announcements", () => {
     expect(speak).toHaveBeenCalledWith("SDHP");
   });
 });
+
+describe("WorkoutEngine — cadencia voice cue (Stage 4)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  const CADENCE_UNITS = ["REPETICIONES", "METROS", "CALORÍAS", "SEGUNDOS", "MÁXIMO"];
+  const cadenceSpeech = (speak: ReturnType<typeof vi.fn>) =>
+    speak.mock.calls.filter(([text]) => CADENCE_UNITS.some((unit) => text.includes(unit)));
+
+  const cadenceFranWorkout: Workout = {
+    id: "w15",
+    name: "Fran",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    favorite: false,
+    blocks: [
+      {
+        id: "b1",
+        type: "forTime",
+        durationSeconds: 120,
+        rounds: 3,
+        repScheme: { start: 21, step: -6, min: 9 },
+        exercises: [
+          { id: "e1", name: "Thrusters" },
+          { id: "e2", name: "Pull-ups" },
+        ],
+      },
+    ],
+  };
+
+  const cadenceAmrapWorkout: Workout = {
+    id: "w16",
+    name: "AMRAP ladder",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    favorite: false,
+    blocks: [
+      {
+        id: "b1",
+        type: "amrap",
+        durationSeconds: 10,
+        rounds: 1,
+        repScheme: { start: 21, step: -3, min: 15 },
+        exercises: [
+          { id: "e1", name: "Thrusters" },
+          { id: "e2", name: "Pull-ups" },
+        ],
+      },
+    ],
+  };
+
+  it("speaks the round cadencia once per Fran round bump (beep + cadence) and finishes silently", () => {
+    const { audio, playRoundChange, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(cadenceFranWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+
+    engine.nextRound();
+    expect(engine.getState().currentRound).toBe(2);
+    expect(playRoundChange).toHaveBeenCalledTimes(1);
+    expect(speak).toHaveBeenCalledWith("15 REPETICIONES");
+
+    engine.nextRound();
+    expect(engine.getState().currentRound).toBe(3);
+    expect(playRoundChange).toHaveBeenCalledTimes(2);
+    expect(speak).toHaveBeenCalledWith("9 REPETICIONES");
+
+    // Last round judged complete → finish without an extra cadencia cue.
+    engine.nextRound();
+    expect(engine.getState().status).toBe("finished");
+    expect(playRoundChange).toHaveBeenCalledTimes(2);
+    expect(cadenceSpeech(speak)).toHaveLength(2);
+  });
+
+  it("re-spokes the cadencia on every AMRAP ladder round, clamping at min", () => {
+    const { audio, playRoundChange, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(cadenceAmrapWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+
+    engine.nextRound();
+    expect(speak).toHaveBeenCalledWith("18 REPETICIONES");
+    engine.nextRound();
+    expect(speak).toHaveBeenCalledWith("15 REPETICIONES");
+    engine.nextRound();
+    // Round 4 clamps at min (21 → 18 → 15 → 15); the fixed cap still ends it.
+    expect(speak).toHaveBeenCalledWith("15 REPETICIONES");
+    expect(playRoundChange).toHaveBeenCalledTimes(3);
+    expect(engine.getState().status).toBe("running");
+  });
+
+  it("picks the cadencia unit from the current station's metric (banner-parity rotation)", () => {
+    const workout: Workout = {
+      id: "w17",
+      name: "Ladder mixto",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [
+        {
+          id: "b1",
+          type: "forTime",
+          durationSeconds: 120,
+          rounds: 3,
+          repScheme: { start: 10, step: -1, min: 5 },
+          exercises: [
+            { id: "e1", name: "Thrusters" },
+            { id: "e2", name: "Row", calories: 50 },
+          ],
+        },
+      ],
+    };
+    const { audio, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(workout, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+
+    // Round 2 → TV highlights station (2-1)%2 = 1 (Row) → CALORÍAS unit.
+    engine.nextRound();
+    expect(speak).toHaveBeenCalledWith("9 CALORÍAS");
+    // Round 3 → station 0 (Thrusters) → REPS unit.
+    engine.nextRound();
+    expect(speak).toHaveBeenCalledWith("8 REPETICIONES");
+  });
+
+  it("fires the cadence on top of EMOM's existing TRABAJO cue when the EMOM carries a repScheme", () => {
+    const emomLadderWorkout: Workout = {
+      ...emomWorkout,
+      blocks: [
+        {
+          ...emomWorkout.blocks[0],
+          repScheme: { start: 20, step: -5, min: 5 },
+        },
+      ],
+    };
+    const { audio, playRoundChange, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(emomLadderWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+    playRoundChange.mockClear();
+
+    vi.advanceTimersByTime(60_100);
+    expect(engine.getState().currentRound).toBe(2);
+    expect(engine.getState().currentPhase).toBe("work");
+    // Existing round cue (beep + TRABAJO) still fires…
+    expect(speak).toHaveBeenCalledWith("TRABAJO");
+    // …and the new cadencia cue lands on top of it: one more beep + speech.
+    expect(playRoundChange).toHaveBeenCalledTimes(2);
+    expect(speak).toHaveBeenCalledWith("15 REPETICIONES");
+  });
+
+  it("does NOT add cadence speech when a non-ladder EMOM rounds over (existing cue intact)", () => {
+    const { audio, playRoundChange, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(emomWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+    playRoundChange.mockClear();
+
+    vi.advanceTimersByTime(60_100);
+    expect(engine.getState().currentRound).toBe(2);
+    expect(playRoundChange).toHaveBeenCalledTimes(1);
+    expect(speak).toHaveBeenCalledWith("TRABAJO");
+    expect(cadenceSpeech(speak)).toHaveLength(0);
+  });
+
+  it("skips the cue when the engine is paused even though the round advances", () => {
+    const { audio, playRoundChange, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(cadenceAmrapWorkout, audio);
+    engine.start();
+    skipGetReady(engine);
+    engine.pause();
+    speak.mockClear();
+    playRoundChange.mockClear();
+
+    engine.nextRound();
+    expect(engine.getState().currentRound).toBe(2);
+    expect(playRoundChange).not.toHaveBeenCalled();
+    expect(cadenceSpeech(speak)).toHaveLength(0);
+  });
+
+  it("keeps chipper station announcements name-only (no cadence strings on the sweep)", () => {
+    const murph: Workout = {
+      id: "w18",
+      name: "Murph",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [
+        {
+          id: "b1",
+          type: "forTime",
+          durationSeconds: 0,
+          rounds: 1,
+          stationSeconds: 60,
+          exercises: [
+            { id: "e1", name: "Run 1 mile" },
+            { id: "e2", name: "Pull-ups" },
+          ],
+        },
+      ],
+    };
+    const { audio, speak } = makeAudioSpy();
+    const engine = new WorkoutEngine(murph, audio);
+    engine.start();
+    skipGetReady(engine);
+    speak.mockClear();
+
+    engine.nextRound();
+    expect(engine.getState().currentExerciseIndex).toBe(1);
+    expect(speak).toHaveBeenCalledWith("Pull-ups");
+    expect(cadenceSpeech(speak)).toHaveLength(0);
+  });
+});

@@ -163,3 +163,38 @@ describe("ExerciseListDisplay next exercise preview", () => {
     expect(screen.queryByTestId("next-exercise-preview")).not.toBeInTheDocument();
   });
 });
+
+describe("ExerciseListDisplay ladder scaling (Stage 3)", () => {
+  const ladderBlock: WorkoutBlock = {
+    id: "block-1",
+    type: "amrap",
+    durationSeconds: 600,
+    repScheme: { start: 21, step: -6, min: 9 },
+    exercises: [
+      { id: "ex-1", name: "Thruster", reps: 21 },
+      { id: "ex-2", name: "Pull-up", reps: 12 },
+    ],
+  };
+
+  it("scales every row to the shared ladder cadence for the given round", () => {
+    render(<ExerciseListDisplay block={ladderBlock} currentRound={2} />);
+
+    expect(screen.getByText("Thruster · 15reps")).toBeInTheDocument();
+    expect(screen.getByText("Pull-up · 15reps")).toBeInTheDocument();
+  });
+
+  it("scales the next-exercise preview for the given round", () => {
+    render(
+      <ExerciseListDisplay block={ladderBlock} currentRound={3} nextExerciseId="ex-2" />
+    );
+
+    expect(screen.getByTestId("next-exercise-preview")).toHaveTextContent("Pull-up · 9reps");
+  });
+
+  it("defaults to round 1 when currentRound is omitted", () => {
+    render(<ExerciseListDisplay block={ladderBlock} />);
+
+    expect(screen.getByText("Thruster · 21reps")).toBeInTheDocument();
+    expect(screen.getByText("Pull-up · 21reps")).toBeInTheDocument();
+  });
+});

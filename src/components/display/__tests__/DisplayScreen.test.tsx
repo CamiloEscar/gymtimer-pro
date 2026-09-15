@@ -310,6 +310,130 @@ it("advances the highlight per round with wrap-around (round 5 → Thruster)", (
   });
 });
 
+describe("DisplayScreen chipper station indicator (Stage 3)", () => {
+  function chipperState(stationIndex: number) {
+    return buildState({
+      workout: {
+        id: "w1",
+        name: "Murph",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "forTime",
+            durationSeconds: 0,
+            rounds: 1,
+            stationSeconds: 60,
+            exercises: [
+              { id: "e1", name: "Run" },
+              { id: "e2", name: "L-Sit" },
+              { id: "e3", name: "Squats" },
+            ],
+          },
+        ],
+      },
+      currentRound: 1,
+      totalRounds: 1,
+      currentExerciseIndex: stationIndex,
+    });
+  }
+
+  it("shows the current station index for a chipper sweep", () => {
+    render(
+      <DisplayScreen
+        state={chipperState(1)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    expect(screen.getByText(/ESTACI.N 2 \/ 3/)).toBeInTheDocument();
+  });
+
+  it("rotates the station banner as the sweep advances", () => {
+    const { rerender } = render(
+      <DisplayScreen
+        state={chipperState(0)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+    expect(screen.getByText(/ESTACI.N 1 \/ 3/)).toBeInTheDocument();
+    rerender(
+      <DisplayScreen
+        state={chipperState(2)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+    expect(screen.getByText(/ESTACI.N 3 \/ 3/)).toBeInTheDocument();
+  });
+
+  it("highlights the engine-tracked chipper station in the side panel list", () => {
+    render(
+      <DisplayScreen
+        state={chipperState(1)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    const current = screen.getByTestId("exercise-list-item-current");
+    expect(current).toHaveTextContent("L-Sit");
+    expect(current.className).toContain("bg-brand-500");
+    expect(screen.getAllByTestId("exercise-list-item-other")).toHaveLength(2);
+  });
+});
+
+describe("DisplayScreen ladder RONDA banner (Stage 3)", () => {
+  function ladderState(round: number) {
+    return buildState({
+      currentRound: round,
+      totalRounds: 3,
+      workout: {
+        id: "w1",
+        name: "Fran",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "forTime",
+            durationSeconds: 0,
+            rounds: 3,
+            repScheme: { start: 21, step: -6, min: 9 },
+            exercises: [
+              { id: "ex-1", name: "Thruster" },
+              { id: "ex-2", name: "Pull-up" },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
+  it("shows the shared ladder cadence per round", () => {
+    render(
+      <DisplayScreen
+        state={ladderState(2)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    expect(screen.getByTestId("ladder-round-banner")).toHaveTextContent("RONDA 2 · 15 REPS");
+  });
+
+  it("hides the banner for blocks without a repScheme", () => {
+    render(
+      <DisplayScreen state={buildState()} connectionStatus="connected" onFullscreenToggle={() => {}} />
+    );
+
+    expect(screen.queryByTestId("ladder-round-banner")).not.toBeInTheDocument();
+  });
+});
+
 describe("DisplayScreen round background color", () => {
   it("uses the default background for a single-round workout", () => {
     const state = buildState({ totalRounds: 1, currentRound: 1 });

@@ -6,6 +6,7 @@ import { selectVisibleExercises } from "@/lib/workout/selectVisibleExercises";
 interface ExerciseListDisplayProps {
   block: WorkoutBlock;
   phase?: WorkoutPhase;
+  currentRound?: number;
   currentExerciseId?: string;
   nextExerciseId?: string;
 }
@@ -13,6 +14,7 @@ interface ExerciseListDisplayProps {
 export function ExerciseListDisplay({
   block,
   phase,
+  currentRound,
   currentExerciseId,
   nextExerciseId,
 }: ExerciseListDisplayProps) {
@@ -64,7 +66,7 @@ export function ExerciseListDisplay({
                     : "text-base md:text-lg leading-snug"
                 }`}
               >
-                {formatExerciseLine(exercise)}
+                {formatExerciseLine(exercise, { block, round: currentRound })}
               </span>
               {exercise.notes && (
                 <span
@@ -93,7 +95,7 @@ export function ExerciseListDisplay({
             SIGUIENTE
           </span>
           <span className="font-industrial text-lg md:text-xl uppercase tracking-tight text-phosphor block truncate">
-            {formatExerciseLine(nextExercise)}
+            {formatExerciseLine(nextExercise, { block, round: currentRound })}
           </span>
         </div>
       )}

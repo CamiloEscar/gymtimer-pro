@@ -1,6 +1,8 @@
 import { TimerEngine } from "@/lib/timer/TimerEngine";
 import { AudioManager } from "@/lib/audio/AudioManager";
+import { isChipper, stationWindow } from "@/lib/workout/repScheme";
 import type {
+  Exercise,
   SessionState,
   SessionStatus,
   Workout,
@@ -83,7 +85,10 @@ export class WorkoutEngine {
 
   nextRound(): void {
     const block = this.currentBlock();
-    if (block.type === "fightGoneBad") {
+    // Chipper rides the FGB judge-driven station sweep: nextRound moves to
+    // the next station, and handling the last station of the single round
+    // finishes the block (spec R4, deferred from T2.2 to the stage-3 lane).
+    if (block.type === "fightGoneBad" || isChipper(block)) {
       this.advanceFgbRound();
       return;
     }
@@ -156,7 +161,13 @@ export class WorkoutEngine {
     this.round = remote.currentRound;
     this.phase = remote.currentPhase;
     this.status = remote.status;
-    this.currentStationIndex = remote.currentExerciseIndex;
+    // Defensive typeof guard (mirrors the accumulatedReps precedent below):
+    // currentExerciseIndex is a required SessionState field, but a snapshot
+    // without it must hydrate a chipper/FGB sweep to station 0 instead of
+    // crashing (spec R6).
+    if (typeof remote.currentExerciseIndex === "number") {
+      this.currentStationIndex = remote.currentExerciseIndex;
+    }
     if (typeof remote.accumulatedReps === "number") {
       this.accumulatedReps = remote.accumulatedReps;
     }
@@ -282,7 +293,11 @@ export class WorkoutEngine {
       return;
     }
 
-    if (block.type === "fightGoneBad") {
+    // Station-sweep lane: FGB (native) and chipper (a single-round forTime
+    // with multiple exercises) rotate stations on the per-station timer — a
+    // countdown station self-advances here when it expires; a countup station
+    // waits for the judge's nextRound() (advanceFgbRound).
+    if (block.type === "fightGoneBad" || isChipper(block)) {
       this.advanceFgb(block);
       return;
     }
@@ -300,12 +315,13 @@ export class WorkoutEngine {
     this.audio?.playStart();
     this.audio?.speak("TRABAJO");
     this.phase = "work";
-    // FGB carries work in stationSeconds, not workSeconds/durationSeconds,
-    // so we route its first work timer through replaceTimerWithDuration
-    // directly to avoid falling through to a 0-second countdown.
+    // FGB and chipper carry work in per-station windows (stationSeconds /
+    // per-exercise timeSeconds), not workSeconds/durationSeconds, so their
+    // first work timer is built from the first station directly to avoid
+    // falling through to a 0-second countdown.
     const block = this.currentBlock();
-    if (block.type === "fightGoneBad") {
-      this.replaceTimerWithDuration(block.stationSeconds ?? 0);
+    if (block.type === "fightGoneBad" || isChipper(block)) {
+      this.replaceStationTimer(block.exercises[0], block);
     } else {
       this.replaceTimer("work");
     }
@@ -399,10 +415,12 @@ export class WorkoutEngine {
   }
 
   /**
-   * FGB: nested loop. On a station finishing, either advance to the next
-   * station in the current round or, when the round is done, rest between
-   * rounds. The "rest between rounds" is itself a normal rest phase whose
-   * end is the trigger to roll over to round+1, station 0.
+   * FGB / chipper: nested loop. On a station finishing, either advance to
+   * the next station in the current round or, when the round is done, rest
+   * between rounds. The "rest between rounds" is itself a normal rest phase
+   * whose end is the trigger to roll over to round+1, station 0. The timer
+   * for each station comes from replaceStationTimer, so a chipper's
+   * per-exercise windows apply while FGB keeps using block.stationSeconds.
    */
   private advanceFgb(block: WorkoutBlock): void {
     const stations = block.exercises;
@@ -411,13 +429,12 @@ export class WorkoutEngine {
       return;
     }
     const totalRounds = block.rounds ?? 1;
-    const stationSec = block.stationSeconds ?? 0;
     const roundRestSec = block.roundRestSeconds ?? 0;
 
     if (this.phase === "work") {
       if (this.currentStationIndex + 1 < stations.length) {
         this.currentStationIndex += 1;
-        this.replaceTimerWithDuration(stationSec);
+        this.replaceStationTimer(stations[this.currentStationIndex], block);
         this.timer.start();
         this.audio?.playRoundChange();
         this.audio?.speak(stations[this.currentStationIndex].name);
@@ -439,7 +456,7 @@ export class WorkoutEngine {
         this.currentStationIndex = 0;
         this.audio?.playRestToWork();
         this.audio?.speak(stations[0].name);
-        this.replaceTimerWithDuration(stationSec);
+        this.replaceStationTimer(stations[0], block);
         this.timer.start();
         return;
       }
@@ -453,14 +470,15 @@ export class WorkoutEngine {
       this.phase = "work";
       this.audio?.playRestToWork();
       this.audio?.speak(stations[0].name);
-      this.replaceTimerWithDuration(stationSec);
+      this.replaceStationTimer(stations[0], block);
       this.timer.start();
     }
   }
 
   private advanceFgbRound(): void {
     const block = this.currentBlock();
-    if (block.type !== "fightGoneBad") return;
+    // Judge-driven station sweep — shared by FGB and the chipper lane.
+    if (block.type !== "fightGoneBad" && !isChipper(block)) return;
     const stations = block.exercises.length;
     const totalRounds = block.rounds ?? 1;
     if (this.round >= totalRounds && this.currentStationIndex + 1 >= stations) {
@@ -477,9 +495,31 @@ export class WorkoutEngine {
       this.audio?.speak(block.exercises[0].name);
     }
     this.phase = "work";
-    this.replaceTimerWithDuration(block.stationSeconds ?? 0);
+    this.replaceStationTimer(block.exercises[this.currentStationIndex], block);
     if (this.status === "running") this.timer.start();
     this.notify();
+  }
+
+  /**
+   * Swap the engine's timer onto the next station of a station-sweep lane
+   * (FGB or chipper). FGB is pinned to a countdown over block.stationSeconds —
+   * byte-identical to the pre-chipper behavior. A chipper station counts down
+   * when it carries a per-exercise window (`timeSeconds`, or an explicit
+   * windowKind="countdown") and counts up from 0 otherwise, leaving the judge
+   * to stop it with nextRound() (spec R2 / design RISK A pinned rule:
+   * `windowKind ?? (timeSeconds ? countdown : countup)`; duration
+   * `timeSeconds ?? stationSeconds ?? 0` — exercise wins over the block).
+   */
+  private replaceStationTimer(station: Exercise, block: WorkoutBlock): void {
+    const isFgb = block.type === "fightGoneBad";
+    const mode = isFgb
+      ? "countdown"
+      : station.windowKind ?? (station.timeSeconds ? "countdown" : "countup");
+    const seconds = isFgb ? (block.stationSeconds ?? 0) : stationWindow(station, block) ?? 0;
+    this.unsubscribeTimer();
+    this.timer.destroy();
+    this.timer = new TimerEngine(mode, seconds * 1000);
+    this.unsubscribeTimer = this.timer.subscribe(() => this.onTimerTick());
   }
 
   private advanceRoundOrFinish(totalRounds: number): void {

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ExerciseListDisplay } from "./ExerciseListDisplay";
 import { VideoPlayer, type VideoPlayerHandle } from "@/components/ui/VideoPlayer";
+import { isChipper, ladderReps, metricOf } from "@/lib/workout/repScheme";
 
 const ROUND_BACKGROUNDS = [
   "bg-surface-950",
@@ -33,14 +34,35 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
   const gymProfile = useGymProfile();
   const currentBlock = state.workout.blocks[state.currentBlockIndex];
   const blockExerciseCount = currentBlock?.exercises.length ?? 0;
-  const highlightIndex =
+  // A chipper sweeps its stations inside a single round — the engine tracks
+  // the exact station like FGB, so we highlight the engine's index instead of
+  // the round rotation every other block type uses.
+  const blockIsChipper = currentBlock ? isChipper(currentBlock) : false;
+  const roundHighlightIndex =
     blockExerciseCount > 0 ? (state.currentRound - 1) % blockExerciseCount : 0;
+  const highlightIndex = blockIsChipper
+    ? Math.min(state.currentExerciseIndex, blockExerciseCount - 1)
+    : roundHighlightIndex;
   const currentExercise =
     currentBlock?.exercises[highlightIndex] ?? currentBlock?.exercises[0];
   const nextExercise =
     blockExerciseCount > 1
       ? currentBlock?.exercises[(highlightIndex + 1) % blockExerciseCount]
       : undefined;
+  // Ladder blocks (amrap|forTime|emom|otm with a repScheme) share one scaled
+  // cadence per round; the TV reflects it with a RONDA banner whose unit
+  // follows the current movement's metric (spec R5 labels).
+  const ladderScheme = currentBlock?.repScheme;
+  const ladderCadence = ladderScheme ? ladderReps(ladderScheme, state.currentRound) : undefined;
+  const ladderMetric = currentExercise ? metricOf(currentExercise) : "reps";
+  const ladderUnit =
+    ladderMetric === "calories"
+      ? "CALORÍAS"
+      : ladderMetric === "distanceMeters"
+        ? "METROS"
+        : ladderMetric === "timeSeconds"
+          ? "SEGUNDOS"
+          : "REPS";
   const currentVideo = currentExercise
     ? state.videoByExerciseId?.[currentExercise.id]
     : undefined;
@@ -110,7 +132,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
           mode={state.timer.mode}
           status={state.status}
         />
-        {currentBlock && currentBlock.type === "fightGoneBad" && state.currentPhase !== "finished" && (
+        {(currentBlock?.type === "fightGoneBad" || blockIsChipper) && state.currentPhase !== "finished" && (
           <div className="flex flex-col items-center gap-1 text-center">
             <p className="font-tactical text-2xl md:text-4xl uppercase tracking-tight leading-tight text-phosphor-muted">
               [ ESTACIÓN {state.currentExerciseIndex + 1} / {currentBlock.exercises.length} ]
@@ -121,6 +143,14 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
               </p>
             )}
           </div>
+        )}
+        {ladderScheme && state.currentPhase !== "finished" && (
+          <p
+            data-testid="ladder-round-banner"
+            className="font-tactical text-xl md:text-3xl uppercase tracking-tight leading-tight text-brand-500 text-center"
+          >
+            [ RONDA {state.currentRound} · {ladderCadence} {ladderUnit} ]
+          </p>
         )}
         {currentBlock && currentBlock.type === "rm" && state.currentPhase !== "finished" && (
           <p
@@ -209,6 +239,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
               <ExerciseListDisplay
                 block={currentBlock}
                 phase={state.currentPhase}
+                currentRound={state.currentRound}
                 currentExerciseId={currentExercise?.id}
                 nextExerciseId={nextExercise?.id}
               />

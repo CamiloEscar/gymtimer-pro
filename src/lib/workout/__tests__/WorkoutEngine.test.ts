@@ -1028,6 +1028,172 @@ describe("WorkoutEngine — repScheme ladder + continuous clock (Stage 2)", () =
   });
 });
 
+describe("WorkoutEngine — chipper lane (Stage 3)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  // S3 Murph: 5 countup stations, judge-driven sweep, block.stationSeconds as
+  // the fallback window.
+  const murphChipperWorkout: Workout = {
+    id: "w11",
+    name: "Murph",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    favorite: false,
+    blocks: [
+      {
+        id: "b1",
+        type: "forTime",
+        durationSeconds: 0,
+        rounds: 1,
+        stationSeconds: 60,
+        exercises: [
+          { id: "e1", name: "Run 1 mile" },
+          { id: "e2", name: "Pull-ups" },
+          { id: "e3", name: "Push-ups" },
+          { id: "e4", name: "Squats" },
+          { id: "e5", name: "Run 1 mile" },
+        ],
+      },
+    ],
+  };
+
+  it("sweeps countup stations judge-to-judge: nextRound 0 → last → finish", () => {
+    const engine = new WorkoutEngine(murphChipperWorkout);
+    engine.start();
+    skipGetReady(engine);
+    expect(engine.getState().currentPhase).toBe("work");
+    expect(engine.getState().currentExerciseIndex).toBe(0);
+    // Stations without a per-exercise window count UP (spec R2 / design RISK A):
+    // the judge stops each one with nextRound().
+    expect(engine.getState().timer.mode).toBe("countup");
+    // Passing time must NOT move a countup station on its own.
+    vi.advanceTimersByTime(5_000);
+    expect(engine.getState().currentExerciseIndex).toBe(0);
+
+    engine.nextRound();
+    expect(engine.getState().currentExerciseIndex).toBe(1);
+    engine.nextRound();
+    engine.nextRound();
+    expect(engine.getState().currentExerciseIndex).toBe(3);
+    engine.nextRound();
+    expect(engine.getState().currentExerciseIndex).toBe(4);
+    engine.nextRound();
+    expect(engine.getState().status).toBe("finished");
+  });
+
+  it("falls back to block.stationSeconds when a station has no per-exercise window", () => {
+    const engine = new WorkoutEngine(murphChipperWorkout);
+    engine.start();
+    skipGetReady(engine);
+    const state = engine.getState();
+    expect(state.timer.mode).toBe("countup");
+    expect(state.timer.durationMs).toBe(60_000);
+  });
+
+  it("counts down a per-exercise window (exercise wins over stationSeconds) and auto-advances", () => {
+    const workout: Workout = {
+      id: "w12",
+      name: "Murph mix",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [
+        {
+          id: "b1",
+          type: "forTime",
+          durationSeconds: 0,
+          rounds: 1,
+          stationSeconds: 60,
+          exercises: [
+            { id: "e1", name: "Run" },
+            { id: "e2", name: "L-Sit", timeSeconds: 30 },
+            { id: "e3", name: "Squats" },
+          ],
+        },
+      ],
+    };
+    const engine = new WorkoutEngine(workout);
+    engine.start();
+    skipGetReady(engine);
+    // Station 0 has no window → countup; judge advances to the L-Sit.
+    expect(engine.getState().timer.mode).toBe("countup");
+    engine.nextRound();
+    const lSit = engine.getState();
+    expect(lSit.currentExerciseIndex).toBe(1);
+    expect(lSit.timer.mode).toBe("countdown");
+    // The 30s exercise window WINS over the block's 60s stationSeconds.
+    expect(lSit.timer.remainingMs).toBe(30_000);
+    // Expiry auto-advances to station 2 with the stationSeconds fallback.
+    vi.advanceTimersByTime(30_100);
+    const after = engine.getState();
+    expect(after.currentExerciseIndex).toBe(2);
+    expect(after.timer.mode).toBe("countup");
+    expect(after.timer.durationMs).toBe(60_000);
+  });
+
+  it("finishes when the last chipper station's countdown expires", () => {
+    const workout: Workout = {
+      id: "w14",
+      name: "Run + L-Sit",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [
+        {
+          id: "b1",
+          type: "forTime",
+          durationSeconds: 0,
+          rounds: 1,
+          stationSeconds: 60,
+          exercises: [
+            { id: "e1", name: "Run" },
+            { id: "e2", name: "L-Sit", timeSeconds: 30 },
+          ],
+        },
+      ],
+    };
+    const engine = new WorkoutEngine(workout);
+    engine.start();
+    skipGetReady(engine);
+    engine.nextRound(); // judge Run → L-Sit (countdown 30s)
+    expect(engine.getState().currentExerciseIndex).toBe(1);
+    vi.advanceTimersByTime(30_100);
+    expect(engine.getState().status).toBe("finished");
+  });
+
+  it("keeps a single-exercise forTime on the classic single-timer lane (isChipper guard)", () => {
+    const workout: Workout = {
+      id: "w13",
+      name: "Single thruster forTime",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks: [
+        {
+          id: "b1",
+          type: "forTime",
+          durationSeconds: 120,
+          rounds: 1,
+          stationSeconds: 60,
+          exercises: [{ id: "e1", name: "Thruster", timeSeconds: 30 }],
+        },
+      ],
+    };
+    const engine = new WorkoutEngine(workout);
+    engine.start();
+    skipGetReady(engine);
+    // NOT a sweep: the classic single countdown over durationSeconds runs as
+    // today — no per-station timer, no drift.
+    const state = engine.getState();
+    expect(state.timer.mode).toBe("countdown");
+    expect(state.timer.remainingMs).toBe(120_000);
+    // rounds=1 → judge nextRound finishes; it does NOT rotate a station.
+    engine.nextRound();
+    expect(engine.getState().status).toBe("finished");
+  });
+});
+
 describe("WorkoutEngine — voice announcements", () => {
   beforeEach(() => {
     vi.useFakeTimers();

@@ -24,6 +24,10 @@ const TIME_WHEEL_VALUES: number[] = [];
 for (let s = 0; s <= TIME_WHEEL_MAX; s += TIME_WHEEL_STEP) {
   TIME_WHEEL_VALUES.push(s);
 }
+// The bar is the widget for long "perceived duration" windows (AMRAP can be
+// 45-60'), so it goes further than the wheel — the wheel renders one chip per
+// value and must stay small for the DOM.
+const SLIDER_MAX = 7200; // 2 h
 
 const VARIANT_LABELS: Record<TimeInputVariant, string> = {
   numeric: "123",
@@ -56,9 +60,9 @@ export function TimeInput({ ariaLabel, seconds, onChangeSeconds, variant = "nume
             aria-label={ariaLabel}
             type="range"
             min={0}
-            max={TIME_WHEEL_MAX}
+            max={SLIDER_MAX}
             step={TIME_WHEEL_STEP}
-            value={Math.min(total, TIME_WHEEL_MAX)}
+            value={Math.min(total, SLIDER_MAX)}
             onChange={(e) => onChangeSeconds(Number(e.target.value))}
             className="w-full accent-brand-500"
           />

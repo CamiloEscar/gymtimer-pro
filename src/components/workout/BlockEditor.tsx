@@ -123,7 +123,6 @@ export function BlockEditor({
         </Select>
         <Button variant="ghost" type="button" onClick={onRemove} aria-label="Quitar bloque">
           <Icon name="trash" />
-          Quitar
         </Button>
       </div>
 
@@ -199,38 +198,54 @@ export function BlockEditor({
         <div className="space-y-2">
           <div className={`grid gap-2 ${isCyclingWithInterval ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
             <div className="space-y-1">
-              <TimeInput
-                ariaLabel="Segundos de trabajo"
-                seconds={block.workSeconds ?? 0}
-                onChangeSeconds={(seconds) => onChange({ ...block, workSeconds: seconds })}
+              <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                Trabajo
+              </p>
+              <Input
+                aria-label="Segundos de trabajo"
+                type="number"
+                value={block.workSeconds ?? ""}
+                onChange={(e) => onChange({ ...block, workSeconds: Number(e.target.value) })}
+                placeholder="40"
               />
             </div>
             <div className="space-y-1">
-              <TimeInput
-                ariaLabel="Segundos de descanso"
-                seconds={block.restSeconds ?? 0}
-                onChangeSeconds={(seconds) => onChange({ ...block, restSeconds: seconds })}
-                variant="wheel"
+              <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                Descanso
+              </p>
+              <Input
+                aria-label="Segundos de descanso"
+                type="number"
+                value={block.restSeconds ?? ""}
+                onChange={(e) => onChange({ ...block, restSeconds: Number(e.target.value) })}
+                placeholder="20"
               />
             </div>
-            <Input
-              aria-label="Rondas"
-              type="number"
-              value={block.rounds ?? ""}
-              onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
-              placeholder="Rondas"
-            />
+            <div className="space-y-1">
+              <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+                Rondas
+              </p>
+              <Input
+                aria-label="Rondas"
+                type="number"
+                value={block.rounds ?? ""}
+                onChange={(e) => onChange({ ...block, rounds: Number(e.target.value) })}
+                placeholder="8"
+              />
+            </div>
             {isCyclingWithInterval && (
               <div className="space-y-1">
                 <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
                   Cada cuánto
                 </p>
-                <TimeInput
-                  ariaLabel="Cada cuánto"
-                  seconds={block.intervalSeconds ?? 0}
-                  onChangeSeconds={(seconds) =>
-                    onChange({ ...block, intervalSeconds: seconds || undefined })
+                <Input
+                  aria-label="Cada cuánto"
+                  type="number"
+                  value={block.intervalSeconds ?? ""}
+                  onChange={(e) =>
+                    onChange({ ...block, intervalSeconds: Number(e.target.value) || undefined })
                   }
+                  placeholder="60"
                 />
               </div>
             )}
@@ -326,7 +341,14 @@ export function BlockEditor({
               </div>
             ))}
           </div>
-          {block.repScheme && <LadderPreview scheme={block.repScheme} />}
+          {block.repScheme && (
+            <>
+              <LadderPreview scheme={block.repScheme} />
+              <p className="text-xs text-phosphor-muted italic">
+                Cada ronda baja según la escalera. Al llegar al mínimo, la cadencia se mantiene en el mínimo hasta que terminés el bloque.
+              </p>
+            </>
+          )}
         </div>
       )}
 
@@ -415,9 +437,26 @@ export function BlockEditor({
   );
 }
 
-// Live rendering of the first four ladder rungs so the trainer sees the
-// cadence before saving — "21 → 15 → 9 → 9".
+// Live rendering of the ladder so the trainer sees the cadence before saving.
+// Consecutive rungs collapse into one (e.g. a 3-rung Fran {21,-6,9} shows
+// "21 → 15 → 9", not "21 → 15 → 9 → 9"), and the floor is tagged explicitly
+// so the repeated-minimum behavior reads as intended, not as a bug.
 function LadderPreview({ scheme }: { scheme: RepScheme }) {
-  const rungs = [1, 2, 3, 4].map((round) => ladderReps(scheme, round));
-  return <p className="text-sm text-phosphor tabular-nums">{rungs.join(" → ")}</p>;
+  const rungs: number[] = [];
+  let hitsFloor = false;
+  for (let round = 1; round <= 8; round += 1) {
+    const value = ladderReps(scheme, round) ?? 0;
+    if (rungs.length > 0 && rungs[rungs.length - 1] === value) {
+      hitsFloor = true;
+      break;
+    }
+    rungs.push(value);
+    if (rungs.length >= 6) break;
+  }
+  return (
+    <p className="text-sm text-phosphor tabular-nums">
+      {rungs.join(" → ")}
+      {hitsFloor ? ` (mínimo ${scheme.min})` : ""}
+    </p>
+  );
 }

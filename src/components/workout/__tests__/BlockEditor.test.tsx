@@ -263,10 +263,9 @@ describe("BlockEditor — EMOM/OTM interval cap input + hint", () => {
     expect(screen.getByLabelText("Rondas")).toBeInTheDocument();
   });
 
-  it("uses number fields for minutes and seconds (iOS time pickers ignore seconds)", () => {
+  it("uses a plain seconds number field (iOS time pickers ignore seconds)", () => {
     render(<BlockEditor block={renderCycling("emom")} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByLabelText("Cada cuánto minutos")).toHaveAttribute("type", "number");
-    expect(screen.getByLabelText("Cada cuánto segundos")).toHaveAttribute("type", "number");
+    expect(screen.getByLabelText("Cada cuánto")).toHaveAttribute("type", "number");
   });
 
   it("shows the missing-interval hint when EMOM has no intervalSeconds", () => {
@@ -323,11 +322,9 @@ describe("BlockEditor — EMOM/OTM interval cap input + hint", () => {
     }
     render(<Wrapper />);
 
-    fireEvent.change(screen.getByLabelText("Cada cuánto minutos"), { target: { value: "1" } });
-    fireEvent.change(screen.getByLabelText("Cada cuánto segundos"), { target: { value: "30" } });
+    fireEvent.change(screen.getByLabelText("Cada cuánto"), { target: { value: "90" } });
 
-    expect(screen.getByLabelText("Cada cuánto minutos")).toHaveValue(1);
-    expect(screen.getByLabelText("Cada cuánto segundos")).toHaveValue(30);
+    expect(screen.getByLabelText("Cada cuánto")).toHaveValue(90);
   });
 });
 
@@ -346,8 +343,8 @@ describe("BlockEditor — repScheme (Escalera)", () => {
     expect(screen.getByLabelText("Inicio de la escalera")).toHaveValue(21);
     expect(screen.getByLabelText("Paso de la escalera")).toHaveValue(-6);
     expect(screen.getByLabelText("Mínimo de la escalera")).toHaveValue(9);
-    // First four rungs of {21, -6, 9} → 21 → 15 → 9 → 9.
-    expect(screen.getByText("21 → 15 → 9 → 9")).toBeInTheDocument();
+    // First rungs of {21, -6, 9} → 21 → 15 → 9, floored at the minimum.
+    expect(screen.getByText("21 → 15 → 9 (mínimo 9)")).toBeInTheDocument();
   });
 
   it("shows the ESCALERA section on every allowed type", () => {

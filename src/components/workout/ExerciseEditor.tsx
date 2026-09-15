@@ -145,8 +145,7 @@ export function ExerciseEditor({ exercise, catalog, onChange, onRemove }: Exerci
           onClick={onRemove}
           aria-label="Quitar ejercicio"
         >
-          <Icon name="close" />
-          Quitar
+          <Icon name="trash" />
         </Button>
       </div>
 

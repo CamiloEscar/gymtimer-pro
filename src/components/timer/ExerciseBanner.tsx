@@ -32,7 +32,7 @@ export function ExerciseBanner({
 
   if (!visible || !current) return null;
 
-  const isLadder = block?.repScheme !== undefined;
+  const isLadder = current.repScheme !== undefined;
   const currentLine = formatExerciseLine(current, { block, round: currentRound });
   const nextLine = next ? formatExerciseLine(next, { block, round: currentRound }) : undefined;
   const isPreview = status === "ready";

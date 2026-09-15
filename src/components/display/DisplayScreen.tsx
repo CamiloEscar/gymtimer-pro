@@ -49,11 +49,14 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
     blockExerciseCount > 1
       ? currentBlock?.exercises[(highlightIndex + 1) % blockExerciseCount]
       : undefined;
-  // Ladder blocks (amrap|forTime|emom|otm with a repScheme) share one scaled
-  // cadence per round; the TV reflects it with a RONDA banner whose unit
-  // follows the current movement's metric (spec R5 labels).
-  const ladderScheme = currentBlock?.repScheme;
-  const ladderCadence = ladderScheme ? ladderReps(ladderScheme, state.currentRound) : undefined;
+  // Ladder blocks surface a RONDA banner whose cadence and unit follow the
+  // CURRENT STATION's repScheme (each exercise defines its own ladder or
+  // none). Fixed-amount stations don't get a banner — keeping the announcement
+  // honest and aligned with what the engine speaks (speakCadenceIfLadder).
+  const stationScheme = currentExercise?.repScheme;
+  const ladderCadence = stationScheme
+    ? ladderReps(stationScheme, state.currentRound)
+    : undefined;
   const ladderMetric = currentExercise ? metricOf(currentExercise) : "reps";
   const ladderUnit =
     ladderMetric === "calories"
@@ -144,7 +147,7 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
             )}
           </div>
         )}
-        {ladderScheme && state.currentPhase !== "finished" && (
+        {ladderCadence !== undefined && state.currentPhase !== "finished" && (
           <p
             data-testid="ladder-round-banner"
             className="font-tactical text-xl md:text-3xl uppercase tracking-tight leading-tight text-brand-500 text-center"

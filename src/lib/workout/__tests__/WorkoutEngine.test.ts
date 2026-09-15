@@ -917,10 +917,9 @@ describe("WorkoutEngine — repScheme ladder + continuous clock (Stage 2)", () =
         type: "amrap",
         durationSeconds: 10,
         rounds: 1,
-        repScheme: { start: 21, step: -3, min: 15 },
         exercises: [
-          { id: "e1", name: "Thrusters", reps: 10 },
-          { id: "e2", name: "Pull-ups", reps: 10 },
+          { id: "e1", name: "Thrusters", repScheme: { start: 21, step: -3, min: 15 } },
+          { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -3, min: 15 } },
         ],
       },
     ],
@@ -937,10 +936,9 @@ describe("WorkoutEngine — repScheme ladder + continuous clock (Stage 2)", () =
         type: "forTime",
         durationSeconds: 120,
         rounds: 3,
-        repScheme: { start: 21, step: -6, min: 9 },
         exercises: [
-          { id: "e1", name: "Thrusters" },
-          { id: "e2", name: "Pull-ups" },
+          { id: "e1", name: "Thrusters", repScheme: { start: 21, step: -6, min: 9 } },
+          { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -6, min: 9 } },
         ],
       },
     ],
@@ -1280,10 +1278,9 @@ describe("WorkoutEngine — cadencia voice cue (Stage 4)", () => {
         type: "forTime",
         durationSeconds: 120,
         rounds: 3,
-        repScheme: { start: 21, step: -6, min: 9 },
         exercises: [
-          { id: "e1", name: "Thrusters" },
-          { id: "e2", name: "Pull-ups" },
+          { id: "e1", name: "Thrusters", repScheme: { start: 21, step: -6, min: 9 } },
+          { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -6, min: 9 } },
         ],
       },
     ],
@@ -1300,10 +1297,9 @@ describe("WorkoutEngine — cadencia voice cue (Stage 4)", () => {
         type: "amrap",
         durationSeconds: 10,
         rounds: 1,
-        repScheme: { start: 21, step: -3, min: 15 },
         exercises: [
-          { id: "e1", name: "Thrusters" },
-          { id: "e2", name: "Pull-ups" },
+          { id: "e1", name: "Thrusters", repScheme: { start: 21, step: -3, min: 15 } },
+          { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -3, min: 15 } },
         ],
       },
     ],
@@ -1363,10 +1359,9 @@ describe("WorkoutEngine — cadencia voice cue (Stage 4)", () => {
           type: "forTime",
           durationSeconds: 120,
           rounds: 3,
-          repScheme: { start: 10, step: -1, min: 5 },
           exercises: [
-            { id: "e1", name: "Thrusters" },
-            { id: "e2", name: "Row", calories: 50 },
+            { id: "e1", name: "Thrusters", repScheme: { start: 10, step: -1, min: 5 } },
+            { id: "e2", name: "Row", calories: 50, repScheme: { start: 10, step: -1, min: 5 } },
           ],
         },
       ],
@@ -1391,7 +1386,12 @@ describe("WorkoutEngine — cadencia voice cue (Stage 4)", () => {
       blocks: [
         {
           ...emomWorkout.blocks[0],
-          repScheme: { start: 20, step: -5, min: 5 },
+          exercises: [
+            {
+              ...emomWorkout.blocks[0].exercises[0],
+              repScheme: { start: 20, step: -5, min: 5 },
+            },
+          ],
         },
       ],
     };

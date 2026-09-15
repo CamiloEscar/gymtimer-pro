@@ -187,6 +187,7 @@ describe("estimateWorkoutDurationSeconds — forTime station-sweep lane (T5.1)",
   });
 
   it("PIN: a repScheme ladder adds ZERO wall-clock — a sweep-capable ladder forTime is estimated as the classic durationSeconds, never as a station sweep", () => {
+    const ladderScheme = { start: 21, step: -6, min: 9 };
     const ladderBlock = {
       id: "b1",
       type: "forTime" as const,
@@ -194,16 +195,25 @@ describe("estimateWorkoutDurationSeconds — forTime station-sweep lane (T5.1)",
       rounds: 3,
       stationSeconds: 60,
       roundRestSeconds: 60,
-      repScheme: { start: 21, step: -6, min: 9 },
       exercises: [
-        { id: "e1", name: "Thrusters" },
-        { id: "e2", name: "Pull-ups" },
+        { id: "e1", name: "Thrusters", repScheme: ladderScheme },
+        { id: "e2", name: "Pull-ups", repScheme: ladderScheme },
       ],
     };
-    // Without repScheme the same geometry IS a sweep: 2 stations * 60s * 3
-    // rounds + 2 rests * 60s = 480s.
+    // Without any repScheme on the exercises the same geometry IS a sweep:
+    // 2 stations * 60s * 3 rounds + 2 rests * 60s = 480s.
     const w = workout([ladderBlock]);
-    const withoutLadder = workout([{ ...ladderBlock, repScheme: undefined }]);
+    const withoutLadder = workout([
+      {
+        ...ladderBlock,
+        exercises: ladderBlock.exercises.map((exercise) => {
+          // Drop repScheme so the same geometry exercises the no-ladder lane.
+          const { repScheme: _ignored, ...rest } = exercise as typeof exercise & { repScheme?: unknown };
+          void _ignored;
+          return rest;
+        }),
+      },
+    ]);
     expect(estimateWorkoutDurationSeconds(w)).toBe(300);
     expect(estimateWorkoutDurationSeconds(withoutLadder)).toBe(480);
   });
@@ -215,10 +225,9 @@ describe("estimateWorkoutDurationSeconds — forTime station-sweep lane (T5.1)",
         type: "amrap",
         durationSeconds: 600,
         rounds: 1,
-        repScheme: { start: 21, step: -3, min: 15 },
         exercises: [
-          { id: "e1", name: "Thrusters" },
-          { id: "e2", name: "Pull-ups" },
+          { id: "e1", name: "Thrusters", repScheme: { start: 21, step: -3, min: 15 } },
+          { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -3, min: 15 } },
         ],
       },
     ]);

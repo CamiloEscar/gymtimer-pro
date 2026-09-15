@@ -1,5 +1,5 @@
 import type { WorkoutBlock } from "@/types";
-import { stationWindow } from "@/lib/workout/repScheme";
+import { blockHasLadder, stationWindow } from "@/lib/workout/repScheme";
 
 function estimateBlockSeconds(block: WorkoutBlock): number {
   if (block.type === "interval" || block.type === "tabata" || block.type === "basic") {
@@ -32,8 +32,10 @@ function estimateBlockSeconds(block: WorkoutBlock): number {
     // continuous forTime clock (design D2); it must never inflate the estimate
     // into a station-sweep sum. A ladder forTime is estimated exactly like the
     // classic block (its durationSeconds / countup 0), byte-identical to the
-    // pre-change behavior.
-    if (block.repScheme) return block.durationSeconds;
+    // pre-change behavior. Under per-exercise ladders the guard is "any
+    // exercise carries a scheme" — a mixed laddered + fixed block still rides
+    // the continuous clock.
+    if (blockHasLadder(block)) return block.durationSeconds;
     const rounds = block.rounds ?? 1;
     const stationsSeconds = block.exercises.reduce(
       (sum, exercise) => sum + (stationWindow(exercise, block) ?? 0),

@@ -101,10 +101,9 @@ describe("ExerciseBanner — repScheme ladder rounds", () => {
     type: "amrap",
     durationSeconds: 600,
     rounds: 1,
-    repScheme: { start: 21, step: -6, min: 9 },
     exercises: [
-      { id: "e1", name: "Thrusters" },
-      { id: "e2", name: "Pull-ups" },
+      { id: "e1", name: "Thrusters", repScheme: { start: 21, step: -6, min: 9 } },
+      { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -6, min: 9 } },
     ],
   });
 

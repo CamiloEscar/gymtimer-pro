@@ -169,10 +169,9 @@ describe("ExerciseListDisplay ladder scaling (Stage 3)", () => {
     id: "block-1",
     type: "amrap",
     durationSeconds: 600,
-    repScheme: { start: 21, step: -6, min: 9 },
     exercises: [
-      { id: "ex-1", name: "Thruster", reps: 21 },
-      { id: "ex-2", name: "Pull-up", reps: 12 },
+      { id: "ex-1", name: "Thruster", repScheme: { start: 21, step: -6, min: 9 } },
+      { id: "ex-2", name: "Pull-up", repScheme: { start: 21, step: -6, min: 9 } },
     ],
   };
 

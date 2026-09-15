@@ -74,10 +74,9 @@ describe("S1 — mixed block: AMRAP ladder → FOR TIME rounds → TABATA (3 adj
         type: "amrap",
         durationSeconds: 3,
         rounds: 1,
-        repScheme: { start: 21, step: -3, min: 15 },
         exercises: [
-          { id: "e1", name: "Push Ups" },
-          { id: "e2", name: "Air Squats" },
+          { id: "e1", name: "Push Ups", repScheme: { start: 21, step: -3, min: 15 } },
+          { id: "e2", name: "Air Squats", repScheme: { start: 21, step: -3, min: 15 } },
         ],
       },
       {
@@ -197,10 +196,9 @@ describe("S2 — Fran 21-15-9 lockstep ladder (full flow)", () => {
         type: "forTime",
         durationSeconds: 120,
         rounds: 3,
-        repScheme: { start: 21, step: -6, min: 9 },
         exercises: [
-          { id: "e1", name: "Thrusters" },
-          { id: "e2", name: "Pull-ups" },
+          { id: "e1", name: "Thrusters", repScheme: { start: 21, step: -6, min: 9 } },
+          { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -6, min: 9 } },
         ],
       },
     ],

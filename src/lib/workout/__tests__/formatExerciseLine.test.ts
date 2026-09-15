@@ -65,17 +65,13 @@ describe("formatExerciseLine", () => {
     expect(formatExerciseLine(exercise)).toBe("Clean · MÁX");
   });
 
-  it("applies the block ladder to reps when a repScheme and round are given", () => {
-    const exercise: Exercise = { id: "e1", name: "Thruster", reps: 21 };
-    const block: import("@/types").WorkoutBlock = {
-      id: "b",
-      type: "forTime",
-      durationSeconds: 0,
-      rounds: 3,
-      exercises: [exercise],
+  it("applies the exercise ladder to reps when a repScheme and round are given", () => {
+    const exercise: Exercise = {
+      id: "e1",
+      name: "Thruster",
       repScheme: { start: 21, step: -6, min: 9 },
     };
-    expect(formatExerciseLine(exercise, { block, round: 2 })).toBe("Thruster · 15reps");
+    expect(formatExerciseLine(exercise, { round: 2 })).toBe("Thruster · 15reps");
   });
 
   it("leaves per-exercise reps untouched when no ladder is present", () => {

@@ -8,7 +8,7 @@ export function formatExerciseLine(
 ): string {
   const segments: string[] = [exercise.name];
   const kind = metricOf(exercise);
-  const scheme = ctx?.block?.repScheme;
+  const scheme = exercise.repScheme;
 
   // The amount segment sits where `reps` used to — one metric amount per
   // exercise, followed by series and weight. Old-shape exercises resolve to

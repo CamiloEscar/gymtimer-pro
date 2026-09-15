@@ -194,15 +194,26 @@ describe("validateWorkout — otm / fightGoneBad / rm", () => {
 });
 
 describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
-  function ladderBlock(type: Workout["blocks"][number]["type"]): Omit<Workout["blocks"][number], "repScheme"> {
+  function ladderBlock(type: Workout["blocks"][number]["type"]): Workout["blocks"][number] {
     return {
       id: "b1",
       type,
       durationSeconds: 600,
       rounds: 3,
-      // No per-exercise `reps`: under a ladder the block owns the cadencia
-      // (spec R3 forbids per-exercise reps on a ladder).
+      // No per-exercise `repScheme` here — each test attaches one to the
+      // exercise so the ladder geometry rules and the new R3 reps+scheme
+      // exclusivity are exercised at the per-exercise level.
       exercises: [{ id: "e1", name: "Thrusters" }],
+    };
+  }
+
+  function withScheme(
+    block: Workout["blocks"][number],
+    scheme: { start: number; step: number; min: number }
+  ): Workout["blocks"][number] {
+    return {
+      ...block,
+      exercises: block.exercises.map((exercise) => ({ ...exercise, repScheme: scheme })),
     };
   }
 
@@ -210,13 +221,7 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
     expect(
       validateWorkout(
         baseWorkout({
-          blocks: [
-            {
-              ...ladderBlock("amrap"),
-              rounds: undefined,
-              repScheme: { start: 21, step: -3, min: 15 },
-            },
-          ],
+          blocks: [withScheme({ ...ladderBlock("amrap"), rounds: undefined }, { start: 21, step: -3, min: 15 })],
         }),
       ),
     ).toEqual([]);
@@ -226,7 +231,7 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
     expect(
       validateWorkout(
         baseWorkout({
-          blocks: [{ ...ladderBlock("forTime"), repScheme: { start: 10, step: 5, min: 25 } }],
+          blocks: [withScheme(ladderBlock("forTime"), { start: 10, step: 5, min: 25 })],
         }),
       ),
     ).toEqual([]);
@@ -236,23 +241,27 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
     for (const type of ["amrap", "forTime", "emom", "otm"] as const) {
       const errors = validateWorkout(
         baseWorkout({
-          blocks: [{ ...ladderBlock(type), repScheme: { start: 21, step: -3, min: 15 } }],
+          blocks: [withScheme(ladderBlock(type), { start: 21, step: -3, min: 15 })],
         }),
       );
       expect(errors).not.toContainEqual(expect.objectContaining({ message: /escalera/i }));
     }
   });
 
-  it("rejects a ladder on a forbidden block type", () => {
-    for (const type of ["interval", "tabata", "basic", "rest", "rm", "fightGoneBad", "countdown", "countup"] as const) {
+  it("rejects a ladder on a forbidden block type that still allows exercises", () => {
+    // Per-exercise ladders attach to exercises; block types without an
+    // exercises list (rest, countdown, countup) trivially can't carry a
+    // ladder because there's nowhere to attach one.
+    const typesWithExercises = [
+      "interval",
+      "tabata",
+      "basic",
+      "rm",
+      "fightGoneBad",
+    ] as const;
+    for (const type of typesWithExercises) {
       const workout = baseWorkout({
-        blocks: [
-          {
-            ...ladderBlock(type),
-            ...(type === "rest" || type === "countdown" || type === "countup" ? { exercises: [] } : {}),
-            repScheme: { start: 21, step: -3, min: 15 },
-          },
-        ],
+        blocks: [withScheme(ladderBlock(type), { start: 21, step: -3, min: 15 })],
       });
       expect(validateWorkout(workout)).toContainEqual({
         message: "La escalera solo se usa en bloques AMRAP, FOR TIME, EMOM u OTM",
@@ -263,30 +272,30 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
 
   it("rejects step === 0", () => {
     const workout = baseWorkout({
-      blocks: [{ ...ladderBlock("amrap"), rounds: undefined, repScheme: { start: 21, step: 0, min: 15 } }],
+      blocks: [withScheme({ ...ladderBlock("amrap"), rounds: undefined }, { start: 21, step: 0, min: 15 })],
     });
     expect(validateWorkout(workout)).toContainEqual({
-      message: "El paso de la escalera no puede ser 0",
+      message: 'El paso de la escalera de "Thrusters" no puede ser 0',
       blockId: "b1",
     });
   });
 
   it("rejects a descending ladder whose start is below min", () => {
     const workout = baseWorkout({
-      blocks: [{ ...ladderBlock("amrap"), rounds: undefined, repScheme: { start: 9, step: -3, min: 15 } }],
+      blocks: [withScheme({ ...ladderBlock("amrap"), rounds: undefined }, { start: 9, step: -3, min: 15 })],
     });
     expect(validateWorkout(workout)).toContainEqual({
-      message: "En una escalera descendente el inicio debe ser mayor o igual al mínimo",
+      message: 'En la escalera descendente de "Thrusters" el inicio debe ser mayor o igual al mínimo',
       blockId: "b1",
     });
   });
 
   it("rejects an ascending ladder whose start is above min", () => {
     const workout = baseWorkout({
-      blocks: [{ ...ladderBlock("forTime"), repScheme: { start: 30, step: 5, min: 25 } }],
+      blocks: [withScheme(ladderBlock("forTime"), { start: 30, step: 5, min: 25 })],
     });
     expect(validateWorkout(workout)).toContainEqual({
-      message: "En una escalera ascendente el inicio debe ser menor o igual al mínimo",
+      message: 'En la escalera ascendente de "Thrusters" el inicio debe ser menor o igual al mínimo',
       blockId: "b1",
     });
   });
@@ -294,15 +303,17 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
   it("rejects a ladder on a chipper (single-round multi-station forTime)", () => {
     const workout = baseWorkout({
       blocks: [
-        {
-          ...ladderBlock("forTime"),
-          rounds: 1,
-          exercises: [
-            { id: "e1", name: "Run" },
-            { id: "e2", name: "L-Sit" },
-          ],
-          repScheme: { start: 21, step: -3, min: 15 },
-        },
+        withScheme(
+          {
+            ...ladderBlock("forTime"),
+            rounds: 1,
+            exercises: [
+              { id: "e1", name: "Run" },
+              { id: "e2", name: "L-Sit" },
+            ],
+          },
+          { start: 21, step: -3, min: 15 },
+        ),
       ],
     });
     expect(validateWorkout(workout)).toContainEqual({
@@ -314,40 +325,41 @@ describe("validateWorkout — repScheme ladders (spec R3/R7)", () => {
   it("accepts rounds-for-time with a ladder (multi-exercise, rounds > 1)", () => {
     const workout = baseWorkout({
       blocks: [
-        {
-          ...ladderBlock("forTime"),
-          rounds: 3,
-          exercises: [
-            { id: "e1", name: "Thrusters" },
-            { id: "e2", name: "Pull-ups" },
-          ],
-          repScheme: { start: 21, step: -6, min: 9 },
-        },
+        withScheme(
+          {
+            ...ladderBlock("forTime"),
+            rounds: 3,
+            exercises: [
+              { id: "e1", name: "Thrusters" },
+              { id: "e2", name: "Pull-ups" },
+            ],
+          },
+          { start: 21, step: -6, min: 9 },
+        ),
       ],
     });
     expect(validateWorkout(workout)).toEqual([]);
   });
 
-  it("rejects a per-exercise reps field on any station of a ladder block (spec R3)", () => {
+  it("rejects a fixed reps amount AND a ladder on the same exercise (spec R3)", () => {
     const workout = baseWorkout({
       blocks: [
         {
           ...ladderBlock("forTime"),
-          repScheme: { start: 21, step: -6, min: 9 },
           exercises: [
-            { id: "e1", name: "Thrusters", reps: 21 },
-            { id: "e2", name: "Pull-ups" },
+            { id: "e1", name: "Thrusters", reps: 21, repScheme: { start: 21, step: -6, min: 9 } },
+            { id: "e2", name: "Pull-ups", repScheme: { start: 21, step: -6, min: 9 } },
           ],
         },
       ],
     });
     expect(validateWorkout(workout)).toContainEqual({
-      message: 'Con escalera las reps las define el bloque, no "Thrusters"',
+      message: 'Definí reps o escalera para "Thrusters", no las dos',
       blockId: "b1",
     });
-    // The sibling station without reps does not produce the error.
+    // The sibling station with only a ladder doesn't trip the new R3.
     const messages = validateWorkout(workout).map((error) => error.message);
-    expect(messages.filter((message) => message.includes("Con escalera"))).toHaveLength(1);
+    expect(messages.filter((message) => message.startsWith("Definí reps o escalera"))).toHaveLength(1);
   });
 });
 

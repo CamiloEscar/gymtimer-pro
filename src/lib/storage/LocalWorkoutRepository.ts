@@ -1,4 +1,4 @@
-import type { Workout } from "@/types";
+import type { Exercise, RepScheme, Workout, WorkoutBlock } from "@/types";
 import type { Result, StorageError, WorkoutRepository } from "./WorkoutRepository";
 
 const STORAGE_KEY = "gymtimer.workouts";
@@ -9,6 +9,28 @@ function ok<T>(value: T): Result<T, StorageError> {
 
 function err<T>(kind: StorageError["kind"], message: string): Result<T, StorageError> {
   return { ok: false, error: { kind, message } };
+}
+
+// One-time read-time migration: pre-`Exercise.repScheme` workouts stored the
+// ladder on the block. Apply it to every exercise (so old lockstep behavior
+// stays byte-identical) and strip `exercise.reps` on those exercises to avoid
+// the new "reps + scheme" conflict the editor would otherwise surface.
+// `block.repScheme` is no longer in the type — read it through `unknown` to
+// stay compatible with whatever localStorage still has.
+function migrateBlock(block: WorkoutBlock & { repScheme?: unknown }): WorkoutBlock {
+  const legacy = block.repScheme;
+  if (!legacy || typeof legacy !== "object") return block;
+  const scheme = legacy as RepScheme;
+  const exercises = block.exercises.map(
+    (exercise: Exercise & { repScheme?: RepScheme }): Exercise =>
+      exercise.repScheme
+        ? (exercise as Exercise)
+        : ({ ...exercise, reps: undefined, repScheme: scheme } as Exercise),
+  );
+  // Drop the legacy field so subsequent saves don't keep writing it back.
+  const { repScheme: _legacy, ...rest } = block as WorkoutBlock & { repScheme?: RepScheme };
+  void _legacy;
+  return { ...(rest as WorkoutBlock), exercises };
 }
 
 export class LocalWorkoutRepository implements WorkoutRepository {
@@ -22,7 +44,13 @@ export class LocalWorkoutRepository implements WorkoutRepository {
           `Se esperaba un array de entrenamientos en el almacenamiento local, se obtuvo ${typeof parsed}`
         );
       }
-      return ok(parsed as Workout[]);
+      const workouts = (parsed as Array<Workout & { blocks?: Array<WorkoutBlock & { repScheme?: unknown }> }>).map(
+        (workout) => ({
+          ...workout,
+          blocks: (workout.blocks ?? []).map(migrateBlock),
+        }),
+      );
+      return ok(workouts);
     } catch {
       return err("read_failed", "No se pudieron leer los entrenamientos del almacenamiento local");
     }

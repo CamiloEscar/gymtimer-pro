@@ -7,13 +7,17 @@ export interface ValidationError {
   blockId?: string;
 }
 
-// repScheme geometry (spec R7): step must actually move, and the clamp at
-// min must have room to work — a descending ladder starting below min and an
-// ascending ladder starting above min are degenerate (clamp from the first
-// round) and rejected.
+// repScheme geometry (spec R7): each exercise that opts into a ladder must
+// satisfy step, min, and start-vs-min on its own scheme. step must actually
+// move, and the clamp at min must have room to work — a descending ladder
+// starting below min and an ascending ladder starting above min are
+// degenerate (clamp from the first round) and rejected.
 function validateRepScheme(block: WorkoutBlock, errors: ValidationError[]): void {
-  const scheme = block.repScheme;
-  if (!scheme) return;
+  const schemes = block.exercises
+    .map((exercise) => ({ exercise, scheme: exercise.repScheme }))
+    .filter((entry): entry is { exercise: Exercise; scheme: NonNullable<Exercise["repScheme"]> } => entry.scheme !== undefined);
+
+  if (schemes.length === 0) return;
 
   if (!isLadderType(block.type)) {
     errors.push({
@@ -29,45 +33,47 @@ function validateRepScheme(block: WorkoutBlock, errors: ValidationError[]): void
   }
 
   const isValidNumber = (n: number) => Number.isFinite(n);
-  if (
-    !isValidNumber(scheme.start) ||
-    !isValidNumber(scheme.step) ||
-    !isValidNumber(scheme.min) ||
-    scheme.min < 0
-  ) {
-    errors.push({ message: "La escalera necesita inicio, paso y mínimo válidos", blockId: block.id });
-    return;
-  }
 
-  if (scheme.step === 0) {
-    errors.push({ message: "El paso de la escalera no puede ser 0", blockId: block.id });
-    return;
-  }
-
-  if (scheme.step < 0 && scheme.start < scheme.min) {
-    errors.push({
-      message: "En una escalera descendente el inicio debe ser mayor o igual al mínimo",
-      blockId: block.id,
-    });
-    return;
-  }
-
-  if (scheme.step > 0 && scheme.start > scheme.min) {
-    errors.push({
-      message: "En una escalera ascendente el inicio debe ser menor o igual al mínimo",
-      blockId: block.id,
-    });
-    return;
-  }
-
-  // Spec R3: per-exercise reps on a ladder are FORBIDDEN. The ladder is the
-  // ONE shared cadencia for every station; a per-exercise `reps` would be dead
-  // data (formatExerciseLine already ignores it under a repScheme) and is a
-  // sign of authoring confusion, so it is rejected here at save time.
-  for (const exercise of block.exercises) {
+  for (const { exercise, scheme } of schemes) {
+    if (
+      !isValidNumber(scheme.start) ||
+      !isValidNumber(scheme.step) ||
+      !isValidNumber(scheme.min) ||
+      scheme.min < 0
+    ) {
+      errors.push({
+        message: `La escalera de "${exercise.name}" necesita inicio, paso y mínimo válidos`,
+        blockId: block.id,
+      });
+      continue;
+    }
+    if (scheme.step === 0) {
+      errors.push({
+        message: `El paso de la escalera de "${exercise.name}" no puede ser 0`,
+        blockId: block.id,
+      });
+      continue;
+    }
+    if (scheme.step < 0 && scheme.start < scheme.min) {
+      errors.push({
+        message: `En la escalera descendente de "${exercise.name}" el inicio debe ser mayor o igual al mínimo`,
+        blockId: block.id,
+      });
+      continue;
+    }
+    if (scheme.step > 0 && scheme.start > scheme.min) {
+      errors.push({
+        message: `En la escalera ascendente de "${exercise.name}" el inicio debe ser menor o igual al mínimo`,
+        blockId: block.id,
+      });
+      continue;
+    }
+    // Spec R3 inverts under per-exercise ladders: a fixed reps AND a ladder on
+    // the same exercise is dead data (the ladder owns the cadence). Reject
+    // the conflict so the trainer chooses one or the other.
     if (exercise.reps !== undefined) {
       errors.push({
-        message: `Con escalera las reps las define el bloque, no "${exercise.name}"`,
+        message: `Definí reps o escalera para "${exercise.name}", no las dos`,
         blockId: block.id,
       });
     }

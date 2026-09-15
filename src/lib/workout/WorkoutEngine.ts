@@ -1,6 +1,6 @@
 import { TimerEngine } from "@/lib/timer/TimerEngine";
 import { AudioManager } from "@/lib/audio/AudioManager";
-import { isChipper, ladderReps, metricOf, stationWindow } from "@/lib/workout/repScheme";
+import { blockHasLadder, isChipper, ladderReps, metricOf, stationWindow } from "@/lib/workout/repScheme";
 import type {
   Exercise,
   SessionState,
@@ -95,10 +95,10 @@ export class WorkoutEngine {
     // AMRAP ladder (design D2): ONE continuous cap carries every pass of the
     // ladder, so the block's `rounds` (always 1 on amrap — the editor has no
     // rounds field) must NOT terminate it; the fixed-time cap does. Hitting
-    // nextRound on a repScheme amrap just advances the displayed round.
-    // Without a repScheme, amrap keeps the historical behavior (rounds=1 ⇒
-    // nextRound ends the block).
-    const isLadderAmrap = block.type === "amrap" && block.repScheme !== undefined;
+    // nextRound on a laddered amrap just advances the displayed round.
+    // Without a ladder anywhere in the block, amrap keeps the historical
+    // behavior (rounds=1 ⇒ nextRound ends the block).
+    const isLadderAmrap = block.type === "amrap" && blockHasLadder(block);
     const totalRounds = block.rounds ?? 1;
     if (!isLadderAmrap && this.round >= totalRounds) {
       this.finish();
@@ -546,21 +546,25 @@ export class WorkoutEngine {
   }
 
   /**
-   * Audible cadencia cue for repScheme ladders (design D7 / spec R5): when a
-   * ladder block bumps to a new round, re-announce its ONE shared cadencia
-   * with a blip + speech, exactly once per round increment, only while
-   * running. The unit follows the CURRENT station's metric — the same
-   * (round−1) % count rotation the TV banner highlights (DisplayScreen), so
-   * what the trainer HEARS matches what the board SHOWS.
+   * Audible cadencia cue for ladder blocks (design D7 / spec R5): when a
+   * laddered block bumps to a new round, re-announce the CURRENT STATION's
+   * cadence (with a blip + speech), exactly once per round increment, only
+   * while running. The number and unit follow the station highlighted on the
+   * TV this round (DisplayScreen banner rotation), so what the trainer HEARS
+   * matches what the board SHOWS. Stations without their own ladder are
+   * silent — fixed-calories Remos or scaffold lifts don't get a cadence
+   * announcement.
    *
    * Pure no-op everywhere that must stay untouched: FGB/chipper and the
    * interval family can't carry a repScheme (validateWorkout + spec R8
    * matrix), so their existing station/round cues are byte-identical.
    */
   private speakCadenceIfLadder(block: WorkoutBlock): void {
-    if (!block.repScheme || this.status !== "running" || block.exercises.length === 0) return;
-    const cadence = ladderReps(block.repScheme, this.round);
+    if (this.status !== "running" || block.exercises.length === 0) return;
     const station = block.exercises[(this.round - 1) % block.exercises.length];
+    if (!station.repScheme) return;
+    const cadence = ladderReps(station.repScheme, this.round);
+    if (cadence === undefined) return;
     const metric = metricOf(station);
     const unit =
       metric === "calories"

@@ -402,10 +402,9 @@ describe("DisplayScreen ladder RONDA banner (Stage 3)", () => {
             type: "forTime",
             durationSeconds: 0,
             rounds: 3,
-            repScheme: { start: 21, step: -6, min: 9 },
             exercises: [
-              { id: "ex-1", name: "Thruster" },
-              { id: "ex-2", name: "Pull-up" },
+              { id: "ex-1", name: "Thruster", repScheme: { start: 21, step: -6, min: 9 } },
+              { id: "ex-2", name: "Pull-up", repScheme: { start: 21, step: -6, min: 9 } },
             ],
           },
         ],

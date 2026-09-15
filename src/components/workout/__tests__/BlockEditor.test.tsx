@@ -328,18 +328,23 @@ describe("BlockEditor — EMOM/OTM interval cap input + hint", () => {
   });
 });
 
-describe("BlockEditor — repScheme (Escalera)", () => {
+describe("BlockEditor — repScheme (Escalera) per-exercise", () => {
   const LADDER_BLOCK: WorkoutBlock = {
     id: "block-ladder",
     type: "amrap",
     durationSeconds: 600,
-    repScheme: { start: 21, step: -6, min: 9 },
-    exercises: [{ id: "ex-1", name: "Thrusters" }],
+    exercises: [
+      {
+        id: "ex-1",
+        name: "Thrusters",
+        repScheme: { start: 21, step: -6, min: 9 },
+      },
+    ],
   };
 
   it("renders the three steppers with current values and the live preview on a ladder-capable type", () => {
     render(<BlockEditor block={LADDER_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByText("ESCALERA")).toBeInTheDocument();
+    expect(screen.getByText("Escalera (por ronda)")).toBeInTheDocument();
     expect(screen.getByLabelText("Inicio de la escalera")).toHaveValue(21);
     expect(screen.getByLabelText("Paso de la escalera")).toHaveValue(-6);
     expect(screen.getByLabelText("Mínimo de la escalera")).toHaveValue(9);
@@ -347,7 +352,7 @@ describe("BlockEditor — repScheme (Escalera)", () => {
     expect(screen.getByText("21 → 15 → 9 (mínimo 9)")).toBeInTheDocument();
   });
 
-  it("shows the ESCALERA section on every allowed type", () => {
+  it("shows the escalera row on every allowed block type", () => {
     for (const type of ["amrap", "forTime", "emom", "otm"] as const) {
       const { unmount } = render(
         <BlockEditor
@@ -357,12 +362,12 @@ describe("BlockEditor — repScheme (Escalera)", () => {
           onRemove={vi.fn()}
         />,
       );
-      expect(screen.getByText("ESCALERA")).toBeInTheDocument();
+      expect(screen.getByText("Escalera (por ronda)")).toBeInTheDocument();
       unmount();
     }
   });
 
-  it("hides the ESCALERA section for non-ladder block types", () => {
+  it("hides the escalera row for non-ladder block types", () => {
     const block: WorkoutBlock = {
       id: "block-interval",
       type: "interval",
@@ -373,13 +378,17 @@ describe("BlockEditor — repScheme (Escalera)", () => {
       exercises: [{ id: "ex-1", name: "Row" }],
     };
     render(<BlockEditor block={block} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.queryByText("ESCALERA")).not.toBeInTheDocument();
+    expect(screen.queryByText("Escalera (por ronda)")).not.toBeInTheDocument();
   });
 
-  it("persists stepper edits into the repScheme via onChange", async () => {
+  it("persists stepper edits into the exercise's repScheme via onChange", async () => {
     const user = userEvent.setup();
+    const blockWithoutScheme: WorkoutBlock = {
+      ...LADDER_BLOCK,
+      exercises: [{ id: "ex-1", name: "Thrusters" }],
+    };
     function Wrapper() {
-      const [block, setBlock] = useState<WorkoutBlock>({ ...LADDER_BLOCK, repScheme: undefined });
+      const [block, setBlock] = useState<WorkoutBlock>(blockWithoutScheme);
       return <BlockEditor block={block} index={1} onChange={setBlock} onRemove={vi.fn()} />;
     }
     render(<Wrapper />);
@@ -387,14 +396,14 @@ describe("BlockEditor — repScheme (Escalera)", () => {
     await user.clear(screen.getByLabelText("Inicio de la escalera"));
     await user.type(screen.getByLabelText("Inicio de la escalera"), "21");
 
-    // Stateful round-trip: the keystrokes landed in state and re-rendered
-    // the controlled input at 21.
+    // Stateful round-trip: the keystrokes landed on the exercise's repScheme
+    // and re-rendered the controlled input at 21.
     expect(screen.getByLabelText("Inicio de la escalera")).toHaveValue(21);
     expect(screen.getByLabelText("Paso de la escalera")).toHaveValue(0);
     expect(screen.getByLabelText("Mínimo de la escalera")).toHaveValue(0);
   });
 
-  it("clears repScheme when the block type changes to a non-ladder type", async () => {
+  it("strips repSchemes from every exercise when the block type changes to a non-ladder type", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<BlockEditor block={LADDER_BLOCK} index={1} onChange={onChange} onRemove={vi.fn()} />);
@@ -404,7 +413,7 @@ describe("BlockEditor — repScheme (Escalera)", () => {
     expect(onChange).toHaveBeenLastCalledWith({
       ...LADDER_BLOCK,
       type: "interval",
-      repScheme: undefined,
+      exercises: [{ id: "ex-1", name: "Thrusters", repScheme: undefined }],
     });
   });
 });

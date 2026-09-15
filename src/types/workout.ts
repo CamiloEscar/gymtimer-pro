@@ -24,7 +24,7 @@ export type MetricKind =
   | "timeSeconds"
   | "max";
 
-// Block-level arithmetic ladder. cadencia(n) = max(min, start + step·(n−1)),
+// Per-exercise arithmetic ladder. cadencia(n) = max(min, start + step·(n−1)),
 // clamped at min. step<0 descends, step>0 ascends, 0 holds fixed.
 export interface RepScheme {
   start: number;
@@ -46,6 +46,9 @@ export interface Exercise {
   calories?: number;
   metricKind?: MetricKind;
   windowKind?: "countdown" | "countup";
+  // Per-exercise rep ladder. Each movement descends/ascends at its own cadence
+  // (or stays fixed); a block can mix laddered and non-laddered exercises.
+  repScheme?: RepScheme;
 }
 
 export interface WorkoutBlock {
@@ -65,8 +68,6 @@ export interface WorkoutBlock {
   stationSeconds?: number;
   // fightGoneBad: rest between full rounds of stations.
   roundRestSeconds?: number;
-  // Block-level rep ladder (amrap|forTime|emom|otm). Absent = per-exercise reps.
-  repScheme?: RepScheme;
 }
 
 export interface Workout {

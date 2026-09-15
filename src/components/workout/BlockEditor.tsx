@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { BlockType, RepScheme, UserExerciseOverride, WorkoutBlock } from "@/types";
-import { ladderReps, isLadderType } from "@/lib/workout/repScheme";
+import type { BlockType, UserExerciseOverride, WorkoutBlock } from "@/types";
+import { isLadderType } from "@/lib/workout/repScheme";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
@@ -84,9 +84,15 @@ export function BlockEditor({
             const type = e.target.value as BlockType;
             const next: WorkoutBlock = { ...block, type };
             if (!isLadderType(type)) {
-              // repScheme is only valid on amrap/forTime/emom/otm — never
-              // carry a stale ladder onto a type that can't honor it.
-              next.repScheme = undefined;
+              // Ladders are only valid on amrap/forTime/emom/otm. Switching to
+              // a different block type must strip the per-exercise schemes so
+              // the engine doesn't carry dead data and stale validation errors
+              // don't leak forward. Per-exercise reps stay — the trainer
+              // already typed them and may re-enable a ladder later.
+              next.exercises = next.exercises.map((ex) => ({
+                ...ex,
+                repScheme: undefined,
+              }));
             }
             if (type === "rest") {
               // Rest blocks are a single-shot duration; rounds don't apply.
@@ -304,53 +310,7 @@ export function BlockEditor({
         </div>
       )}
 
-      {isLadderBlock && (
-        <div className="space-y-2">
-          <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
-            ESCALERA
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {(
-              [
-                { key: "start", label: "Inicio", placeholder: "21" },
-                { key: "step", label: "Paso", placeholder: "-3" },
-                { key: "min", label: "Mínimo", placeholder: "9" },
-              ] as const
-            ).map((field) => (
-              <div key={field.key} className="space-y-1">
-                <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-dim">
-                  {field.label}
-                </p>
-                <Input
-                  aria-label={`${field.label} de la escalera`}
-                  type="number"
-                  value={block.repScheme?.[field.key] ?? ""}
-                  onChange={(e) =>
-                    onChange({
-                      ...block,
-                      repScheme: {
-                        start: block.repScheme?.start ?? 0,
-                        step: block.repScheme?.step ?? 0,
-                        min: block.repScheme?.min ?? 0,
-                        [field.key]: Number(e.target.value),
-                      },
-                    })
-                  }
-                  placeholder={field.placeholder}
-                />
-              </div>
-            ))}
-          </div>
-          {block.repScheme && (
-            <>
-              <LadderPreview scheme={block.repScheme} />
-              <p className="text-xs text-phosphor-muted italic">
-                Cada ronda baja según la escalera. Al llegar al mínimo, la cadencia se mantiene en el mínimo hasta que terminés el bloque.
-              </p>
-            </>
-          )}
-        </div>
-      )}
+
 
       <p className="text-sm text-phosphor-dim font-tactical inline-flex items-center gap-2">
         <Icon name="clock" />
@@ -399,6 +359,7 @@ export function BlockEditor({
                 key={exercise.id}
                 exercise={exercise}
                 catalog={effectiveCatalog}
+                allowLadder={isLadderBlock}
                 onChange={(updated) =>
                   onChange({
                     ...block,
@@ -437,26 +398,3 @@ export function BlockEditor({
   );
 }
 
-// Live rendering of the ladder so the trainer sees the cadence before saving.
-// Consecutive rungs collapse into one (e.g. a 3-rung Fran {21,-6,9} shows
-// "21 → 15 → 9", not "21 → 15 → 9 → 9"), and the floor is tagged explicitly
-// so the repeated-minimum behavior reads as intended, not as a bug.
-function LadderPreview({ scheme }: { scheme: RepScheme }) {
-  const rungs: number[] = [];
-  let hitsFloor = false;
-  for (let round = 1; round <= 8; round += 1) {
-    const value = ladderReps(scheme, round) ?? 0;
-    if (rungs.length > 0 && rungs[rungs.length - 1] === value) {
-      hitsFloor = true;
-      break;
-    }
-    rungs.push(value);
-    if (rungs.length >= 6) break;
-  }
-  return (
-    <p className="text-sm text-phosphor tabular-nums">
-      {rungs.join(" → ")}
-      {hitsFloor ? ` (mínimo ${scheme.min})` : ""}
-    </p>
-  );
-}

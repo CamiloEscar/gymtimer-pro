@@ -1,9 +1,16 @@
 import type { Exercise, MetricKind, RepScheme, WorkoutBlock } from "@/types";
 
 // Pure ladder math, shared by the engine (round cadencia), the editor preview
-// and the display. `undefined` scheme ⇒ per-exercise reps (status quo).
+// and the display. `undefined` scheme ⇒ fixed per-exercise amount.
 export const ladderReps = (scheme: RepScheme | undefined, round: number) =>
   scheme ? Math.max(scheme.min, scheme.start + scheme.step * (round - 1)) : undefined;
+
+// True when ANY exercise in the block carries its own ladder. This drives the
+// "rounds keep bumping instead of finishing" gate (engine), the zero-wall-clock
+// estimation PIN, and the ladder validation — a laddered cadence is a round
+// property even though each movement defines its own scheme.
+export const blockHasLadder = (block: WorkoutBlock) =>
+  block.exercises.some((exercise) => exercise.repScheme !== undefined);
 
 // Chipper = a single-round forTime that sweeps its stations instead of running
 // a single timer. `exercises.length > 1` keeps the classic one-movement

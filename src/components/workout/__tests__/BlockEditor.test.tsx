@@ -12,36 +12,46 @@ const BLOCK: WorkoutBlock = {
   exercises: [{ id: "ex-1", name: "Sentadilla" }],
 };
 
-describe("BlockEditor — time input variants (modos de colocar el tiempo)", () => {
-  it("defaults the Duración field to the slider bar for an amrap window", () => {
+describe("BlockEditor — time input widget per field", () => {
+  it("uses a slider for the AMRAP Duración (long-window bar widget)", () => {
     render(<BlockEditor block={BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
     const slider = screen.getByRole("slider", { name: "Duración" }) as HTMLInputElement;
     expect(slider.type).toBe("range");
     expect(slider.value).toBe("600");
   });
 
-  it("switches Duración to the wheel and selects a value by tapping a chip", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<BlockEditor block={BLOCK} index={1} onChange={onChange} onRemove={vi.fn()} />);
-
-    await user.click(screen.getByRole("button", { name: "Duración: Rueda" }));
-
-    const chip = screen.getByRole("button", { name: "0:30" });
-    expect(chip).toHaveAttribute("aria-pressed", "false");
-    await user.click(chip);
-
-    expect(onChange).toHaveBeenLastCalledWith({ ...BLOCK, durationSeconds: 30 });
+  it("uses a wheel for the FGB Estación field (short-cadence chips)", () => {
+    const fgb: WorkoutBlock = {
+      id: "b-fgb",
+      type: "fightGoneBad",
+      durationSeconds: 600,
+      rounds: 3,
+      stationSeconds: 60,
+      roundRestSeconds: 60,
+      exercises: [{ id: "e1", name: "Wall Ball" }],
+    };
+    render(<BlockEditor block={fgb} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    // Both Estación and Descanso entre rondas render as wheels with the same
+    // 1:00 chip — assert at least one chip is selected (the value we set).
+    const chips = screen.getAllByRole("button", { name: "1:00" });
+    expect(chips.length).toBeGreaterThan(0);
+    expect(chips.some((chip) => chip.getAttribute("aria-pressed") === "true")).toBe(true);
   });
 
-  it("switches Duración back to the numeric minute/second inputs", async () => {
-    const user = userEvent.setup();
-    render(<BlockEditor block={BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-
-    await user.click(screen.getByRole("button", { name: "Duración: 123" }));
-
-    expect(screen.getByLabelText("Duración minutos")).toBeInTheDocument();
-    expect(screen.getByLabelText("Duración segundos")).toBeInTheDocument();
+  it("uses a slider for the basic Ejercicio time and a wheel for Pausa", () => {
+    const basic: WorkoutBlock = {
+      id: "b-basic",
+      type: "basic",
+      durationSeconds: 0,
+      workSeconds: 30,
+      restSeconds: 15,
+      rounds: 4,
+      repsPerRound: 12,
+      exercises: [{ id: "e1", name: "Sentadilla" }],
+    };
+    render(<BlockEditor block={basic} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
+    expect(screen.getByRole("slider", { name: "Tiempo de ejercicio" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "0:15" })).toBeInTheDocument();
   });
 });
 
@@ -147,12 +157,14 @@ describe("BlockEditor — basic block type", () => {
     exercises: [{ id: "ex-1", name: "Sentadilla" }],
   };
 
-  it("renders the 4 basic-specific labeled inputs with their current values", () => {
+  it("renders the basic-specific inputs with their current values", () => {
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByLabelText("Tiempo de ejercicio minutos")).toHaveValue(0);
-    expect(screen.getByLabelText("Tiempo de ejercicio segundos")).toHaveValue(30);
-    expect(screen.getByLabelText("Tiempo de pausa minutos")).toHaveValue(0);
-    expect(screen.getByLabelText("Tiempo de pausa segundos")).toHaveValue(10);
+    // Ejercicio is a slider (long/medium cadence), Pausa is a wheel chip at
+    // 0:10 (the short-cadence widget). Both carry the current seconds value
+    // through the same field, so we assert the widget-level accessors instead
+    // of the now-defunct numeric split.
+    expect(screen.getByRole("slider", { name: "Tiempo de ejercicio" })).toHaveValue("30");
+    expect(screen.getByRole("button", { name: "0:10" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Cantidad de series")).toHaveValue(3);
     expect(screen.getByLabelText("Reps por serie")).toHaveValue(12);
   });

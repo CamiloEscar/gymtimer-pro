@@ -71,7 +71,7 @@ export function BlockEditor({
   const blockEstimatedSeconds = estimateWorkoutDurationSeconds({ blocks: [block] });
 
   return (
-    <Card className={`space-y-3 p-4 ${hasErrors ? "!border-danger-500" : ""}`}>
+    <Card className={`space-y-4 p-5 sm:p-6 ${hasErrors ? "!border-danger-500" : ""}`}>
       <p className="font-tactical text-xs uppercase tracking-widest text-brand-500">
         BLOQUE {index} · {BLOCK_TYPE_INFO[block.type].label.toUpperCase()}
       </p>
@@ -136,6 +136,9 @@ export function BlockEditor({
 
       {showDuration && (
         <div className="space-y-1">
+          <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+            Duración
+          </p>
           <TimeInput
             ariaLabel="Duración"
             seconds={block.durationSeconds}
@@ -263,19 +266,27 @@ export function BlockEditor({
       )}
 
       {isBasic && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
+            <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+              Ejercicio
+            </p>
             <TimeInput
               ariaLabel="Tiempo de ejercicio"
               seconds={block.workSeconds ?? 0}
               onChangeSeconds={(seconds) => onChange({ ...block, workSeconds: seconds })}
+              variant="slider"
             />
           </div>
           <div className="space-y-1">
+            <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
+              Pausa
+            </p>
             <TimeInput
               ariaLabel="Tiempo de pausa"
               seconds={block.restSeconds ?? 0}
               onChangeSeconds={(seconds) => onChange({ ...block, restSeconds: seconds })}
+              variant="wheel"
             />
           </div>
           <Input

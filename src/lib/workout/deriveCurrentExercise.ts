@@ -1,5 +1,6 @@
 import type { SessionStatus, WorkoutPhase } from "@/types";
 import type { Exercise, WorkoutBlock } from "@/types";
+import { isChipper } from "@/lib/workout/repScheme";
 
 export interface DerivedExerciseInfo {
   visible: boolean;
@@ -45,12 +46,12 @@ export function deriveCurrentExercise({
   }
 
   const count = block.exercises.length;
-  // FGB rotates stations inside a round; the engine tracks the exact index.
-  // Every other block type has no per-exercise engine index, so derive it
-  // from the round for parity with the TV (DisplayScreen rotates on
+  // FGB and chipper rotate stations inside a round; the engine tracks the
+  // exact index. Every other block type has no per-exercise engine index, so
+  // derive it from the round for parity with the TV (DisplayScreen rotates on
   // `(currentRound - 1) % count`).
   const index =
-    block.type === "fightGoneBad"
+    block.type === "fightGoneBad" || isChipper(block)
       ? Math.min(currentExerciseIndex, count - 1)
       : (Math.max(1, currentRound) - 1) % count;
   const current = block.exercises[index];

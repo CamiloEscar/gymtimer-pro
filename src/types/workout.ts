@@ -12,6 +12,26 @@ export type BlockType =
   | "rm"
   | "fightGoneBad";
 
+// What the exercise amount actually measures. `max` carries no amount — it's
+// result-entry only. Runtime resolution (metricOf) prefers an explicit value,
+// then infers from which amount field is present (calories→calories,
+// distance→distance, time→time), falling back to reps — so pre-metricKind data
+// keeps rendering exactly as today.
+export type MetricKind =
+  | "reps"
+  | "distanceMeters"
+  | "calories"
+  | "timeSeconds"
+  | "max";
+
+// Block-level arithmetic ladder. cadencia(n) = max(min, start + step·(n−1)),
+// clamped at min. step<0 descends, step>0 ascends, 0 holds fixed.
+export interface RepScheme {
+  start: number;
+  step: number;
+  min: number;
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -21,6 +41,11 @@ export interface Exercise {
   distanceMeters?: number;
   weightKg?: number;
   notes?: string;
+  // New additive fields (crossfit-wod-models). Old localStorage data with none
+  // of these hydrates unchanged — metricOf infers `reps`.
+  calories?: number;
+  metricKind?: MetricKind;
+  windowKind?: "countdown" | "countup";
 }
 
 export interface WorkoutBlock {
@@ -40,6 +65,8 @@ export interface WorkoutBlock {
   stationSeconds?: number;
   // fightGoneBad: rest between full rounds of stations.
   roundRestSeconds?: number;
+  // Block-level rep ladder (amrap|forTime|emom|otm). Absent = per-exercise reps.
+  repScheme?: RepScheme;
 }
 
 export interface Workout {

@@ -1,4 +1,4 @@
-import type { UserExerciseOverride } from "@/types";
+import type { MetricKind, UserExerciseOverride } from "@/types";
 
 export interface CatalogExercise {
   id: string;
@@ -7,6 +7,7 @@ export interface CatalogExercise {
   videoUrl?: string;
   thumbnailUrl?: string;
   description?: string;
+  metricKind?: MetricKind;
 }
 
 export const EXERCISE_CATALOG: CatalogExercise[] = [

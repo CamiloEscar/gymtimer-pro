@@ -200,11 +200,12 @@ export const CROSSFIT_CATALOG: CatalogExercise[] = [
     category: "Gymnastics",
     description: "Tirá de la cuerda solo con brazos y manos hasta tocar el suelo desde arriba.",
   },
-  {
+{
     id: "cf-gy-13",
     videoUrl: "/exercises/cf-gy-13.mp4",
     name: "L-Sit",
     category: "Gymnastics",
+    metricKind: "timeSeconds",
     description: "En paralelas o suelo, mantené cadera elevada con piernas extendidas al frente en L.",
   },
   {
@@ -223,11 +224,12 @@ export const CROSSFIT_CATALOG: CatalogExercise[] = [
   },
 
   // Monostructural/Cardio
-  {
+{
     id: "cf-mo-01",
     videoUrl: "/exercises/cf-mo-01.mp4",
     name: "Row",
     category: "Monostructural/Cardio",
+    metricKind: "calories",
     description: "Remo en máquina: piernas primero, después torso, finalizá con brazos. Invertí al volver.",
   },
   {
@@ -235,6 +237,7 @@ export const CROSSFIT_CATALOG: CatalogExercise[] = [
     videoUrl: "/exercises/cf-mo-02.mp4",
     name: "Assault Bike",
     category: "Monostructural/Cardio",
+    metricKind: "calories",
     description: "Bicicleta de aire: pedaleo con brazos y piernas. Distribuí el esfuerzo durante todo el tiempo.",
   },
   {
@@ -242,6 +245,7 @@ export const CROSSFIT_CATALOG: CatalogExercise[] = [
     videoUrl: "/exercises/cf-mo-03.mp4",
     name: "Ski Erg",
     category: "Monostructural/Cardio",
+    metricKind: "calories",
     description: "Ski Erg: tirones con brazos desde arriba, usando abdomen y glúteos para estabilizar.",
   },
   {
@@ -249,6 +253,7 @@ export const CROSSFIT_CATALOG: CatalogExercise[] = [
     videoUrl: "/exercises/cf-mo-04.mp4",
     name: "Run",
     category: "Monostructural/Cardio",
+    metricKind: "distanceMeters",
     description: "Carrera constante o intervalos, controlá el ritmo y la pisada según el bloque.",
   },
   {

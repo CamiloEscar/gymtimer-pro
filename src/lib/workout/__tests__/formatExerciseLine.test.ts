@@ -32,4 +32,56 @@ describe("formatExerciseLine", () => {
     const exercise: Exercise = { id: "e1", name: "Curl", weightKg: 0 };
     expect(formatExerciseLine(exercise)).toBe("Curl · 0kg");
   });
+
+  it("keeps old-shape output byte-identical even with a block ctx that carries no repScheme", () => {
+    const exercise: Exercise = { id: "e1", name: "Burpees", reps: 15, sets: 3, weightKg: 20 };
+    expect(formatExerciseLine(exercise, { block: { type: "amrap" } as never })).toBe(
+      "Burpees · 15reps · 3series · 20kg",
+    );
+  });
+
+  it("renders calories as Ncal", () => {
+    const exercise: Exercise = { id: "e1", name: "Row", calories: 50, metricKind: "calories" };
+    expect(formatExerciseLine(exercise)).toBe("Row · 50cal");
+  });
+
+  it("infers calories from the field alone (no explicit metricKind)", () => {
+    const exercise: Exercise = { id: "e1", name: "Row", calories: 50 };
+    expect(formatExerciseLine(exercise)).toBe("Row · 50cal");
+  });
+
+  it("renders distance in meters", () => {
+    const exercise: Exercise = { id: "e1", name: "Run", distanceMeters: 400 };
+    expect(formatExerciseLine(exercise)).toBe("Run · 400m");
+  });
+
+  it("renders timeSeconds through formatTimeInput", () => {
+    const exercise: Exercise = { id: "e1", name: "L-Sit", timeSeconds: 30 };
+    expect(formatExerciseLine(exercise)).toBe("L-Sit · 0:30");
+  });
+
+  it("renders max as a MÁX badge segment, no amount", () => {
+    const exercise: Exercise = { id: "e1", name: "Clean", metricKind: "max" };
+    expect(formatExerciseLine(exercise)).toBe("Clean · MÁX");
+  });
+
+  it("applies the block ladder to reps when a repScheme and round are given", () => {
+    const exercise: Exercise = { id: "e1", name: "Thruster", reps: 21 };
+    const block: import("@/types").WorkoutBlock = {
+      id: "b",
+      type: "forTime",
+      durationSeconds: 0,
+      rounds: 3,
+      exercises: [exercise],
+      repScheme: { start: 21, step: -6, min: 9 },
+    };
+    expect(formatExerciseLine(exercise, { block, round: 2 })).toBe("Thruster · 15reps");
+  });
+
+  it("leaves per-exercise reps untouched when no ladder is present", () => {
+    const exercise: Exercise = { id: "e1", name: "Thruster", reps: 21 };
+    expect(formatExerciseLine(exercise, { block: { id: "b", type: "emom" } as never, round: 3 })).toBe(
+      "Thruster · 21reps",
+    );
+  });
 });

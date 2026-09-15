@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { EXERCISE_CATALOG, groupCatalogByCategory } from "../exerciseCatalog";
+import { metricOf } from "../repScheme";
+import type { Exercise } from "@/types";
 
 const KNOWN_CATEGORIES = [
   "Piernas",
@@ -35,6 +37,12 @@ describe("EXERCISE_CATALOG", () => {
   it("has a non-empty description for every exercise", () => {
     for (const exercise of EXERCISE_CATALOG) {
       expect(exercise.description?.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it("defaults every entry to reps via metricOf (no explicit metricKind needed)", () => {
+    for (const exercise of EXERCISE_CATALOG) {
+      expect(metricOf(exercise as Exercise)).toBe("reps");
     }
   });
 });

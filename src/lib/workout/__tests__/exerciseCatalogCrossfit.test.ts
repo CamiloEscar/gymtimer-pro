@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { CROSSFIT_CATALOG } from "../exerciseCatalogCrossfit";
 import { groupCatalogByCategory } from "../exerciseCatalog";
+import { metricOf } from "../repScheme";
+import type { Exercise } from "@/types";
 
 const KNOWN_CATEGORIES = ["Weightlifting", "Gymnastics", "Monostructural/Cardio"];
 
@@ -35,5 +37,22 @@ describe("CROSSFIT_CATALOG", () => {
   it("groups into all three known categories with groupCatalogByCategory", () => {
     const grouped = groupCatalogByCategory(CROSSFIT_CATALOG);
     expect(Object.keys(grouped).sort()).toEqual([...KNOWN_CATEGORIES].sort());
+  });
+
+  it.each([
+    ["Row", "calories"],
+    ["Assault Bike", "calories"],
+    ["Ski Erg", "calories"],
+    ["Run", "distanceMeters"],
+    ["L-Sit", "timeSeconds"],
+  ])("defaults %s to metricKind %s", (name, metricKind) => {
+    const entry = CROSSFIT_CATALOG.find((exercise) => exercise.name === name);
+    expect(entry?.metricKind).toBe(metricKind);
+  });
+
+  it("resolves any catalog entry without an explicit metricKind to reps", () => {
+    const entry = CROSSFIT_CATALOG.find((exercise) => exercise.name === "Back Squat");
+    expect(entry).toBeDefined();
+    expect(metricOf(entry! as Exercise)).toBe("reps");
   });
 });

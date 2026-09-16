@@ -5,6 +5,7 @@ import type { SessionState, ConnectionStatus } from "@/types";
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ code: "abc123" }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 let stateHandler: ((state: SessionState) => void) | null = null;

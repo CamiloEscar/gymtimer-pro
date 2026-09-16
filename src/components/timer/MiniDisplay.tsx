@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { SessionState, WorkoutPhase } from "@/types";
 import { formatTimeInput } from "@/lib/workout/formatTimeInput";
+import { deriveCurrentExercise } from "@/lib/workout/deriveCurrentExercise";
+import { formatExerciseLine } from "@/lib/workout/formatExerciseLine";
 
 // Floating mini timer ("like YouTube / Twitch") while the session runs.
 //
@@ -12,8 +14,9 @@ import { formatTimeInput } from "@/lib/workout/formatTimeInput";
 // is ALSO what lets iOS auto-float it when the user backgrounds the app —
 // the actual "minimizo /run y queda flotando" behavior.
 //
-// Priority: Document PiP (desktop Chromium, iframe to the real /display
-// mirror) > WebKit video PiP > video requestPictureInPicture.
+// Priority: Document PiP (desktop Chromium, iframe to the trainer-side
+// mirror `/display/{code}?view=run`) > WebKit video PiP > video
+// requestPictureInPicture.
 //
 // Mobile reality (2026):
 // - The stream MUST carry an audio track or neither OS floats it on
@@ -124,6 +127,15 @@ function phaseColor(phase: WorkoutPhase): string {
   }
 }
 
+function clipText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let clipped = text;
+  while (clipped.length > 1 && ctx.measureText(clipped + "…").width > maxWidth) {
+    clipped = clipped.slice(0, -1);
+  }
+  return clipped + "…";
+}
+
 function drawTimer(ctx: CanvasRenderingContext2D, state: SessionState): void {
   const c = colors();
   ctx.fillStyle = c.bg;
@@ -135,20 +147,47 @@ function drawTimer(ctx: CanvasRenderingContext2D, state: SessionState): void {
   ctx.font = "700 26px system-ui";
   ctx.fillText(PHASE_LABEL[state.currentPhase], 28, 22);
 
+  if (state.totalRounds > 1) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "600 18px system-ui";
+    ctx.fillStyle = c.ready;
+    ctx.fillText(`RONDA ${state.currentRound}/${state.totalRounds}`, W / 2, 64);
+  }
+
   const isCountup = state.timer.mode === "countup";
   const ms = isCountup ? state.timer.elapsedMs : Math.max(0, state.timer.remainingMs);
   const text = formatTimeInput(ms);
   ctx.fillStyle = phaseColor(state.currentPhase);
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  const fit = Math.min(150, Math.floor((W * 0.9) / Math.max(4, text.length * 0.58)));
+  const fit = Math.min(124, Math.floor((W * 0.9) / Math.max(4, text.length * 0.58)));
   ctx.font = `700 ${fit}px system-ui`;
-  ctx.fillText(text, W / 2, H / 2 + 6);
+  ctx.fillText(text, W / 2, H / 2 + 4);
 
-  ctx.textBaseline = "middle";
-  ctx.font = "500 20px system-ui";
-  ctx.fillStyle = c.dim;
-  ctx.fillText(state.status.toUpperCase(), W / 2, H / 2 + 74);
+  // Echo the /run trainer line: current movement, and the next station when
+  // there is one. deriveCurrentExercise hides the line on rest/wait/finished
+  // and RM/rest/countdown blocks, matching the run-page banner.
+  const block = state.workout.blocks[state.currentBlockIndex];
+  const derived = deriveCurrentExercise({
+    block,
+    currentRound: state.currentRound,
+    currentExerciseIndex: state.currentExerciseIndex,
+    status: state.status,
+    phase: state.currentPhase,
+  });
+  if (derived.visible && derived.current && block) {
+    ctx.font = "600 24px system-ui";
+    ctx.fillStyle = c.phosphor;
+    const line = formatExerciseLine(derived.current, { block, round: state.currentRound });
+    ctx.fillText(clipText(ctx, line, W - 56), W / 2, H - 100);
+    if (derived.next) {
+      ctx.font = "500 16px system-ui";
+      ctx.fillStyle = c.dim;
+      const nextLine = "SIGUE: " + formatExerciseLine(derived.next, { block, round: state.currentRound });
+      ctx.fillText(clipText(ctx, nextLine, W - 56), W / 2, H - 70);
+    }
+  }
 
   const dur = state.timer.durationMs || 0;
   const pct =
@@ -333,10 +372,11 @@ export function MiniDisplay({ state, code }: MiniDisplayProps) {
     }).documentPictureInPicture;
     if (!docPip || !code.trim()) return;
     const pip = await docPip.requestWindow({ width: 480, height: 320 });
-    // The mini window embeds the real /display mirror (own Pusher channel),
-    // so it stays live and self-correcting without duplicating timer logic.
+    // The mini window embeds the trainer-side mirror of the live session
+    // (same Pusher channel as the TV, but framed like the /run screen), so it
+    // stays live and self-correcting without duplicating timer logic.
     const iframe = pip.document.createElement("iframe");
-    iframe.src = `/display/${code}`;
+    iframe.src = `/display/${code}?view=run`;
     iframe.style.width = "100%";
     iframe.style.height = "100%";
     iframe.style.border = "0";

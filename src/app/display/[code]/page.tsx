@@ -1,17 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import type { ConnectionStatus, SessionState } from "@/types";
 import { SessionChannel } from "@/lib/session/SessionChannel";
 import { WorkoutEngine } from "@/lib/workout/WorkoutEngine";
 import { DisplayConnection } from "@/components/display/DisplayConnection";
 import { DisplayScreen } from "@/components/display/DisplayScreen";
+import { RunMirrorScreen } from "@/components/display/RunMirrorScreen";
 import { useFullscreen } from "@/hooks/useFullscreen";
 
 export default function DisplayCodePage() {
+  // useSearchParams must read inside a Suspense boundary or the route fails
+  // at build/render time.
+  return (
+    <Suspense fallback={null}>
+      <DisplayCodeContent />
+    </Suspense>
+  );
+}
+
+function DisplayCodeContent() {
   const params = useParams<{ code: string }>();
   const code = params.code.toUpperCase();
+  const searchParams = useSearchParams();
+  const runView = searchParams.get("view") === "run";
   const channelRef = useRef<SessionChannel | null>(null);
   // The trainer's phone can get locked/backgrounded mid-timer, which
   // throttles its setInterval and stops the "client-state" broadcasts this
@@ -78,6 +91,12 @@ export default function DisplayCodePage() {
 
   if (!state) {
     return <DisplayConnection code={code} status={connectionStatus} />;
+  }
+
+  if (runView) {
+    // The mini display (Document PiP) shows the trainer-side echo instead of
+    // the industrial TV screen — same live mirror, different framing.
+    return <RunMirrorScreen state={state} connectionStatus={connectionStatus} />;
   }
 
   return <DisplayScreen state={state} connectionStatus={connectionStatus} onFullscreenToggle={toggle} />;

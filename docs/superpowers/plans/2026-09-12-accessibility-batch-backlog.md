@@ -170,6 +170,10 @@ Modo display (TV) para bloques RM / levantamiento: un gráfico de la BARRA con e
 
 Modo display "competencia": scoreboard/leaderboard entre atletas corriendo la misma WOD (nombre, corridas/reps, tiempo, ranking). Se conecta con el backlog viejo "Multi-atleta — leaderboard" y con el historial (para comparativa en vivo vs PRs).
 
+### Historial: click en una corrida → ver detalle (2026-09-16)
+
+`/app/history` — cuando se hace click en una entrada del historial se tiene que abrir un detalle mostrando QUÉ se hizo: bloques (tipo, duración), ejercicios con reps/series/peso, duración total, fecha, resultado RM si aplica. Hoy cada entrada solo muestra nombre + duración + botón borrar (card no clickeable). Data necesaria ya existe: `WorkoutHistoryEntry` (workoutId, workoutName, completedAt, durationMs, reps?) + el workout completo en `gymtimer.workouts` (via `LocalWorkoutRepository`).
+
 ---
 
 ## Pendiente del audit (no tocado nunca)

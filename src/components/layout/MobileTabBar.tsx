@@ -7,6 +7,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 const TABS: { href: string; label: string; icon: IconName }[] = [
   { href: "/app", label: "Inicio", icon: "dumbbell" },
   { href: "/app/workouts", label: "Rutinas", icon: "repeat" },
+  { href: "/app/history", label: "Historial", icon: "calendar" },
   { href: "/app/exercises", label: "Ejercicios", icon: "clock" },
   { href: "/app/settings", label: "Ajustes", icon: "menu" },
 ];
@@ -27,7 +28,7 @@ export function MobileTabBar() {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 py-2.5 text-xs font-tactical uppercase tracking-wider ${
+                className={`flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-tactical uppercase tracking-wider ${
                   active ? "text-brand-500" : "text-phosphor-dim hover:text-phosphor"
                 }`}
               >

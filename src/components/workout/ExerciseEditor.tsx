@@ -83,7 +83,6 @@ export function ExerciseEditor({ exercise, catalog, allowLadder = false, onChang
             ariaLabel="Tiempo del ejercicio"
             seconds={exercise.timeSeconds ?? 0}
             onChangeSeconds={(seconds) => onChange({ ...exercise, timeSeconds: seconds })}
-            variant="slider"
           />
           <div className="inline-flex items-center gap-0.5">
             <button

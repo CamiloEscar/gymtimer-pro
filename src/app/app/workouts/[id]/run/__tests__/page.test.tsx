@@ -294,7 +294,7 @@ describe("RunWorkoutPage edit-save with display", () => {
     await act(async () => {
       // Duración defaults to the slider variant; 300s = the same "5 minutos"
       // the legacy numeric-input test used to type.
-      fireEvent.change(screen.getByRole("slider", { name: "Duración" }), { target: { value: "300" } });
+      fireEvent.change(screen.getByRole("slider", { name: "Duración (barra)" }), { target: { value: "300" } });
     });
 
     const saveButton = screen.getByRole("button", { name: "Guardar" });
@@ -328,7 +328,7 @@ describe("RunWorkoutPage edit-save with display", () => {
     await act(async () => {
       // Duración defaults to the slider variant; 300s = the same "5 minutos"
       // the legacy numeric-input test used to type.
-      fireEvent.change(screen.getByRole("slider", { name: "Duración" }), { target: { value: "300" } });
+      fireEvent.change(screen.getByRole("slider", { name: "Duración (barra)" }), { target: { value: "300" } });
     });
 
     const saveButton = screen.getByRole("button", { name: "Guardar" });
@@ -360,7 +360,7 @@ describe("RunWorkoutPage edit-save with display", () => {
     await act(async () => {
       // Duración defaults to the slider variant; 300s = the same "5 minutos"
       // the legacy numeric-input test used to type.
-      fireEvent.change(screen.getByRole("slider", { name: "Duración" }), { target: { value: "300" } });
+      fireEvent.change(screen.getByRole("slider", { name: "Duración (barra)" }), { target: { value: "300" } });
     });
 
     await act(async () => {

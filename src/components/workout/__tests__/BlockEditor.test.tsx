@@ -13,14 +13,15 @@ const BLOCK: WorkoutBlock = {
 };
 
 describe("BlockEditor — time input widget per field", () => {
-  it("uses a slider for the AMRAP Duración (long-window bar widget)", () => {
+  it("uses the bar for the AMRAP Duración with a tap-to-edit readout", () => {
     render(<BlockEditor block={BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    const slider = screen.getByRole("slider", { name: "Duración" }) as HTMLInputElement;
+    const slider = screen.getByRole("slider", { name: "Duración (barra)" }) as HTMLInputElement;
     expect(slider.type).toBe("range");
     expect(slider.value).toBe("600");
+    expect(screen.getByRole("button", { name: "Duración: 10:00" })).toBeInTheDocument();
   });
 
-  it("uses a wheel for the FGB Estación field (short-cadence chips)", () => {
+  it("opens the minutes/seconds inputs when the FGB Estación readout is tapped", async () => {
     const fgb: WorkoutBlock = {
       id: "b-fgb",
       type: "fightGoneBad",
@@ -30,15 +31,20 @@ describe("BlockEditor — time input widget per field", () => {
       roundRestSeconds: 60,
       exercises: [{ id: "e1", name: "Wall Ball" }],
     };
+    const user = userEvent.setup();
     render(<BlockEditor block={fgb} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    // Both Estación and Descanso entre rondas render as wheels with the same
-    // 1:00 chip — assert at least one chip is selected (the value we set).
-    const chips = screen.getAllByRole("button", { name: "1:00" });
-    expect(chips.length).toBeGreaterThan(0);
-    expect(chips.some((chip) => chip.getAttribute("aria-pressed") === "true")).toBe(true);
+    // Both Estación and Descanso render the bar + an editable readout carrying
+    // the current seconds. Tap the number to edit it inline.
+    expect(screen.getByRole("slider", { name: "Segundos por estación (barra)" })).toHaveValue("60");
+    const readout = screen.getByRole("button", { name: "Segundos por estación: 1:00" });
+    expect(readout).toBeInTheDocument();
+
+    await user.click(readout);
+    expect(screen.getByLabelText("Segundos por estación minutos")).toHaveValue(1);
+    expect(screen.getByLabelText("Segundos por estación segundos")).toHaveValue(0);
   });
 
-  it("uses a slider for the basic Ejercicio time and a wheel for Pausa", () => {
+  it("editing the Pausa number keeps the bar in sync (same seconds source)", () => {
     const basic: WorkoutBlock = {
       id: "b-basic",
       type: "basic",
@@ -50,8 +56,8 @@ describe("BlockEditor — time input widget per field", () => {
       exercises: [{ id: "e1", name: "Sentadilla" }],
     };
     render(<BlockEditor block={basic} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByRole("slider", { name: "Tiempo de ejercicio" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "0:15" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Tiempo de ejercicio (barra)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tiempo de pausa: 0:15" })).toBeInTheDocument();
   });
 });
 
@@ -159,12 +165,10 @@ describe("BlockEditor — basic block type", () => {
 
   it("renders the basic-specific inputs with their current values", () => {
     render(<BlockEditor block={BASIC_BLOCK} index={1} onChange={vi.fn()} onRemove={vi.fn()} />);
-    // Ejercicio is a slider (long/medium cadence), Pausa is a wheel chip at
-    // 0:10 (the short-cadence widget). Both carry the current seconds value
-    // through the same field, so we assert the widget-level accessors instead
-    // of the now-defunct numeric split.
-    expect(screen.getByRole("slider", { name: "Tiempo de ejercicio" })).toHaveValue("30");
-    expect(screen.getByRole("button", { name: "0:10" })).toHaveAttribute("aria-pressed", "true");
+    // Ejercicio and Pausa both use the bar + tappable number readout; the
+    // readout carries the current seconds value.
+    expect(screen.getByRole("slider", { name: "Tiempo de ejercicio (barra)" })).toHaveValue("30");
+    expect(screen.getByRole("button", { name: "Tiempo de pausa: 0:10" })).toBeInTheDocument();
     expect(screen.getByLabelText("Cantidad de series")).toHaveValue(3);
     expect(screen.getByLabelText("Reps por serie")).toHaveValue(12);
   });

@@ -143,7 +143,6 @@ export function BlockEditor({
             ariaLabel="Duración"
             seconds={block.durationSeconds}
             onChangeSeconds={(seconds) => onChange({ ...block, durationSeconds: seconds })}
-            variant="slider"
           />
         </div>
       )}
@@ -157,14 +156,13 @@ export function BlockEditor({
             ariaLabel="Timcap"
             seconds={block.durationSeconds}
             onChangeSeconds={(seconds) => onChange({ ...block, durationSeconds: seconds })}
-            variant="slider"
           />
         </div>
       )}
 
       {isFgb && (
         <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             <div className="space-y-1">
               <p className="font-tactical text-xs uppercase tracking-widest text-phosphor-muted">
                 Rondas
@@ -185,7 +183,6 @@ export function BlockEditor({
                 ariaLabel="Segundos por estación"
                 seconds={block.stationSeconds ?? 0}
                 onChangeSeconds={(seconds) => onChange({ ...block, stationSeconds: seconds })}
-                variant="wheel"
               />
             </div>
             <div className="space-y-1">
@@ -196,7 +193,6 @@ export function BlockEditor({
                 ariaLabel="Descanso entre rondas"
                 seconds={block.roundRestSeconds ?? 0}
                 onChangeSeconds={(seconds) => onChange({ ...block, roundRestSeconds: seconds })}
-                variant="wheel"
               />
             </div>
           </div>
@@ -275,7 +271,6 @@ export function BlockEditor({
               ariaLabel="Tiempo de ejercicio"
               seconds={block.workSeconds ?? 0}
               onChangeSeconds={(seconds) => onChange({ ...block, workSeconds: seconds })}
-              variant="slider"
             />
           </div>
           <div className="space-y-1">
@@ -286,7 +281,6 @@ export function BlockEditor({
               ariaLabel="Tiempo de pausa"
               seconds={block.restSeconds ?? 0}
               onChangeSeconds={(seconds) => onChange({ ...block, restSeconds: seconds })}
-              variant="wheel"
             />
           </div>
           <Input

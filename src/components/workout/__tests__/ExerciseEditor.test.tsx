@@ -74,7 +74,7 @@ describe("ExerciseEditor — widget-fit per metricKind", () => {
 
   it("swaps to the TimeInput slider for timeSeconds (fixture S3: L-Sit 30s)", () => {
     renderEditor({ id: "ex-1", name: "L-Sit", metricKind: "timeSeconds", timeSeconds: 30 });
-    const slider = screen.getByRole("slider", { name: "Tiempo del ejercicio" }) as HTMLInputElement;
+    const slider = screen.getByRole("slider", { name: "Tiempo del ejercicio (barra)" }) as HTMLInputElement;
     expect(slider.type).toBe("range");
     expect(slider.value).toBe("30");
   });

@@ -13,8 +13,21 @@ import { formatTimeInput } from "@/lib/workout/formatTimeInput";
 // the actual "minimizo /run y queda flotando" behavior.
 //
 // Priority: Document PiP (desktop Chromium, iframe to the real /display
-// mirror) > video requestPictureInPicture > WebKit video PiP. Feature-detect
-// only; the button simply doesn't exist where no API is present.
+// mirror) > WebKit video PiP > video requestPictureInPicture.
+//
+// Mobile reality (2026):
+// - The stream MUST carry an audio track or neither OS floats it on
+//   background: iOS auto-PiP and Android's backgrounding heuristics treat a
+//   silent video as dead playback. We attach a silent audio track (gain 0).
+// - iOS: feature-detect via webkitSupportsPresentationMode and NOT via
+//   `requestPictureInPicture in HTMLVideoElement.prototype` — Safari exposes
+//   the standard API but it rejects there, and it LIES in standalone PWAs
+//   (Home Screen): webkitSupportsPresentationMode("picture-in-picture")
+//   returns false while pictureInPictureEnabled still reports true. In that
+//   container PiP is simply broken (WebKit Bug 303885), so the button hides.
+// - Android Chromium (134+): `autoPictureInPicture` makes the browser enter
+//   PiP itself when the tab is hidden — no user activation needed, which is
+//   why the old visibilitychange→requestPictureInPicture() path was rejected.
 
 const W = 640;
 const H = 360;
@@ -26,6 +39,8 @@ interface WebkitVideo extends HTMLVideoElement {
   webkitSetPresentationMode?: (mode: string) => void;
   webkitPresentationMode?: string;
 }
+
+type AutoPipVideo = HTMLVideoElement & { autoPictureInPicture?: boolean };
 
 const OKLCH_RE = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)$/i;
 
@@ -151,14 +166,15 @@ function drawTimer(ctx: CanvasRenderingContext2D, state: SessionState): void {
 function detectPipMode(): PiPMode {
   if (typeof window === "undefined") return null;
   if ("documentPictureInPicture" in window) return "document";
-  if ("requestPictureInPicture" in HTMLVideoElement.prototype) return "video";
   const probe = document.createElement("video") as WebkitVideo;
-  if (
-    typeof probe.webkitSupportsPresentationMode === "function" &&
-    probe.webkitSupportsPresentationMode("picture-in-picture")
-  ) {
-    return "webkit";
+  if (typeof probe.webkitSupportsPresentationMode === "function") {
+    // The ONLY truthful signal on iOS. The standard requestPictureInPicture
+    // rejects there, and pictureInPictureEnabled reports true in standalone
+    // PWAs where PiP is outright broken (WebKit Bug 303885) — so when the
+    // WebKit probe says "not supported", trust it and hide the button.
+    return probe.webkitSupportsPresentationMode("picture-in-picture") ? "webkit" : null;
   }
+  if ("requestPictureInPicture" in HTMLVideoElement.prototype) return "video";
   return null;
 }
 
@@ -198,6 +214,8 @@ export function MiniDisplay({ state, code }: MiniDisplayProps) {
     if (!canvas || !video || !ctx) return;
 
     let stream: MediaStream | null = null;
+    let audioCtx: AudioContext | null = null;
+    let osc: OscillatorNode | null = null;
     let stopped = false;
     const start = async () => {
       const track = streamRef.current ? streamRef.current.getVideoTracks()[0] : null;
@@ -207,13 +225,36 @@ export function MiniDisplay({ state, code }: MiniDisplayProps) {
         return;
       }
       try {
-        stream = canvas.captureStream(0);
+        stream = canvas.captureStream(15);
         if (stopped) return;
+        // PiP on mobile only floats media with audio. Attach a silent audio
+        // track (oscillator into a MediaStreamDestination, gain 0) so the OS
+        // treats the stream as active playback while making no sound.
+        try {
+          audioCtx = new AudioContext();
+          const dest = audioCtx.createMediaStreamDestination();
+          osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          gain.gain.value = 0;
+          osc.connect(gain);
+          gain.connect(dest);
+          osc.start();
+          stream.addTrack(dest.stream.getAudioTracks()[0]);
+        } catch {
+          // audio is a bonus; the video track alone still works on Chromium
+        }
         streamRef.current = stream;
         video.srcObject = stream;
+        video.width = W;
+        video.height = H;
         video.muted = true;
         video.playsInline = true;
         video.setAttribute("playsinline", "");
+        // Chromium 134+: hiding the tab makes the browser enter PiP itself, no
+        // user activation required. This is the actual "minimizo y queda
+        // flotando" on Android (and newer iOS Safari handles webkit mode in
+        // the visibilitychange below).
+        (video as AutoPipVideo).autoPictureInPicture = true;
         await video.play();
         if (stopped) {
           streamRef.current = null;
@@ -239,24 +280,25 @@ export function MiniDisplay({ state, code }: MiniDisplayProps) {
         window.clearInterval(id);
         streamRef.current?.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
+        osc?.stop();
+        void audioCtx?.close();
       }
     };
   }, [mode, state.status]);
 
   // Enter PiP in the background (trainer switches apps with /run active).
-  // Best-effort: Chromium needs a user gesture for requestPictureInPicture,
-  // but WebKit iOS floats the playing video itself — this handler is the
-  // belt to iOS's own suspenders.
+  // Chromium 134+ is handled by autoPictureInPicture above; WebKit still
+  // needs an explicit call, and it rejects without the playing audio track.
   useEffect(() => {
     if (!mode || mode === "document") return;
     const onVis = () => {
       if (!document.hidden || activeRef.current) return;
-      const video = videoRef.current;
+      const video = videoRef.current as WebkitVideo;
       if (!video) return;
-      if (mode === "video") {
-        video.requestPictureInPicture().catch(() => {});
-      } else if (mode === "webkit") {
+      if (mode === "webkit") {
         video.webkitSetPresentationMode?.("picture-in-picture");
+      } else if (mode === "video") {
+        video.requestPictureInPicture().catch(() => {});
       }
     };
     document.addEventListener("visibilitychange", onVis);
@@ -335,7 +377,7 @@ export function MiniDisplay({ state, code }: MiniDisplayProps) {
 
   return (
     <>
-      <div className="pointer-events-none fixed h-px w-px overflow-hidden opacity-0" aria-hidden="true">
+      <div className="pointer-events-none fixed -left-[9999px] top-0 size-[2px] overflow-hidden opacity-[0.01]" aria-hidden="true">
         <canvas ref={canvasRef} width={W} height={H} />
         <video ref={videoRef} muted playsInline />
       </div>

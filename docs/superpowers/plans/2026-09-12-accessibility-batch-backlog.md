@@ -160,6 +160,18 @@ Cada tarea tiene la spec mínima para que un agente la vuelva a implementar. Tod
 
 ---
 
+## Ideas nuevas (2026-09-16)
+
+### Display de levantamiento (barbell con peso actual)
+
+Modo display (TV) para bloques RM / levantamiento: un gráfico de la BARRA con el peso cargado — visualización de barra + discos según el peso actual del intento, animado al cambiarlo (el trainer ya maneja `weightKg` por ejercicio, ver `src/types/workout.ts`).
+
+### Display de competencia CrossFit
+
+Modo display "competencia": scoreboard/leaderboard entre atletas corriendo la misma WOD (nombre, corridas/reps, tiempo, ranking). Se conecta con el backlog viejo "Multi-atleta — leaderboard" y con el historial (para comparativa en vivo vs PRs).
+
+---
+
 ## Pendiente del audit (no tocado nunca)
 
 ### Run page
@@ -191,6 +203,7 @@ Cada tarea tiene la spec mínima para que un agente la vuelva a implementar. Tod
 - **Tarea 15** — Spotify integration (OAuth + Web Playback SDK, requiere backend con client secret)
 - **PWA / kiosko** — install prompt, fullscreen lock, manifest con iconos
 - **Historial con progreso real** — atletas individuales, trends, comparativa entre sesiones
+- **IA coach de entrenamiento** — leer `gymtimer.history` + `gymtimer.workouts` (localStorage) y, en base a la forma de trabajo real del atleta (volúmenes, bloques preferidos, frecuencias, gaps), sugerir ideas de rutinas / próximas sesiones. Requiere backend para el prompt (API key), el historial ya está en el lado cliente. Ver cómo exponer: endpoint propio o resumir el historial del lado cliente y mandar el resumen.
 - **RX / Scaled** — escalado de pesos por nivel del atleta (elite/intermediate/scaled)
 - **Multi-atleta** — leaderboard, varios atletas corriendo a la vez, heat maps
 - **Videos livianos** — CDN para los videos de ejercicios (actualmente en `/public/videos/`, pesado)

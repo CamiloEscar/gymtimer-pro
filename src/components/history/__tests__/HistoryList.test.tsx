@@ -5,6 +5,7 @@ import { HistoryList } from "../HistoryList";
 import { WorkoutHistoryRepository } from "@/lib/storage/WorkoutHistoryRepository";
 import { LocalWorkoutRepository } from "@/lib/storage/LocalWorkoutRepository";
 import type { Workout } from "@/types";
+import type { WorkoutBlock } from "@/types";
 
 const NOW = new Date("2026-09-13T12:00:00.000Z");
 const ONE_HOUR_AGO = new Date(NOW.getTime() - 60 * 60 * 1000).toISOString();
@@ -321,5 +322,116 @@ describe("HistoryList delete entry", () => {
       JSON.parse(window.localStorage.getItem("gymtimer.history")!)
     ).toHaveLength(2);
     expect(screen.getByText("1")).toBeInTheDocument();
+  });
+});
+
+describe("HistoryList run detail", () => {
+  function seedWorkoutWithBlocks(blocks: WorkoutBlock[]): Workout {
+    const workout: Workout = {
+      id: "w1",
+      name: "Murph",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      favorite: false,
+      blocks,
+    };
+    new LocalWorkoutRepository().save(workout);
+    return workout;
+  }
+
+  function seedEntry() {
+    new WorkoutHistoryRepository().record({
+      workoutId: "w1",
+      workoutName: "Murph",
+      completedAt: ONE_HOUR_AGO,
+      durationMs: 32 * 60 * 1000,
+      reps: 21,
+    });
+  }
+
+  it("opens the detail modal on click with date, duration and RM reps", async () => {
+    seedWorkoutWithBlocks([]);
+    seedEntry();
+    const user = userEvent.setup();
+    render(<HistoryList />);
+
+    await user.click(
+      screen.getByRole("button", { name: /ver detalle de la corrida de murph/i })
+    );
+
+    const dialog = screen.getByRole("dialog", { name: /corrida de murph/i });
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("32m 0s");
+    expect(dialog).toHaveTextContent("RM: 21 reps");
+  });
+
+  it("renders blocks with exercise names and amounts", async () => {
+    seedWorkoutWithBlocks([
+      {
+        id: "b1",
+        type: "amrap",
+        durationSeconds: 60 * 5,
+        exercises: [
+          { id: "e1", name: "Pull ups", reps: 10 },
+          { id: "e2", name: "Push ups", sets: 3, reps: 15 },
+        ],
+      },
+      {
+        id: "b2",
+        type: "rm",
+        durationSeconds: 60,
+        label: "RM bench",
+        exercises: [{ id: "e3", name: "Bench Press", sets: 5, reps: 5, weightKg: 60 }],
+      },
+    ]);
+    seedEntry();
+    const user = userEvent.setup();
+    render(<HistoryList />);
+
+    await user.click(
+      screen.getByRole("button", { name: /ver detalle de la corrida de murph/i })
+    );
+
+    const dialog = screen.getByRole("dialog", { name: /corrida de murph/i });
+    expect(dialog).toHaveTextContent("AMRAP · 5m 0s");
+    expect(dialog).toHaveTextContent("Pull ups");
+    expect(dialog).toHaveTextContent("10 reps");
+    expect(dialog).toHaveTextContent("3× · 15 reps");
+    expect(dialog).toHaveTextContent("RM · RM bench · 1m 0s");
+    expect(dialog).toHaveTextContent("Bench Press");
+    expect(dialog).toHaveTextContent("5× · 5 reps · 60 kg");
+  });
+
+  it("shows a fallback when the workout was deleted", async () => {
+    seedWorkoutWithBlocks([]);
+    seedEntry();
+    new LocalWorkoutRepository().delete("w1");
+    const user = userEvent.setup();
+    render(<HistoryList />);
+
+    await user.click(
+      screen.getByRole("button", { name: /ver detalle de la corrida de murph/i })
+    );
+
+    const dialog = screen.getByRole("dialog", { name: /corrida de murph/i });
+    expect(dialog).toHaveTextContent(/eliminada/i);
+    expect(dialog).toHaveTextContent("32m 0s");
+  });
+
+  it("closes the detail modal without deleting the entry", async () => {
+    seedWorkoutWithBlocks([]);
+    seedEntry();
+    const user = userEvent.setup();
+    render(<HistoryList />);
+
+    await user.click(
+      screen.getByRole("button", { name: /ver detalle de la corrida de murph/i })
+    );
+    expect(screen.getByRole("dialog", { name: /corrida de murph/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cerrar" }));
+
+    expect(screen.queryByRole("dialog", { name: /corrida de murph/i })).not.toBeInTheDocument();
+    expect(
+      JSON.parse(window.localStorage.getItem("gymtimer.history")!)
+    ).toHaveLength(1);
   });
 });

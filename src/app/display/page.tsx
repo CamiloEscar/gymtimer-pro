@@ -21,8 +21,9 @@ export default function DisplayEntryPage() {
 
   if (mode === "choice") {
     // Single CTA path: a configured linkCode replaces the random generator
-    // so the gym's TV never lands on a code that no trainer is using.
-    const pairedCode = configuredLinkCode ?? generateCode();
+    // so the gym's TV never lands on a code that no trainer is using. The
+    // random code is generated at click time (never during render) so the
+    // SSR'd markup stays deterministic.
     return (
       <div className="min-h-[100dvh] bg-surface-950 flex flex-col items-center justify-center gap-4 p-4">
         <h1 className="text-2xl font-bold text-phosphor">Abrir una pantalla</h1>
@@ -36,7 +37,7 @@ export default function DisplayEntryPage() {
             </p>
           </>
         )}
-        <Button size="lg" onClick={() => router.push(`/display/${pairedCode}`)}>
+        <Button size="lg" onClick={() => router.push(`/display/${configuredLinkCode ?? generateCode()}`)}>
           {configuredLinkCode ? `Conectar a ${configuredLinkCode}` : "Generar código nuevo"}
         </Button>
         <Button size="lg" variant="secondary" onClick={() => setMode("manual")}>

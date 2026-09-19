@@ -19,6 +19,8 @@ import { DisplayOnboardingBanner } from "./DisplayOnboardingBanner";
 import { FirstRunChecklist } from "./FirstRunChecklist";
 import { RecentWorkouts } from "./RecentWorkouts";
 
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
 function greeting(hour: number): string {
   if (hour < 12) return "Buenos días";
   if (hour < 19) return "Buenas tardes";
@@ -58,6 +60,10 @@ export function Dashboard() {
   // avoiding a hydration mismatch against the user's local hour.
   const [greetingText, setGreetingText] = useState<string | null>(null);
   const [dateText, setDateText] = useState<string | null>(null);
+  // Same constraint for the weekday: the server must pick the same WOD as the
+  // client, so today's weekday is resolved in the effect (client timezone),
+  // never during the render that hydrates.
+  const [todayKey, setTodayKey] = useState<string | null>(null);
   const gymProfile = useGymProfile();
 
   /* eslint-disable react-hooks/set-state-in-effect -- client-only greeting, hour must not come from the server */
@@ -65,6 +71,7 @@ export function Dashboard() {
     const now = new Date();
     setGreetingText(greeting(now.getHours()));
     setDateText(formatLongDate(now));
+    setTodayKey(DAY_KEYS[now.getDay()]);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -75,13 +82,7 @@ export function Dashboard() {
     notifyLocalStorageChange();
   }
 
-  const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-
-  function getTodayKey(): string {
-    return DAY_KEYS[new Date().getDay()];
-  }
-
-  const weeklyPlanWodId = gymProfile?.weeklyPlan?.[getTodayKey()];
+  const weeklyPlanWodId = todayKey ? gymProfile?.weeklyPlan?.[todayKey] : undefined;
   const workoutOfTheDay =
     workouts.find((w) => w.id === weeklyPlanWodId) ??
     workouts.find((w) => w.id === gymProfile?.wodWorkoutId) ??

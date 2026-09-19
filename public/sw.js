@@ -1,9 +1,12 @@
 // GymTimer service worker. Vanilla JS — Next 16 has no built-in SW; this
 // gives the site "installable" PWA status + offline fallback for navigation.
-// Strategy is intentionally minimal: precache the offline shell, network-
-// first for navigation, cache-first for previously-seen same-origin assets.
+// Strategy: precache the offline shell, network-first for navigation,
+// stale-while-revalidate for previously-seen same-origin assets. SWR (not
+// cache-first) matters here: in dev the chunk URLs are stable and in prod a
+// deploy can rewrite assets — cache-first served the OLD build forever until
+// a hard refresh, which showed stale sections after every code change.
 
-const CACHE_NAME = "gymtimer-v1";
+const CACHE_NAME = "gymtimer-v2";
 const PRECACHE_URLS = ["/offline"];
 
 self.addEventListener("install", (event) => {
@@ -47,19 +50,28 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets: cache-first, fall back to network. Good enough for v1;
-  // upgrade to stale-while-revalidate when cache churn becomes a concern.
+  // Static assets: stale-while-revalidate. Serve the cached copy instantly,
+  // then refresh it from the network in the background so an edited build
+  // (same URL in dev, hashed-but-rewritten in prod) replaces the stale copy
+  // on the next load instead of requiring a hard refresh.
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(req);
-      if (cached) return cached;
-      try {
-        const res = await fetch(req);
-        if (res.ok) cache.put(req, res.clone());
+      const cached = (await cache.match(req)) as Response | undefined;
+      const network = fetch(req).then((res) => {
+        if (res.ok) void cache.put(req, res.clone());
         return res;
+      });
+      if (cached) {
+        // Serve from cache now; let the background revalidation finish on
+        // its own (a failed refresh leaves the cached copy in place).
+        network.catch(() => {});
+        return cached;
+      }
+      try {
+        return await network;
       } catch {
-        return cached ?? Response.error();
+        return Response.error();
       }
     })()
   );

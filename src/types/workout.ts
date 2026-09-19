@@ -40,6 +40,10 @@ export interface Exercise {
   timeSeconds?: number;
   distanceMeters?: number;
   weightKg?: number;
+  // Barbell the lift runs on (affects how the TV display draws the bar: size
+  // + center stripe). Absent → 20kg men's bar. kg values outside the known
+  // set still size the bar proportionally, just without a stripe color.
+  barKg?: number;
   notes?: string;
   // New additive fields (crossfit-wod-models). Old localStorage data with none
   // of these hydrates unchanged — metricOf infers `reps`.

@@ -5,6 +5,8 @@ import type { Exercise, MetricKind, RepScheme } from "@/types";
 import type { CatalogExercise } from "@/lib/workout/exerciseCatalog";
 import { groupCatalogByCategory } from "@/lib/workout/exerciseCatalog";
 import { ladderReps, metricOf } from "@/lib/workout/repScheme";
+import { BAR_KG } from "@/lib/display/barbell";
+import { isLiftExercise } from "@/lib/workout/exerciseCatalogWeightlifting";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -194,6 +196,19 @@ export function ExerciseEditor({ exercise, catalog, allowLadder = false, onChang
           }
           placeholder="Peso (kg)"
         />
+        {isLiftExercise(exercise.name) && (
+          <Select
+            aria-label="Barra"
+            value={String(exercise.barKg ?? BAR_KG)}
+            onChange={(e) =>
+              onChange({ ...exercise, barKg: e.target.value ? Number(e.target.value) : undefined })
+            }
+          >
+            <option value="20">Barra 20 kg</option>
+            <option value="15">Barra 15 kg</option>
+            <option value="10">Barra 10 kg</option>
+          </Select>
+        )}
         <Input
           aria-label="Notas"
           value={exercise.notes ?? ""}

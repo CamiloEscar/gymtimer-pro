@@ -565,6 +565,117 @@ describe("DisplayScreen workout video", () => {
   });
 });
 
+describe("DisplayScreen barbell", () => {
+  function weightedRmState(weightKg: number, barKg?: number) {
+    return buildState({
+      workout: {
+        id: "w1",
+        name: "WOD",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "rm",
+            durationSeconds: 120,
+            exercises: [{ id: "e1", name: "Back Squat", weightKg, ...(barKg ? { barKg } : {}) }],
+          },
+        ],
+      },
+      accumulatedReps: 0,
+    });
+  }
+
+  it("renders the barbell with the current exercise weight for a weighted RM block", () => {
+    render(
+      <DisplayScreen
+        state={weightedRmState(100)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    expect(screen.getByTestId("barbell-display")).toBeInTheDocument();
+    expect(screen.getByTestId("barbell-weight")).toHaveTextContent("100 KG");
+    expect(screen.getByText("Back Squat")).toBeInTheDocument();
+  });
+
+  it("draws the bar type picked on the exercise (15kg women's bar)", () => {
+    render(
+      <DisplayScreen
+        state={weightedRmState(100, 15)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    expect(screen.getByTestId("barbell-stripe")).toHaveAttribute("fill", "#ef4444");
+    expect(
+      screen.getByRole("img", { name: /barra de 15 kg con 100 kg/i })
+    ).toBeInTheDocument();
+  });
+
+  it("stays hidden for a weighted exercise that is not a lift", () => {
+    const state = buildState({
+      workout: {
+        id: "w1",
+        name: "WOD",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        favorite: false,
+        blocks: [
+          {
+            id: "b1",
+            type: "amrap",
+            durationSeconds: 600,
+            exercises: [{ id: "e1", name: "Thruster", weightKg: 40 }],
+          },
+        ],
+      },
+    });
+    render(
+      <DisplayScreen
+        state={state}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+
+    expect(screen.queryByTestId("barbell-display")).not.toBeInTheDocument();
+  });
+
+  it("stays hidden when the exercise has no weight and when finished", () => {
+    const { rerender } = render(
+      <DisplayScreen
+        state={weightedRmState(60)}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+    expect(screen.getByTestId("barbell-display")).toBeInTheDocument();
+
+    const noWeight = buildState();
+    rerender(
+      <DisplayScreen
+        state={noWeight}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+    expect(screen.queryByTestId("barbell-display")).not.toBeInTheDocument();
+
+    const finished = weightedRmState(60);
+    finished.currentPhase = "finished";
+    rerender(
+      <DisplayScreen
+        state={finished}
+        connectionStatus="connected"
+        onFullscreenToggle={() => {}}
+      />
+    );
+    expect(screen.queryByTestId("barbell-display")).not.toBeInTheDocument();
+  });
+});
+
 describe("DisplayScreen side panel", () => {
   it("renders the exercise list inside the side panel during work for a non-rest block", () => {
     const state = buildState();

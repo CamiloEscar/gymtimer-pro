@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { CatalogExercise } from "@/lib/workout/exerciseCatalog";
 import { EXERCISE_CATALOG, getEffectiveCatalog } from "@/lib/workout/exerciseCatalog";
 import { CROSSFIT_CATALOG } from "@/lib/workout/exerciseCatalogCrossfit";
-import { WEIGHTLIFTING_CATALOG } from "@/lib/workout/exerciseCatalogWeightlifting";
+import { WEIGHTLIFTING_CATALOG, WEIGHTLIFTING_NAMES } from "@/lib/workout/exerciseCatalogWeightlifting";
 import type { UserExerciseOverride } from "@/types";
 import { UserExerciseOverrideRepository } from "@/lib/storage/UserExerciseOverrideRepository";
 import { useLocalStorageSnapshot } from "@/hooks/useLocalStorageSnapshot";
@@ -33,9 +33,6 @@ const CROSSFIT_NAMES = new Set(
 );
 const GYM_NAMES = new Set(
   EXERCISE_CATALOG.map((e) => e.name.trim().toLowerCase()),
-);
-const WEIGHTLIFTING_NAMES = new Set(
-  WEIGHTLIFTING_CATALOG.map((e) => e.name.trim().toLowerCase()),
 );
 
 function ThumbnailPreview({ src }: { src?: string }) {
@@ -117,8 +114,36 @@ function ExerciseCard({
         <p className="mt-0.5 font-tactical text-xs uppercase tracking-widest text-brand-500">
           {exercise.category}
         </p>
+        <OriginBadges tags={exercise.tags} />
       </Card>
     </Link>
+  );
+}
+
+const ORIGIN_BADGES: Record<OriginTag, string> = {
+  gym: "Gimnasio",
+  crossfit: "Crossfit",
+  weightlifting: "Lifting",
+};
+
+function OriginBadges({ tags }: { tags: Set<OriginTag> }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-1">
+      {(["gym", "crossfit", "weightlifting"] as const).map((origin) =>
+        tags.has(origin) ? (
+          <span
+            key={origin}
+            className={`rounded border px-1.5 py-0.5 font-tactical text-[10px] uppercase tracking-widest ${
+              origin === "weightlifting"
+                ? "text-brand-500 border-brand-500/40"
+                : "text-phosphor-dim border-surface-700"
+            }`}
+          >
+            {ORIGIN_BADGES[origin]}
+          </span>
+        ) : null
+      )}
+    </div>
   );
 }
 

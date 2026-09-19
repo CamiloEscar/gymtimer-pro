@@ -23,7 +23,7 @@ describe("ExerciseLibrary", () => {
   it("renders every seeded exercise as a link", async () => {
     render(<ExerciseLibrary />);
     const links = await cardLinks();
-    expect(links).toHaveLength(103);
+    expect(links).toHaveLength(123);
     const sentadilla = links.find((l) => l.getAttribute("href") === "/app/exercises/leg-01");
     expect(sentadilla?.textContent).toContain("Sentadilla");
     const backSquat = links.find((l) => l.getAttribute("href") === "/app/exercises/cf-wl-01");
@@ -60,11 +60,11 @@ describe("ExerciseLibrary", () => {
     expect(screen.getByText("Sin resultados.")).toBeInTheDocument();
   });
 
-  it("shows Todos by default and renders the 103 cards", async () => {
+  it("shows Todos by default and renders the 123 cards", async () => {
     render(<ExerciseLibrary />);
     const allButton = screen.getByRole("button", { name: "Todos" });
     expect(allButton).toHaveAttribute("aria-pressed", "true");
-    expect(await cardLinks()).toHaveLength(103);
+    expect(await cardLinks()).toHaveLength(123);
   });
 
   it("filters to gym catalog when Gimnasio is selected", async () => {
@@ -86,11 +86,14 @@ describe("ExerciseLibrary", () => {
     render(<ExerciseLibrary />);
     await user.click(screen.getByRole("button", { name: "Weightlifting" }));
     expect(screen.getByRole("button", { name: "Weightlifting" })).toHaveAttribute("aria-pressed", "true");
-    // 8 wl entries + 3 cf entries (Back Squat, Front Squat, Power Clean)
+    // 28 wl entries + 3 cf entries (Back Squat, Front Squat, Power Clean)
     // that share a name with the weightlifting catalog.
-    expect(cardLinks()).toHaveLength(11);
+    expect(cardLinks()).toHaveLength(31);
     expect(
       cardLinks().find((l) => /Bench Press/.test(l.textContent || ""))
+    ).toBeDefined();
+    expect(
+      cardLinks().find((l) => /Romanian Deadlift/.test(l.textContent || ""))
     ).toBeDefined();
     expect(
       cardLinks().find((l) => /Sentadilla/.test(l.textContent || ""))
@@ -111,6 +114,27 @@ describe("ExerciseLibrary", () => {
     expect(
       cardLinks().find((l) => /Sentadilla/.test(l.textContent || ""))
     ).toBeUndefined();
+  });
+
+  it("shows origin badges telling gym, crossfit and lifting apart", async () => {
+    render(<ExerciseLibrary />);
+    const bench = cardLinks().find((l) => l.getAttribute("href") === "/app/exercises/wl-03");
+    expect(within(bench!).getByText("Lifting")).toBeInTheDocument();
+    expect(within(bench!).queryByText("Gimnasio")).not.toBeInTheDocument();
+
+    const sentadilla = cardLinks().find(
+      (l) => l.getAttribute("href") === "/app/exercises/leg-01"
+    );
+    expect(within(sentadilla!).getByText("Gimnasio")).toBeInTheDocument();
+    expect(within(sentadilla!).queryByText("Lifting")).not.toBeInTheDocument();
+
+    // Back Squat lives in both the CrossFit and the weightlifting catalog.
+    const backSquat = cardLinks().find(
+      (l) => l.getAttribute("href") === "/app/exercises/cf-wl-01"
+    );
+    expect(within(backSquat!).getByText("Crossfit")).toBeInTheDocument();
+    expect(within(backSquat!).getByText("Lifting")).toBeInTheDocument();
+    expect(within(backSquat!).queryByText("Gimnasio")).not.toBeInTheDocument();
   });
 
   it("combines search with the origin filter", async () => {

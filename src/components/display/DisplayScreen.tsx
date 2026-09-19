@@ -12,7 +12,9 @@ import { TimerProgressBar } from "@/components/timer/TimerProgressBar";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ExerciseListDisplay } from "./ExerciseListDisplay";
+import { BarbellDisplay } from "./BarbellDisplay";
 import { VideoPlayer, type VideoPlayerHandle } from "@/components/ui/VideoPlayer";
+import { isLiftExercise } from "@/lib/workout/exerciseCatalogWeightlifting";
 import { isChipper, ladderReps, metricOf } from "@/lib/workout/repScheme";
 
 const ROUND_BACKGROUNDS = [
@@ -238,6 +240,17 @@ export function DisplayScreen({ state, connectionStatus, onFullscreenToggle }: D
                 )}
               </>
             )}
+            {isLiftExercise(currentExercise?.name ?? "") &&
+              currentExercise?.weightKg != null &&
+              state.currentPhase !== "finished" && (
+                <BarbellDisplay
+                  weightKg={currentExercise.weightKg}
+                  barKg={currentExercise.barKg}
+                  exerciseName={currentExercise.name}
+                  round={state.currentRound}
+                  totalRounds={state.totalRounds}
+                />
+              )}
             {currentBlock.type !== "rm" && (
               <ExerciseListDisplay
                 block={currentBlock}

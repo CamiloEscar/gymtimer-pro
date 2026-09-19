@@ -145,3 +145,29 @@ describe("ExerciseEditor — widget-fit per metricKind", () => {
     });
   });
 });
+
+describe("ExerciseEditor — Barra select gating", () => {
+  it("shows the Barra select only for lifts in the weightlifting catalog", () => {
+    const { rerender } = render(
+      <ExerciseEditor
+        exercise={{ id: "ex-1", name: "Back Squat" }}
+        catalog={CATALOG}
+        onChange={vi.fn()}
+        onRemove={vi.fn()}
+      />
+    );
+
+    expect(screen.getByLabelText("Barra")).toBeInTheDocument();
+
+    rerender(
+      <ExerciseEditor
+        exercise={{ id: "ex-1", name: "Thruster" }}
+        catalog={CATALOG}
+        onChange={vi.fn()}
+        onRemove={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByLabelText("Barra")).not.toBeInTheDocument();
+  });
+});

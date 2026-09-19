@@ -113,4 +113,35 @@ describe("DisplayCodePage (mirror)", () => {
     stateHandler?.(buildState({ currentPhase: "rest" }));
     await waitFor(() => expect(screen.getByText("DESCANSO")).toBeInTheDocument());
   });
+
+  it("rebuilds the mirror when the trainer broadcasts an edited workout", async () => {
+    render(<DisplayCodePage />);
+    statusHandler?.("connected");
+    stateHandler?.(buildState());
+    expect(await screen.findByText("WOD del día")).toBeInTheDocument();
+
+    stateHandler?.(
+      buildState({
+        workout: {
+          id: "w1",
+          name: "WOD editado",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          favorite: false,
+          blocks: [
+            {
+              id: "block-1",
+              type: "amrap",
+              durationSeconds: 600,
+              exercises: [{ id: "ex-1", name: "Back Squat", reps: 5, weightKg: 100 }],
+            },
+          ],
+        },
+        currentPhase: "getReady",
+        status: "ready",
+      })
+    );
+    expect(await screen.findByText("WOD editado")).toBeInTheDocument();
+    expect(screen.queryByText("WOD del día")).not.toBeInTheDocument();
+    expect(screen.getByTestId("barbell-display")).toBeInTheDocument();
+  });
 });

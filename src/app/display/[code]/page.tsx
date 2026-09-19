@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import type { ConnectionStatus, SessionState } from "@/types";
+import type { ConnectionStatus, SessionState, Workout } from "@/types";
 import { SessionChannel } from "@/lib/session/SessionChannel";
 import { WorkoutEngine } from "@/lib/workout/WorkoutEngine";
 import { DisplayConnection } from "@/components/display/DisplayConnection";
@@ -37,6 +37,14 @@ function DisplayCodeContent() {
   const [state, setState] = useState<SessionState | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("waiting");
   const { toggle } = useFullscreen();
+  // Signature of the workout the current mirror engine was built for.
+  // Compares against each broadcast's workout so an edit applied on the
+  // trainer side triggers a mirror rebuild — hydrate() restores timing and
+  // position only, never the block definitions, so without this the TV keeps
+  // showing the PREVIOUS routine while the trainer moves to the new one.
+  // JSON.stringify (not object identity) because the channel serializes every
+  // broadcast and a fresh object arrives each time.
+  const workoutSigRef = useRef<string | null>(null);
 
   // Created and destroyed in the same effect (rather than via useMemo + a
   // separate cleanup effect) so React Strict Mode's dev-only double-invoke
@@ -53,28 +61,57 @@ function DisplayCodeContent() {
     const channel = new SessionChannel(code, "display");
     channelRef.current = channel;
     let unsubscribeMirror: (() => void) | null = null;
+
+    // (Re)build the mirror engine for a workout structure. Called on the
+    // first broadcast and whenever the trainer's state carries a DIFFERENT
+    // workout (an edit applied mid-session).
+    const attachMirror = (workout: Workout) => {
+      unsubscribeMirror?.();
+      mirrorRef.current?.destroy();
+      workoutSigRef.current = JSON.stringify(workout);
+      const mirror = new WorkoutEngine(workout);
+      mirrorRef.current = mirror;
+      unsubscribeMirror = mirror.subscribe(() => {
+        const mirrorState = mirror.getState();
+        if (!remoteRef.current) return;
+        setState({
+          ...mirrorState,
+          code: remoteRef.current.code,
+          showVideoOnDisplay: remoteRef.current.showVideoOnDisplay,
+          videoByExerciseId: remoteRef.current.videoByExerciseId,
+        });
+      });
+    };
+
     const unsubscribeState = channel.onState((remote) => {
       const receivedAt = Date.now();
       remoteRef.current = remote;
-      if (!mirrorRef.current) {
-        const mirror = new WorkoutEngine(remote.workout);
-        mirrorRef.current = mirror;
-        unsubscribeMirror = mirror.subscribe(() => {
-          const mirrorState = mirror.getState();
-          if (!remoteRef.current) return;
-          setState({
-            ...mirrorState,
-            code: remoteRef.current.code,
-            showVideoOnDisplay: remoteRef.current.showVideoOnDisplay,
-            videoByExerciseId: remoteRef.current.videoByExerciseId,
-          });
-        });
+      if (!mirrorRef.current || JSON.stringify(remote.workout) !== workoutSigRef.current) {
+        attachMirror(remote.workout);
       }
+      const mirror = mirrorRef.current;
+      if (!mirror) return;
       // Anchor on the sender's capture instant when the trainer stamps it
       // (see SessionState.capturedAt); using our own receive time makes
       // staleMs zero and rewinds the timer by the network+processing lag
       // on every broadcast — a slow/mobile display visibly counts backwards.
-      mirrorRef.current.hydrate(remote, remote.capturedAt ?? receivedAt);
+      try {
+        mirror.hydrate(remote, remote.capturedAt ?? receivedAt);
+      } catch {
+        // The trainer rebuilt the workout mid-session and the broadcast
+        // position no longer exists in the new structure (e.g. blocks were
+        // removed). Throw the half-hydrated mirror away and show the new
+        // routine from its top instead of freezing on a stale position.
+        attachMirror(remote.workout);
+        const fresh = mirrorRef.current;
+        if (!fresh) return;
+        setState({
+          ...fresh.getState(),
+          code: remote.code,
+          showVideoOnDisplay: remote.showVideoOnDisplay,
+          videoByExerciseId: remote.videoByExerciseId,
+        });
+      }
     });
     const unsubscribeStatus = channel.onConnectionStatusChange(setConnectionStatus);
     return () => {

@@ -1,10 +1,8 @@
 import type { MetadataRoute } from "next";
 
-const ICON_SRC = "/images/display.png";
-
-// ponytail: single 67KB source PNG reused at 192/512/maskable. Browsers
-// scale; ideal would be 3 dedicated exports at exact sizes — when we want
-// proper hi-DPI icons, drop a Sharp build step.
+// ponytail: dedicated exports at exact sizes, generated from src/app/icon.svg
+// by the Sharp build step in scripts/generate-icons.mjs - rerun it after any
+// logo tweak to refresh these assets.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "GymTimer Pro",
@@ -17,10 +15,10 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#0a0a0a",
     categories: ["fitness", "health", "productivity"],
     icons: [
-      { src: ICON_SRC, sizes: "192x192", type: "image/png" },
-      { src: ICON_SRC, sizes: "512x512", type: "image/png" },
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
       {
-        src: ICON_SRC,
+        src: "/icons/icon-512-maskable.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

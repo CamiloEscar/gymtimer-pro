@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { LogoMark } from "@/components/ui/Logo";
 
 const SECTION_LINKS = [
   { href: "/app", label: "Dashboard" },
@@ -28,8 +29,7 @@ function inferBackHref(pathname: string): string | null {
 export function AppHeader() {
   const pathname = usePathname();
   const backHref = inferBackHref(pathname);
-  const activeHref = SECTION_LINKS
-    .map((l) => l.href)
+  const activeHref = SECTION_LINKS.map((l) => l.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
 
@@ -45,14 +45,20 @@ export function AppHeader() {
               </Button>
             </Link>
           )}
-          <Link href="/app" className="font-industrial text-phosphor tracking-widest text-sm md:text-base">
+          <Link
+            href="/app"
+            className="font-industrial text-phosphor tracking-widest text-sm md:text-base inline-flex items-center gap-2"
+          >
+            <LogoMark className="h-6 w-6 shrink-0 md:h-7 md:w-7" />
             GYMTIMER
           </Link>
         </div>
         <ul className="hidden md:flex flex-wrap items-center justify-end gap-x-3 gap-y-1 md:gap-4 text-xs md:text-sm font-tactical">
           {SECTION_LINKS.map((link) => {
             const active = link.href === activeHref;
-            const className = active ? "text-brand-500" : "text-phosphor-dim hover:text-phosphor";
+            const className = active
+              ? "text-brand-500"
+              : "text-phosphor-dim hover:text-phosphor";
             return (
               <li key={link.href}>
                 <Link href={link.href} className={className}>

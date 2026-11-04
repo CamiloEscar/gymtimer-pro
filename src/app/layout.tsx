@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Archivo_Black, JetBrains_Mono, Bebas_Neue } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Archivo_Black,
+  JetBrains_Mono,
+  Bebas_Neue,
+} from "next/font/google";
 import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
 import "./globals.css";
 
@@ -41,11 +47,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/images/display.png", sizes: "any", type: "image/png" },
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    apple: [
-      { url: "/images/display.png", sizes: "any", type: "image/png" },
-    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 

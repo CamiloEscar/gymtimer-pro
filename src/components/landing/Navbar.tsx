@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { LogoMark } from "@/components/ui/Logo";
 import { MobileMenu } from "./MobileMenu";
 
 export function Navbar() {
@@ -13,8 +14,9 @@ export function Navbar() {
       <nav className="absolute top-0 left-0 right-0 z-40 h-16 md:h-20 px-6 md:px-10 flex items-center justify-between anim-fade-down">
         <Link
           href="/"
-          className="font-industrial text-xl md:text-2xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors"
+          className="font-industrial text-xl md:text-2xl text-phosphor uppercase tracking-tight hover:text-brand-500 transition-colors inline-flex items-center gap-2"
         >
+          <LogoMark className="h-6 w-6 shrink-0 md:h-7 md:w-7" />
           GYMTIMER
         </Link>
 

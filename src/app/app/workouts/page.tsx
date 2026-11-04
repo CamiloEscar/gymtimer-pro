@@ -1,19 +1,24 @@
 import Link from "next/link";
 import { WorkoutList } from "@/components/workout/WorkoutList";
+import { WorkoutTemplates } from "@/components/workout/WorkoutTemplates";
 import { Button } from "@/components/ui/Button";
 
 interface WorkoutsPageProps {
   searchParams: Promise<{ code?: string }>;
 }
 
-export default async function WorkoutsPage({ searchParams }: WorkoutsPageProps) {
+export default async function WorkoutsPage({
+  searchParams,
+}: WorkoutsPageProps) {
   const { code } = await searchParams;
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between p-4">
         <h1 className="text-xl font-bold text-phosphor">Entrenamientos</h1>
-        <Link href={code ? `/app/workouts/new?code=${code}` : "/app/workouts/new"}>
+        <Link
+          href={code ? `/app/workouts/new?code=${code}` : "/app/workouts/new"}
+        >
           <Button>+ Nuevo entrenamiento</Button>
         </Link>
       </div>
@@ -22,6 +27,7 @@ export default async function WorkoutsPage({ searchParams }: WorkoutsPageProps) 
           [ CONECTANDO A PANTALLA: {code} ]
         </p>
       )}
+      <WorkoutTemplates code={code} />
       <WorkoutList code={code} />
     </div>
   );

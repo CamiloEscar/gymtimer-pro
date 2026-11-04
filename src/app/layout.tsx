@@ -1,39 +1,42 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Geist,
-  Geist_Mono,
-  Archivo_Black,
-  JetBrains_Mono,
-  Bebas_Neue,
-} from "next/font/google";
+import localFont from "next/font/local";
 import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
 import "./globals.css";
 
-const geistSans = Geist({
+// Self-hosted woff2 files (src/app/fonts) so dev/build never hits the
+// network — next/font/google broke behind TLS-intercepting AV/proxies
+// ("unable to verify the first certificate"). Variable families ship a
+// single wght-axis file; Archivo Black and Bebas Neue are static 400.
+const geistSans = localFont({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  src: "./fonts/geist-latin-wght-normal.woff2",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  src: "./fonts/geist-mono-latin-wght-normal.woff2",
+  display: "swap",
 });
 
-const archivoBlack = Archivo_Black({
+const archivoBlack = localFont({
   variable: "--font-archivo-black",
-  subsets: ["latin"],
+  src: "./fonts/archivo-black-latin-400-normal.woff2",
   weight: "400",
+  display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
   variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
+  src: "./fonts/jetbrains-mono-latin-wght-normal.woff2",
+  display: "swap",
 });
 
-const bebasNeue = Bebas_Neue({
+const bebasNeue = localFont({
   variable: "--font-bebas-neue",
-  subsets: ["latin"],
+  src: "./fonts/bebas-neue-latin-400-normal.woff2",
   weight: "400",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

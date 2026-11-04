@@ -14,14 +14,30 @@ function storedWorkouts(): Workout[] {
   return JSON.parse(window.localStorage.getItem("gymtimer.workouts") ?? "[]");
 }
 
+function openTemplates() {
+  fireEvent.click(screen.getByText("Clásicos de CrossFit"));
+}
+
 describe("WorkoutTemplates", () => {
   beforeEach(() => {
     pushMock.mockClear();
     window.localStorage.clear();
   });
 
-  it("renders all 10 classic templates", () => {
+  it("is collapsed by default so the trainer's own routines stay on top", () => {
     render(<WorkoutTemplates />);
+    const details = screen.getByText("Clásicos de CrossFit").closest("details");
+    expect(details?.open).toBe(false);
+    expect(
+      screen.getByText(`${CROSSFIT_WOD_TEMPLATES.length} plantillas`),
+    ).toBeInTheDocument();
+  });
+
+  it("expands on tap and renders all 10 classic templates", () => {
+    render(<WorkoutTemplates />);
+    openTemplates();
+    const details = screen.getByText("Clásicos de CrossFit").closest("details");
+    expect(details?.open).toBe(true);
     for (const template of CROSSFIT_WOD_TEMPLATES) {
       expect(screen.getByText(template.name)).toBeInTheDocument();
     }
@@ -32,6 +48,7 @@ describe("WorkoutTemplates", () => {
 
   it("clones a template into localStorage and navigates to the saved routine", () => {
     render(<WorkoutTemplates />);
+    openTemplates();
     fireEvent.click(
       screen.getAllByRole("button", { name: "Usar plantilla" })[0],
     );
@@ -46,6 +63,7 @@ describe("WorkoutTemplates", () => {
 
   it("propagates the display code to the navigation target", () => {
     render(<WorkoutTemplates code="ABC123" />);
+    openTemplates();
     fireEvent.click(
       screen.getAllByRole("button", { name: "Usar plantilla" })[3],
     );
